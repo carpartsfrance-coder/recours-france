@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { adminCourant } from "@/lib/auth";
+import Image from "next/image";
 import { FormulaireConnexion } from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -21,24 +22,8 @@ export default async function Connexion() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
-        <div className="rf-ligne" style={{ gap: 14, marginBottom: 20, justifyContent: "center" }}>
-          <span
-            aria-hidden="true"
-            style={{
-              width: 44,
-              height: 44,
-              background: "var(--rf-cobalt-fonce)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              letterSpacing: ".04em",
-            }}
-          >
-            RF
-          </span>
-          <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>Recours France</span>
+        <div className="rf-ligne" style={{ marginBottom: 20, justifyContent: "center" }}>
+          <Image src="/recours-france.png" alt="Recours France" width={172} height={42} style={{ height: 42, width: "auto" }} />
         </div>
         <FormulaireConnexion />
       </div>

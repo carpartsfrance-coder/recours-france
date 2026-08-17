@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { adminCourant } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -33,23 +34,16 @@ export default async function LayoutInterne({ children }: { children: React.Reac
     <div className="rf-admin">
       <nav className="rf-admin__nav" aria-label="Navigation de l’administration">
         <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span
+          <Image
+            src="/pictogramme-rf.png"
+            alt=""
             aria-hidden="true"
-            style={{
-              width: 32,
-              height: 32,
-              background: "#fff",
-              color: "var(--rf-cobalt-fonce)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              fontSize: 12,
-            }}
-          >
-            RF
-          </span>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>Administration</span>
+            width={30}
+            height={32}
+            style={{ height: 32, width: "auto", filter: "brightness(0) invert(1)" }}
+          />
+          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>Recours France</span>
+          <span style={{ color: "var(--rf-sur-nuit)", fontWeight: 600, fontSize: 12.5 }}>Administration</span>
         </div>
         <ul>
           {LIENS.map((l) => {

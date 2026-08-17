@@ -1316,24 +1316,22 @@ button {
   gap: 32px;
   flex-wrap: wrap;
 }
+/* Logotype : pictogramme de la marque + nom en texte, pour rester net et
+   lisible à la hauteur d'un en-tête. */
 .rf-logo {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   text-decoration: none;
 }
-.rf-logo__marque {
-  width: 44px;
-  height: 44px;
+.rf-logo__picto {
+  display: block;
+  width: auto;
+  height: 42px;
   flex: none;
-  background: var(--rf-cobalt-fonce);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+}
+.rf-logo--institutionnel .rf-logo__picto {
+  height: 38px;
 }
 .rf-logo__nom {
   display: block;
@@ -1341,6 +1339,17 @@ button {
   font-weight: 700;
   color: var(--rf-encre);
   letter-spacing: -0.02em;
+}
+.rf-logo--institutionnel .rf-logo__nom {
+  font-size: 19px;
+  color: var(--rfi-bleu);
+}
+/* Le pied de page reçoit le verrou complet : la place y est suffisante. */
+.rf-pied__logo {
+  display: block;
+  width: auto;
+  height: 52px;
+  margin-bottom: 14px;
 }
 .rf-logo__baseline {
   display: block;
@@ -1407,18 +1416,7 @@ button {
 .rf-entete--institutionnel .rf-nav {
   gap: 20px;
 }
-.rf-logo--institutionnel {
-  gap: 14px;
-}
-.rf-logo--institutionnel .rf-logo__marque {
-  width: 38px;
-  height: 38px;
-  font-size: 14px;
-}
-.rf-logo--institutionnel .rf-logo__nom {
-  font-size: 19px;
-  color: var(--rfi-bleu);
-}
+
 .rf-logo--institutionnel .rf-logo__baseline {
   font-size: 11.5px;
   margin-top: 1px;
@@ -1723,13 +1721,16 @@ button {
   .rf-logo__baseline {
     display: none;
   }
-  .rf-logo__marque {
-    width: 34px;
-    height: 34px;
-    font-size: 13px;
+  .rf-logo__picto,
+  .rf-logo--institutionnel .rf-logo__picto {
+    height: 32px;
   }
-  .rf-logo__nom {
+  .rf-logo__nom,
+  .rf-logo--institutionnel .rf-logo__nom {
     font-size: 18px;
+  }
+  .rf-logo {
+    gap: 10px;
   }
   .rf-entete__recherche .rf-input,
   .rf-entete__recherche .rf-btn {
@@ -1909,12 +1910,6 @@ button {
 }
 .rfi .rf-pied__barre a:hover {
   color: #fff;
-}
-.rfi .rf-logo__marque {
-  background: var(--rfi-bleu);
-}
-.rfi .rf-logo__nom {
-  color: var(--rfi-bleu);
 }
 .rfi .rf-btn--marine {
   background: var(--rfi-bleu);

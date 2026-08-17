@@ -1,5 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
+
+/**
+ * Logotype fourni. Le verrou complet (pictogramme + nom + signature) sert là où
+ * il y a de la place ; en en-tête, seul le pictogramme est repris, le nom
+ * restant du texte — sinon la signature devient illisible à cette hauteur.
+ */
+const LOGO = {
+  verrou: "/recours-france.png",
+  verrouBlanc: "/recours-france-blanc.png",
+  picto: "/pictogramme-rf.png",
+  ratioVerrou: 1205 / 325,
+  ratioPicto: 272 / 287,
+};
 
 const DEMO = process.env.DEMO_BANNER !== "false";
 
@@ -43,11 +57,18 @@ export function Logo({
   habillage?: Habillage;
 }) {
   const institutionnel = habillage === "institutionnel";
+  const hauteur = institutionnel ? 38 : 42;
   return (
     <Link href="/" className={`rf-logo${institutionnel ? " rf-logo--institutionnel" : ""}`}>
-      <span className="rf-logo__marque" aria-hidden="true">
-        RF
-      </span>
+      <Image
+        src={LOGO.picto}
+        alt=""
+        aria-hidden="true"
+        width={Math.round(hauteur * LOGO.ratioPicto)}
+        height={hauteur}
+        className="rf-logo__picto"
+        priority
+      />
       <span>
         <span className="rf-logo__nom">Recours France</span>
         <span className="rf-logo__baseline">{baseline}</span>
@@ -176,30 +197,13 @@ export function PiedDePage({
             style={institutionnel ? { paddingTop: 34, paddingBottom: 22 } : undefined}
           >
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: institutionnel ? 13 : 14, marginBottom: 14 }}>
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: institutionnel ? 34 : 38,
-                    height: institutionnel ? 34 : 38,
-                    background: "#FFFFFF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: institutionnel ? "var(--rfi-bleu)" : "var(--rf-cobalt-fonce)",
-                    fontSize: institutionnel ? 13 : 14,
-                    fontWeight: 700,
-                    letterSpacing: ".04em",
-                  }}
-                >
-                  RF
-                </span>
-                <span
-                  style={{ fontSize: institutionnel ? 17 : 18, fontWeight: 700, color: "#FFFFFF", letterSpacing: "-0.015em" }}
-                >
-                  Recours France
-                </span>
-              </div>
+              <Image
+                src={LOGO.verrouBlanc}
+                alt="Recours France — vos droits, notre engagement"
+                width={Math.round(52 * LOGO.ratioVerrou)}
+                height={52}
+                className="rf-pied__logo"
+              />
               <p className="rf-pied__texte">
                 Plateforme privée indépendante de signalement des litiges de consommation, éditée par
                 Recours France SAS. Sans lien avec l’État, une administration ou une autorité publique.
