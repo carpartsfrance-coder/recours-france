@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
+import { BarreOnglets } from "@/components/fiche/onglets";
 import { Dossiers, type Dossier } from "@/components/fiche/dossiers";
-import { versDossier } from "@/lib/dossiers";
 import { Repli, Rubriques } from "@/components/fiche/rubriques";
 import { InfoBulle } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { chargerEntreprise, detailEntreprise } from "@/lib/fiche";
 import { indicesEntreprise } from "@/lib/stats";
+import { versDossier } from "@/lib/dossiers";
 import {
   apprecier,
   couleurVerdict,
@@ -36,6 +37,19 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const JOUR = 86_400_000;
+
+const ONGLETS = [
+  { cle: "synthese", libelle: "Fiche résumé" },
+  { cle: "litiges", libelle: "Litiges et dossiers" },
+  { cle: "donnees", libelle: "Données publiques" },
+  { cle: "recours", libelle: "Médiation et recours" },
+  { cle: "avis", libelle: "Avis" },
+  { cle: "methodo", libelle: "Méthodologie" },
+] as const;
+
+type CleOnglet = (typeof ONGLETS)[number]["cle"];
+
 export async function generateMetadata({
   params,
 }: {
@@ -50,10 +64,20 @@ export async function generateMetadata({
   };
 }
 
-const JOUR = 86_400_000;
-
-export default async function FicheEntreprise({ params }: { params: Promise<{ slug: string }> }) {
+export default async function FicheEntreprise({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
+  const onglet: CleOnglet = ONGLETS.some((o) => o.cle === query.onglet)
+    ? (query.onglet as CleOnglet)
+    : "synthese";
+  const rubriqueInitiale = typeof query.rubrique === "string" ? query.rubrique : null;
+
   const base = await chargerEntreprise(slug);
   if (!base) notFound();
   if (base.slug !== slug) redirect(`/entreprises/${base.slug}`);
@@ -67,7 +91,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
 
   await prisma.entreprise.update({ where: { id: entreprise.id }, data: { vues: { increment: 1 } } });
 
-  const [signalements, avisPublies, nbAvisNonVerifies, totalDossiers] = await Promise.all([
+  const [signalements, avisPublies, nbAvisNonVerifies, totalDossiers, notesVerifiees] = await Promise.all([
     prisma.signalement.findMany({
       where: { entrepriseId: entreprise.id, moderation: "PUBLIE" },
       orderBy: { creeLe: "desc" },
@@ -76,22 +100,21 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     prisma.avis.findMany({
       where: { entrepriseId: entreprise.id, moderation: "PUBLIE", verifie: true },
       orderBy: { publieLe: "desc" },
-      include: { signalement: { select: { reference: true, statut: true, resolutionConfirmee: true } } },
+      include: { signalement: { select: { reference: true, resolutionConfirmee: true } } },
       take: 2,
     }),
     prisma.avis.count({ where: { entrepriseId: entreprise.id, moderation: "PUBLIE", verifie: false } }),
     prisma.signalement.count({ where: { entrepriseId: entreprise.id, moderation: "PUBLIE" } }),
+    prisma.avis.findMany({
+      where: { entrepriseId: entreprise.id, moderation: "PUBLIE", verifie: true },
+      select: { note: true },
+    }),
   ]);
 
-  const notesVerifiees = await prisma.avis.findMany({
-    where: { entrepriseId: entreprise.id, moderation: "PUBLIE", verifie: true },
-    select: { note: true },
-  });
   const moyenne = notesVerifiees.length
     ? notesVerifiees.reduce((t, a) => t + a.note, 0) / notesVerifiees.length
     : null;
 
-  // ── Points de vigilance et appréciation ──────────────────────────────────
   const alertes = construireAlertes({
     entreprise: {
       denomination: entreprise.denomination,
@@ -122,7 +145,6 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   const comptesRecents = comptes.filter((c) =>
     [anneeCourante - 1, anneeCourante - 2, anneeCourante - 3].includes(c.exercice),
   );
-
   const anciennete = entreprise.dateImmatriculation
     ? Math.floor((Date.now() - entreprise.dateImmatriculation.getTime()) / (365.25 * JOUR))
     : null;
@@ -141,7 +163,6 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     anciennete,
     procedures: evenements.filter((e) => e.procedureCollective).length,
     evenements3Ans: evenements.filter((e) => Date.now() - e.date.getTime() < 3 * 365.25 * JOUR).length,
-    // Le critère porte sur les trois derniers exercices attendus, pas sur tout l'historique.
     exercicesDeposes: comptesRecents.filter((c) => c.dateDepot !== null).length,
     exercicesEnRetard: comptesRecents.filter((c) => estEnRetard(c)).length,
     chiffreAffaires: comptes.slice(0, 3).map((c) => ({
@@ -153,48 +174,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     alertesSurveiller: alertes.filter((a) => a.niveau === "surveiller").length,
   });
 
-  // ── Dossiers récents ─────────────────────────────────────────────────────
   const dossiers: Dossier[] = signalements.map(versDossier);
-
-  // ── Synthèse en 8 faits ──────────────────────────────────────────────────
-  const dernierCompte = comptes.find((c) => c.chiffreAffaires !== null) ?? comptes[0];
-  const faits = [
-    { cle: "Forme juridique", valeur: entreprise.formeJuridique ?? "Non renseignée", source: "Sirene" },
-    {
-      cle: "Immatriculée le",
-      valeur: formatDateLongue(entreprise.dateImmatriculation),
-      source: anciennete !== null ? `Ancienneté : ${anciennete} ans` : "Sirene",
-    },
-    {
-      cle: dernierCompte ? `Chiffre d’affaires ${dernierCompte.exercice}` : "Chiffre d’affaires",
-      valeur: dernierCompte?.chiffreAffaires ? formaterMontantCourt(Number(dernierCompte.chiffreAffaires)) : "Non publié",
-      source: dernierCompte?.chiffreAffaires ? "Comptes déposés" : "Aucun dépôt exploitable",
-    },
-    {
-      cle: dernierCompte ? `Résultat net ${dernierCompte.exercice}` : "Résultat net",
-      valeur: dernierCompte?.resultatNet
-        ? `${Number(dernierCompte.resultatNet) >= 0 ? "+ " : "− "}${formaterMontantCourt(Math.abs(Number(dernierCompte.resultatNet)))}`
-        : "Non publié",
-      source: dernierCompte?.resultatNet ? "Comptes déposés" : "Aucun dépôt exploitable",
-    },
-    { cle: "Effectif", valeur: libelleEffectif(entreprise.trancheEffectif).replace(" (tranche Insee)", ""), source: "Sirene" },
-    {
-      cle: "Siège",
-      valeur: entreprise.commune ? `${entreprise.commune} (${entreprise.departement ?? ""})` : "Non renseigné",
-      source: "Sirene",
-    },
-    {
-      cle: "Établissements",
-      valeur: `${formatNombre(entreprise.nombreEtablissementsOuverts)} actif${entreprise.nombreEtablissementsOuverts > 1 ? "s" : ""}`,
-      source: "Sirene",
-    },
-    {
-      cle: "Procédure collective",
-      valeur: evenements.some((e) => e.procedureCollective) ? "Publiée" : "Aucune",
-      source: "BODACC",
-    },
-  ];
-
   const guide = construireGuide({
     categorie: "AUTRE",
     contactPrealable: "AUCUN",
@@ -204,11 +184,58 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     mediateur: entreprise.mediateur,
   });
 
-  const maxMotif = Math.max(1, ...stats.motifs.map((m) => m.pourcentage));
-  const couleurBarre = (i: number) =>
-    i < 2 ? "var(--rfi-barre-1)" : i < 4 ? "var(--rfi-barre-2)" : "var(--rfi-barre-3)";
+  const lien = (cle: CleOnglet, extra?: string) =>
+    `/entreprises/${slug}${cle === "synthese" && !extra ? "" : `?onglet=${cle}${extra ?? ""}`}`;
+  const lienEtablissements = lien("donnees", "&rubrique=etablissements");
 
-  const identite: { cle: string; valeur: string }[] = [
+  const dernierCompte = comptes.find((c) => c.chiffreAffaires !== null) ?? comptes[0];
+  const etablissementsOuverts =
+    entreprise.nombreEtablissementsOuverts || etablissements.filter((e) => e.actif).length;
+
+  const faits = [
+    { cle: "Forme juridique", valeur: entreprise.formeJuridique ?? "Non renseignée", source: "Sirene" },
+    {
+      cle: "Immatriculée le",
+      valeur: formatDateLongue(entreprise.dateImmatriculation),
+      source: anciennete !== null ? `Ancienneté : ${anciennete} ans` : "Sirene",
+    },
+    {
+      cle: dernierCompte ? `Chiffre d’affaires ${dernierCompte.exercice}` : "Chiffre d’affaires",
+      valeur: dernierCompte?.chiffreAffaires
+        ? formaterMontantCourt(Number(dernierCompte.chiffreAffaires))
+        : "Non publié",
+      source: dernierCompte?.chiffreAffaires ? "Comptes déposés" : "Aucun dépôt exploitable",
+    },
+    {
+      cle: dernierCompte ? `Résultat net ${dernierCompte.exercice}` : "Résultat net",
+      valeur: dernierCompte?.resultatNet
+        ? `${Number(dernierCompte.resultatNet) >= 0 ? "+ " : "− "}${formaterMontantCourt(Math.abs(Number(dernierCompte.resultatNet)))}`
+        : "Non publié",
+      source: dernierCompte?.resultatNet ? "Comptes déposés" : "Aucun dépôt exploitable",
+    },
+    {
+      cle: "Effectif",
+      valeur: libelleEffectif(entreprise.trancheEffectif).replace(" (tranche Insee)", ""),
+      source: "Sirene",
+    },
+    {
+      cle: "Siège",
+      valeur: entreprise.commune ? `${entreprise.commune} (${entreprise.departement ?? ""})` : "Non renseigné",
+      source: "Sirene",
+    },
+    {
+      cle: "Établissements",
+      valeur: `${formatNombre(etablissementsOuverts)} actif${etablissementsOuverts > 1 ? "s" : ""}`,
+      source: "Sirene",
+    },
+    {
+      cle: "Procédure collective",
+      valeur: evenements.some((e) => e.procedureCollective) ? "Publiée" : "Aucune",
+      source: "BODACC",
+    },
+  ];
+
+  const identite = [
     { cle: "Dénomination sociale", valeur: entreprise.denomination },
     { cle: "Nom commercial", valeur: entreprise.enseigne ?? "Non déclaré" },
     { cle: "SIREN", valeur: formatSiren(entreprise.siren) },
@@ -231,186 +258,358 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     { cle: "Dernière mise à jour Sirene", valeur: formatDate(entreprise.syncSirene) },
   ];
 
+  const maxMotif = Math.max(1, ...stats.motifs.map((m) => m.pourcentage));
+  const couleurBarre = (i: number) =>
+    i < 2 ? "var(--rfi-barre-1)" : i < 4 ? "var(--rfi-barre-2)" : "var(--rfi-barre-3)";
+
   return (
     <Page
       habillage="institutionnel"
       entete={{ baseline: "Signalement des litiges de consommation" }}
-      fil={[
-        { libelle: "Annuaire des entreprises", href: "/entreprises" },
-        { libelle: entreprise.denomination },
-      ]}
+      fil={[{ libelle: "Annuaire des entreprises", href: "/entreprises" }, { libelle: entreprise.denomination }]}
     >
       {/* ── En-tête entreprise ────────────────────────────────────────────── */}
-      <div
-        className="rfi-conteneur rfi-entete-entreprise"
-        style={{
-          padding: "32px 32px 26px",
-          display: "grid",
-          gridTemplateColumns: "minmax(0,1fr) auto",
-          gap: 36,
-          alignItems: "end",
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <h1 className="rfi-h1">{entreprise.denomination}</h1>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              flexWrap: "wrap",
-              marginTop: 13,
-              fontSize: 13.5,
-              color: "var(--rf-texte-2)",
-            }}
-          >
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, color: "var(--rf-encre)", fontWeight: 600 }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: entreprise.etatAdministratif === "ACTIVE" ? "var(--rfi-vert)" : "var(--rfi-rouge)",
-                  display: "block",
-                }}
-              />
-              {entreprise.etatAdministratif === "ACTIVE" ? "Entreprise active" : "Entreprise cessée"}
-            </span>
-            <span className="rfi-sep" aria-hidden="true">|</span>
-            <span>
-              SIREN{" "}
-              <strong className="rf-nombres" style={{ fontWeight: 600 }}>
+      <div className="rfi-conteneur" style={{ padding: "30px 32px 0" }}>
+        <div
+          className="rfi-entete-entreprise"
+          style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 36, alignItems: "start" }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <h1 className="rfi-titre">{entreprise.denomination}</h1>
+            <div className="rfi-identification">
+              <span className="rfi-jeton">Unité légale</span>
+              <span aria-hidden="true" style={{ color: "var(--rf-texte-desactive)" }}>
+                ›
+              </span>
+              <span className="rf-nombres" style={{ fontSize: 15, fontWeight: 500 }}>
                 {formatSiren(entreprise.siren)}
+              </span>
+              <span
+                className={`rfi-marqueur ${entreprise.etatAdministratif === "ACTIVE" ? "rfi-marqueur--actif" : "rfi-marqueur--cesse"}`}
+              >
+                {entreprise.etatAdministratif === "ACTIVE" ? "EN ACTIVITÉ" : "CESSÉE"}
+              </span>
+              <span className="rfi-marqueur rfi-marqueur--verifie">IDENTITÉ VÉRIFIÉE</span>
+            </div>
+            <div className="rfi-arbre">
+              <span className="rfi-arbre__coude" aria-hidden="true" />
+              <Link href={lienEtablissements} style={{ fontSize: 14 }}>
+                {formatNombre(etablissementsOuverts)} établissement{etablissementsOuverts > 1 ? "s" : ""}
+              </Link>
+            </div>
+          </div>
+          <div style={{ minWidth: 230 }}>
+            <Link href={`/signaler?siren=${entreprise.siren}`} className="rfi-bouton">
+              Signaler un litige
+            </Link>
+            <div className="rfi-source" style={{ textAlign: "center", marginTop: 7 }}>
+              Gratuit · 3 à 5 minutes
+            </div>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 14, fontSize: 12.5 }}>
+              <a href={`/api/entreprises/${entreprise.siren}`} style={{ textDecoration: "none" }}>
+                Partager
+              </a>
+              <a href={`/entreprises/${slug}/fiche.pdf`} style={{ textDecoration: "none" }}>
+                Imprimer
+              </a>
+              <Link href={`/entreprises/${slug}/suivre`} style={{ textDecoration: "none" }}>
+                Suivre
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Paragraphe de synthèse, en prose */}
+        <p className="rfi-synthese" style={{ marginTop: 26 }}>
+          {phraseIdentite(entreprise, anciennete)}
+        </p>
+        <p className="rfi-synthese">
+          Son <Link href={lienEtablissements}>siège social</Link> est domicilié au{" "}
+          <Link href={lienEtablissements}>{(adressePostale(entreprise) ?? "adresse non publiée").toUpperCase()}</Link>.
+          {etablissementsOuverts > 1 ? (
+            <>
+              {" "}
+              Elle possède{" "}
+              <Link href={lienEtablissements}>{formatNombre(etablissementsOuverts)} établissements</Link>.
+            </>
+          ) : null}{" "}
+          {stats.total12Mois > 0 ? (
+            <>
+              <strong>
+                {formatNombre(stats.total12Mois)} dossier{stats.total12Mois > 1 ? "s" : ""}
+              </strong>{" "}
+              de litige {stats.total12Mois > 1 ? "ont" : "a"} été enregistré{stats.total12Mois > 1 ? "s" : ""} sur
+              Recours France au cours des douze derniers mois, dont{" "}
+              <strong>
+                {formatNombre(stats.enCours)} {stats.enCours > 1 ? "sont encore en cours" : "est encore en cours"}
               </strong>
-            </span>
-            <span className="rfi-sep" aria-hidden="true">|</span>
-            <span>Identité vérifiée auprès des registres publics</span>
-            <span className="rfi-sep" aria-hidden="true">|</span>
-            <span>
-              {[
-                entreprise.formeJuridique,
-                entreprise.nafLibelle?.toLowerCase(),
-                entreprise.commune ? `${entreprise.commune} (${entreprise.departement ?? ""})` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-          </div>
-          <div className="rfi-source" style={{ marginTop: 9, fontSize: 12.5 }}>
-            Dernière mise à jour des données publiques : {formatDateLongue(entreprise.syncSirene ?? entreprise.majLe)} —
-            Sirene, RNE/INPI, BODACC.
-          </div>
-        </div>
-        <div style={{ minWidth: 220 }}>
-          <Link href={`/signaler?siren=${entreprise.siren}`} className="rfi-bouton">
-            Signaler un litige
-          </Link>
-          <div className="rfi-source" style={{ textAlign: "center", marginTop: 7 }}>
-            Gratuit · 3 à 5 minutes
-          </div>
-        </div>
+              .
+            </>
+          ) : (
+            <>Aucun dossier de litige n’a été enregistré sur Recours France au cours des douze derniers mois.</>
+          )}
+        </p>
+        <p className="rfi-source" style={{ marginTop: 14, fontSize: 12.5 }}>
+          Données publiques mises à jour le {formatDateLongue(entreprise.syncSirene ?? entreprise.majLe)} — Sirene,
+          RNE/INPI, BODACC.
+        </p>
       </div>
 
-      {/* ── Litiges et signalements ───────────────────────────────────────── */}
-      <section className="rfi-section--dominante">
-        <div className="rfi-conteneur">
-          <div className="rfi-entete-section">
-            <div>
-              <h2 className="rfi-h2">Litiges et signalements concernant cette entreprise</h2>
-              <p className="rfi-chapo">
-                Données issues des dossiers enregistrés sur Recours France et des justificatifs transmis par les
-                consommateurs, sur les douze derniers mois.
-              </p>
+      {/* ── Barre d'onglets ───────────────────────────────────────────────── */}
+      <BarreOnglets
+        onglets={ONGLETS.map((o) => ({ cle: o.cle, libelle: o.libelle, href: lien(o.cle) }))}
+        actif={onglet}
+      />
+
+      {/* ── Onglet : fiche résumé ─────────────────────────────────────────── */}
+      {onglet === "synthese" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Litiges et signalements concernant {entreprise.denomination}</h2>
+              <span className="rfi-source">Source : dossiers enregistrés · déclarations des consommateurs</span>
             </div>
-            <Link href="/methodologie" style={{ fontSize: 13.5 }}>
-              Consulter la méthodologie
-            </Link>
-          </div>
+            <p className="rfi-chapo">
+              Données issues des dossiers enregistrés sur Recours France et des justificatifs transmis par les
+              consommateurs, sur les douze derniers mois. Les dossiers non vérifiés sont comptés dans le volume
+              mais exclus de tous les taux.
+            </p>
 
-          {stats.total12Mois === 0 ? (
-            <div className="rfi-ouverture" style={{ marginTop: 22, padding: "26px 0" }}>
-              <p style={{ fontSize: 16, fontWeight: 600 }}>Aucun dossier enregistré sur cette entreprise.</p>
-              <p className="rfi-chapo" style={{ maxWidth: 720 }}>
-                Aucun taux n’est publié : les statistiques de comportement ne sont calculées qu’à partir de
-                dossiers vérifiés. Les points de vigilance ci-dessous reposent alors uniquement sur les
-                registres publics.
-              </p>
+            {stats.total12Mois === 0 ? (
+              <div className="rfi-ouverture" style={{ marginTop: 20, paddingTop: 20 }}>
+                <p style={{ fontSize: 16, fontWeight: 600 }}>Aucun dossier enregistré sur cette entreprise.</p>
+                <p className="rfi-chapo" style={{ marginTop: 8 }}>
+                  Aucun taux n’est publié : les statistiques de comportement ne sont calculées qu’à partir de
+                  dossiers vérifiés. Les points de vigilance ci-dessous reposent alors uniquement sur les
+                  registres publics.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="rfi-chiffres">
+                  <Chiffre
+                    id="total"
+                    valeur={formatNombre(stats.total12Mois)}
+                    libelle="dossiers enregistrés"
+                    base="12 derniers mois, vérifiés ou non"
+                    aide="Total des signalements déposés par des consommateurs sur les douze derniers mois. Un dossier par consommateur et par litige."
+                  />
+                  <Chiffre
+                    id="verifies"
+                    valeur={formatNombre(stats.verifies)}
+                    libelle="dossiers vérifiés"
+                    base="justificatif contrôlé par Recours France"
+                    aide="Dossiers pour lesquels une pièce a été contrôlée : facture, commande, contrat ou preuve de paiement. Seule base des taux publiés."
+                  />
+                  <Chiffre
+                    id="encours"
+                    valeur={formatNombre(stats.enCours)}
+                    libelle="litiges en cours"
+                    base={`dont ${stats.ouverts.filter((o) => o.jours > 30).length} ouverts depuis plus de 30 jours`}
+                    aide="Dossiers vérifiés non clôturés à ce jour, quel que soit leur statut déclaré."
+                    couleur={stats.ouverts.filter((o) => o.jours > 30).length ? "var(--rfi-ambre)" : undefined}
+                  />
+                  <Chiffre
+                    id="resolution"
+                    valeur={stats.tauxResolution === null ? "—" : formatPourcent(stats.tauxResolution)}
+                    libelle="de résolution confirmée"
+                    base={`base : ${stats.clotures} dossier${stats.clotures > 1 ? "s" : ""} clôturé${stats.clotures > 1 ? "s" : ""}`}
+                    aide="Part des dossiers vérifiés et clôturés dont la résolution a été confirmée par le consommateur. Un abandon ou une absence de retour n’est jamais compté comme résolu."
+                  />
+                  <Chiffre
+                    id="delai"
+                    valeur={stats.delaiMedian === null ? "—" : `${stats.delaiMedian} j`}
+                    libelle="de délai médian de résolution"
+                    base="médiane déclarée, dossiers résolus"
+                    aide="Délai médian déclaré entre le dépôt du dossier et la confirmation de résolution. La médiane évite l’effet des cas extrêmes."
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 20,
+                    flexWrap: "wrap",
+                    paddingTop: 12,
+                    fontSize: 12.5,
+                    color: "var(--rf-texte-3)",
+                  }}
+                >
+                  <span>
+                    Évolution sur 90 jours :{" "}
+                    {stats.evolution90j === null ? (
+                      <strong style={{ fontWeight: 600 }}>base insuffisante</strong>
+                    ) : (
+                      <strong
+                        style={{
+                          color: stats.evolution90j > 0 ? "var(--rfi-ambre)" : "var(--rfi-vert)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {stats.evolution90j > 0 ? "+ " : "− "}
+                        {Math.abs(Math.round(stats.evolution90j))} % de nouveaux signalements
+                      </strong>
+                    )}{" "}
+                    par rapport au trimestre précédent.
+                  </span>
+                  <Link href={lien("litiges")} style={{ fontSize: 12.5, fontWeight: 600 }}>
+                    Consulter les dossiers →
+                  </Link>
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Points de vigilance relevés</h2>
+              <span className="rfi-source">{resumerAlertes(alertes)}</span>
             </div>
-          ) : (
-            <>
-              <div className="rfi-chiffres">
-                <Chiffre
-                  id="total"
-                  valeur={formatNombre(stats.total12Mois)}
-                  libelle="dossiers enregistrés"
-                  base="12 derniers mois, vérifiés ou non"
-                  aide="Total des signalements déposés par des consommateurs sur les douze derniers mois. Un dossier par consommateur et par litige."
-                />
-                <Chiffre
-                  id="verifies"
-                  valeur={formatNombre(stats.verifies)}
-                  libelle="dossiers vérifiés"
-                  base="justificatif contrôlé par Recours France"
-                  aide="Dossiers pour lesquels une pièce a été contrôlée : facture, commande, contrat ou preuve de paiement. Seule base des taux publiés."
-                />
-                <Chiffre
-                  id="encours"
-                  valeur={formatNombre(stats.enCours)}
-                  libelle="litiges en cours"
-                  base={`dont ${stats.ouverts.filter((o) => o.jours > 30).length} ouverts depuis plus de 30 jours`}
-                  aide="Dossiers vérifiés non clôturés à ce jour, quel que soit leur statut déclaré."
-                  couleur={stats.ouverts.filter((o) => o.jours > 30).length ? "var(--rfi-ambre)" : undefined}
-                />
-                <Chiffre
-                  id="resolution"
-                  valeur={stats.tauxResolution === null ? "—" : formatPourcent(stats.tauxResolution)}
-                  libelle="de résolution confirmée"
-                  base={`base : ${stats.clotures} dossier${stats.clotures > 1 ? "s" : ""} clôturé${stats.clotures > 1 ? "s" : ""}`}
-                  aide="Part des dossiers vérifiés et clôturés dont la résolution a été confirmée par le consommateur. Un abandon ou une absence de retour n’est jamais compté comme résolu."
-                />
-                <Chiffre
-                  id="delai"
-                  valeur={stats.delaiMedian === null ? "—" : `${stats.delaiMedian} j`}
-                  libelle="de délai médian de résolution"
-                  base="médiane déclarée, dossiers résolus"
-                  aide="Délai médian déclaré entre le dépôt du dossier et la confirmation de résolution. La médiane évite l’effet des cas extrêmes."
-                />
-              </div>
+            <div className="rfi-ouverture" style={{ marginTop: 18 }}>
+              {alertes.length === 0 ? (
+                <p className="rfi-legende" style={{ padding: "18px 0" }}>
+                  Aucun point de vigilance relevé à ce jour sur les sources consultées.
+                </p>
+              ) : (
+                alertes.map((a) => (
+                  <div key={a.titre} className="rfi-alerte">
+                    <div className="rfi-alerte__niveau" style={{ color: couleurNiveau(a.niveau) }}>
+                      <span
+                        className="rfi-alerte__carre"
+                        style={{ background: couleurNiveau(a.niveau) }}
+                        aria-hidden="true"
+                      />
+                      <span>{a.libelle}</span>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.4 }}>{a.titre}</div>
+                      <p style={{ fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.6, marginTop: 5 }}>
+                        {a.description}
+                      </p>
+                    </div>
+                    <div className="rfi-source" style={{ textAlign: "right" }}>
+                      {a.source}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 20,
-                  flexWrap: "wrap",
-                  padding: "12px 0 0",
-                  fontSize: 12.5,
-                  color: "var(--rf-texte-3)",
-                }}
-              >
-                <span>
-                  Évolution sur 90 jours :{" "}
-                  {stats.evolution90j === null ? (
-                    <strong style={{ fontWeight: 600 }}>base insuffisante</strong>
-                  ) : (
-                    <strong
-                      style={{
-                        color: stats.evolution90j > 0 ? "var(--rfi-ambre)" : "var(--rfi-vert)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {stats.evolution90j > 0 ? "+ " : "− "}
-                      {Math.abs(Math.round(stats.evolution90j))} % de nouveaux signalements
-                    </strong>
-                  )}{" "}
-                  par rapport au trimestre précédent.
-                </span>
-                <span>Source : dossiers enregistrés · déclarations des consommateurs</span>
+          <section className="rfi-bloc">
+            <h2 className="rfi-pastille-titre">Appréciation générale de Recours France</h2>
+            <div
+              className="rfi-deux-colonnes--large"
+              style={{ display: "grid", gap: 40, marginTop: 20, alignItems: "start" }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: "-0.015em" }}>
+                  Niveau de vigilance :{" "}
+                  <span style={{ color: couleurVigilance(appreciation.niveauVigilance) }}>
+                    {appreciation.niveauVigilance}
+                  </span>
+                </div>
+                <div style={{ fontSize: 15, marginTop: 10 }}>{resumerAlertes(alertes)}.</div>
+                <p
+                  style={{ fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.65, marginTop: 8, maxWidth: 620 }}
+                >
+                  {appreciation.commentaire}
+                </p>
+                <div style={{ paddingTop: 14 }}>
+                  <Repli variante="lien" libelleFerme="Consulter les critères →" libelleOuvert="Masquer les critères">
+                    <div style={{ marginTop: 22 }}>
+                      <div className="rfi-tete-tableau">
+                        <span style={{ flex: "1 1 260px" }}>Critère</span>
+                        <span style={{ flex: "1 1 320px" }}>Constat</span>
+                        <span style={{ flex: "none", width: 110, textAlign: "right" }}>Appréciation</span>
+                      </div>
+                      {appreciation.criteres.map((c) => (
+                        <div
+                          key={c.cle}
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "8px 20px",
+                            borderBottom: "1px solid var(--rfi-filet-ligne)",
+                            padding: "14px 0",
+                            alignItems: "baseline",
+                          }}
+                        >
+                          <span style={{ flex: "1 1 260px", fontSize: 14.5, fontWeight: 600 }}>{c.libelle}</span>
+                          <span
+                            style={{ flex: "1 1 320px", fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.6 }}
+                          >
+                            {c.constat}
+                          </span>
+                          <span
+                            style={{
+                              flex: "none",
+                              width: 110,
+                              textAlign: "right",
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: couleurVerdict(c.verdict),
+                            }}
+                          >
+                            {c.verdict}
+                          </span>
+                        </div>
+                      ))}
+                      <p className="rfi-legende" style={{ marginTop: 12 }}>
+                        Trois critères reposent sur les registres publics, deux sur les dossiers vérifiés et les
+                        déclarations des consommateurs.
+                      </p>
+                    </div>
+                  </Repli>
+                </div>
               </div>
+              <div style={{ minWidth: 0, borderLeft: "1px solid var(--rfi-filet)", paddingLeft: 22 }}>
+                <div className="rfi-etiquette" style={{ fontSize: 12 }}>
+                  Indice de confiance
+                </div>
+                <div className="rf-nombres" style={{ fontSize: 15, marginTop: 8 }}>
+                  {appreciation.indice}/100 — {appreciation.bande}
+                </div>
+                <p className="rfi-legende" style={{ marginTop: 8 }}>
+                  Recalculé chaque jour. Un dossier non vérifié ne fait pas varier cet indice.
+                  {appreciation.comportementPublie
+                    ? ""
+                    : ` Faute de ${SEUIL_PUBLICATION_EXPERIENCE} dossiers vérifiés sur douze mois, il repose ici sur les seuls registres publics.`}
+                </p>
+                <div style={{ paddingTop: 10 }}>
+                  <Link href={lien("methodo")} style={{ fontSize: 12.5 }}>
+                    Méthodologie de calcul
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
-              <div className="rfi-deux-colonnes" style={{ marginTop: 34 }}>
-                <Dossiers dossiers={dossiers} total={totalDossiers} lienTous={`/entreprises/${entreprise.slug}/dossiers`} />
+      {/* ── Onglet : litiges et dossiers ──────────────────────────────────── */}
+      {onglet === "litiges" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Dossiers enregistrés sur Recours France</h2>
+              <span className="rfi-source">
+                {formatNombre(stats.total12Mois)} dossier{stats.total12Mois > 1 ? "s" : ""} ·{" "}
+                {formatNombre(stats.verifies)} vérifié{stats.verifies > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {totalDossiers === 0 ? (
+              <div className="rfi-ouverture" style={{ marginTop: 20, paddingTop: 20 }}>
+                <p style={{ fontSize: 16, fontWeight: 600 }}>Aucun dossier enregistré sur cette entreprise.</p>
+                <p className="rfi-chapo" style={{ marginTop: 8 }}>
+                  Si vous rencontrez un litige avec {entreprise.denomination}, vous pouvez le signaler
+                  gratuitement : trois à cinq minutes, sans création de compte.
+                </p>
+              </div>
+            ) : (
+              <div className="rfi-deux-colonnes" style={{ marginTop: 22 }}>
+                <Dossiers dossiers={dossiers} total={totalDossiers} lienTous={`/entreprises/${slug}/dossiers`} />
 
                 <div style={{ minWidth: 0 }}>
                   <div className="rfi-ouverture" style={{ paddingTop: 14 }}>
@@ -421,7 +620,9 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
                       {stats.motifs.map((m, i) => (
                         <div key={m.cle}>
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+                          <div
+                            style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}
+                          >
                             <span style={{ fontSize: 13.5 }}>{m.libelle}</span>
                             <span className="rf-nombres" style={{ fontSize: 13, color: "var(--rf-texte-2)" }}>
                               {m.pourcentage} %
@@ -440,7 +641,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     </div>
                   </div>
 
-                  <div className="rfi-ouverture--legere" style={{ marginTop: 26, paddingTop: 16 }}>
+                  <div className="rfi-ouverture--legere" style={{ marginTop: 24, paddingTop: 16 }}>
                     <h3 className="rfi-h3 rfi-h3--petit">Deux niveaux de fiabilité</h3>
                     <div style={{ marginTop: 14 }}>
                       <span className="rfi-badge rfi-badge--verifie">✓ Justificatif vérifié</span>
@@ -458,574 +659,398 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   </div>
                 </div>
               </div>
-            </>
-          )}
+            )}
+          </section>
         </div>
-      </section>
+      ) : null}
 
-      {/* ── Points de vigilance ───────────────────────────────────────────── */}
-      <section className="rfi-section rfi-section--alternee">
-        <div className="rfi-conteneur">
-          <div className="rfi-entete-section">
-            <div>
-              <h2 className="rfi-h2">Points de vigilance relevés sur cette entreprise</h2>
-              <p className="rfi-chapo">
-                Événements détectés sur les registres publics et sur les dossiers enregistrés. Chaque élément
-                indique sa source.
-              </p>
+      {/* ── Onglet : données publiques ────────────────────────────────────── */}
+      {onglet === "donnees" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Informations légales de {entreprise.denomination}</h2>
+              <span className="rfi-source">Sources : Insee · INPI · BODACC</span>
             </div>
-            <span className="rfi-legende">{resumerAlertes(alertes)}</span>
-          </div>
 
-          <div className="rfi-ouverture" style={{ marginTop: 20 }}>
-            {alertes.length === 0 ? (
-              <p className="rfi-legende" style={{ padding: "20px 0" }}>
-                Aucun point de vigilance relevé à ce jour sur les sources consultées.
-              </p>
-            ) : (
-              alertes.map((a) => (
-                <div key={a.titre} className="rfi-alerte">
-                  <div className="rfi-alerte__niveau" style={{ color: couleurNiveau(a.niveau) }}>
-                    <span className="rfi-alerte__carre" style={{ background: couleurNiveau(a.niveau) }} aria-hidden="true" />
-                    <span>{a.libelle}</span>
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.4 }}>{a.titre}</div>
-                    <p style={{ fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.6, marginTop: 5 }}>
-                      {a.description}
-                    </p>
-                  </div>
-                  <div className="rfi-source" style={{ textAlign: "right" }}>
-                    {a.source}
+            <div className="rfi-faits">
+              {faits.map((f) => (
+                <div key={f.cle} className="rfi-fait">
+                  <div className="rfi-etiquette">{f.cle}</div>
+                  <div className="rfi-fait__valeur">{f.valeur}</div>
+                  <div className="rfi-source" style={{ fontSize: 11.5, marginTop: 4 }}>
+                    {f.source}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Bloc d'action ─────────────────────────────────────────────────── */}
-      <section className="rfi-section--marine">
-        <div
-          className="rfi-conteneur"
-          style={{
-            padding: "38px 32px",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,320px),1fr))",
-            gap: 44,
-            alignItems: "start",
-          }}
-        >
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.25 }}>
-              Vous rencontrez un litige avec cette entreprise&nbsp;?
-            </h2>
-            <p style={{ fontSize: 15.5, color: "var(--rf-sur-marine)", lineHeight: 1.65, marginTop: 12, maxWidth: 600 }}>
-              Signalez gratuitement votre litige. Recours France structure votre situation, identifie les
-              justificatifs utiles et vous indique les démarches à effectuer dans le bon ordre.
-            </p>
-            <div style={{ borderTop: "1px solid var(--rf-filet-marine)", marginTop: 20, paddingTop: 16 }}>
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "var(--rf-sur-marine-attenue)",
-                  textTransform: "uppercase",
-                  letterSpacing: ".06em",
-                }}
-              >
-                Ce que vous obtenez gratuitement
-              </div>
-              <ul className="rfi-grille--250" style={{ display: "grid", marginTop: 12 }}>
-                {[
-                  "Les démarches à effectuer dans le bon ordre",
-                  "Les justificatifs et preuves à conserver",
-                  "Les coordonnées utiles du professionnel",
-                  "Le médiateur compétent lorsqu’il est identifié",
-                  "Les recours officiels disponibles",
-                  "SignalConso lorsque cette démarche est pertinente",
-                ].map((d) => (
-                  <li key={d} style={{ fontSize: 13.5, color: "var(--rf-sur-marine)", lineHeight: 1.5 }}>
-                    — {d}
-                  </li>
-                ))}
-              </ul>
+              ))}
             </div>
-          </div>
-          <div style={{ maxWidth: 340, width: "100%", justifySelf: "end" }}>
-            <Link href={`/signaler?siren=${entreprise.siren}`} className="rfi-bouton rfi-bouton--blanc">
-              Signaler mon litige gratuitement
-            </Link>
-            <div
-              style={{
-                fontSize: 12.5,
-                color: "var(--rf-sur-marine-attenue)",
-                textAlign: "center",
-                lineHeight: 1.55,
-                marginTop: 10,
-              }}
-            >
-              Gratuit · 3 à 5 minutes · justificatifs facultatifs
-              {stats.total12Mois > 0 ? (
-                <>
-                  <br />
-                  {formatNombre(stats.total12Mois)} consommateur{stats.total12Mois > 1 ? "s ont" : " a"} déjà
-                  signalé un litige avec cette entreprise.
-                </>
-              ) : null}
-            </div>
-            <div style={{ textAlign: "center", marginTop: 12 }}>
-              <Link href={`/entreprises/${entreprise.slug}/avis`} style={{ fontSize: 12.5, color: "var(--rf-sur-marine)" }}>
-                Laisser seulement un avis
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Informations légales, publiques et financières ────────────────── */}
-      <section className="rfi-conteneur" style={{ padding: "36px 32px 34px" }}>
-        <div className="rfi-entete-section">
-          <div>
-            <h2 className="rfi-h2">Informations légales, publiques et financières</h2>
-            <p className="rfi-chapo">
-              Données issues des registres publics. Chaque rubrique peut être dépliée pour consulter le détail
-              et sa source.
-            </p>
-          </div>
-          <span className="rfi-legende">Sirene · RNE/INPI · BODACC</span>
-        </div>
-
-        <div className="rfi-faits">
-          {faits.map((f) => (
-            <div key={f.cle} className="rfi-fait">
-              <div className="rfi-etiquette">{f.cle}</div>
-              <div className="rfi-fait__valeur">{f.valeur}</div>
-              <div className="rfi-source" style={{ fontSize: 11.5, marginTop: 4 }}>
-                {f.source}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Rubriques
-          rubriques={[
-            {
-              cle: "comptes",
-              titre: "Comptes annuels et résultats",
-              indice: comptes.length
-                ? `${comptes.length} exercice${comptes.length > 1 ? "s" : ""} connu${comptes.length > 1 ? "s" : ""}, avec dates de dépôt`
-                : "Aucun dépôt trouvé au BODACC",
-              contenu: comptes.length ? (
-                <div>
-                  <div className="rfi-tete-tableau">
-                    <span style={{ flex: "1 1 90px" }}>Exercice</span>
-                    <span style={{ flex: "1 1 130px", textAlign: "right" }}>Chiffre d’affaires</span>
-                    <span style={{ flex: "1 1 120px", textAlign: "right" }}>Résultat net</span>
-                    <span style={{ flex: "1 1 170px", textAlign: "right" }}>Dépôt au greffe</span>
-                  </div>
-                  {comptes.slice(0, 6).map((c) => {
-                    const retard = estEnRetard(c);
-                    return (
-                      <div key={c.exercice} className="rfi-ligne-tableau">
-                        <span style={{ flex: "1 1 90px", fontWeight: 600 }}>{c.exercice}</span>
-                        <span className="rf-nombres" style={{ flex: "1 1 130px", textAlign: "right" }}>
-                          {c.chiffreAffaires ? formaterMontantCourt(Number(c.chiffreAffaires)) : "—"}
-                        </span>
-                        <span className="rf-nombres" style={{ flex: "1 1 120px", textAlign: "right" }}>
-                          {c.resultatNet
-                            ? `${Number(c.resultatNet) >= 0 ? "+ " : "− "}${formaterMontantCourt(Math.abs(Number(c.resultatNet)))}`
-                            : "—"}
-                        </span>
-                        <span
+            <Rubriques
+              initiale={rubriqueInitiale}
+              rubriques={[
+                {
+                  cle: "comptes",
+                  titre: "Comptes annuels et résultats",
+                  indice: comptes.length
+                    ? `${comptes.length} exercice${comptes.length > 1 ? "s" : ""} connu${comptes.length > 1 ? "s" : ""}, avec dates de dépôt`
+                    : "Aucun dépôt trouvé au BODACC",
+                  contenu: comptes.length ? (
+                    <div>
+                      <div className="rfi-tete-tableau">
+                        <span style={{ flex: "1 1 90px" }}>Exercice</span>
+                        <span style={{ flex: "1 1 130px", textAlign: "right" }}>Chiffre d’affaires</span>
+                        <span style={{ flex: "1 1 120px", textAlign: "right" }}>Résultat net</span>
+                        <span style={{ flex: "1 1 170px", textAlign: "right" }}>Dépôt au greffe</span>
+                      </div>
+                      {comptes.slice(0, 6).map((c) => {
+                        const retard = estEnRetard(c);
+                        return (
+                          <div key={c.exercice} className="rfi-ligne-tableau">
+                            <span style={{ flex: "1 1 90px", fontWeight: 600 }}>{c.exercice}</span>
+                            <span className="rf-nombres" style={{ flex: "1 1 130px", textAlign: "right" }}>
+                              {c.chiffreAffaires ? formaterMontantCourt(Number(c.chiffreAffaires)) : "—"}
+                            </span>
+                            <span className="rf-nombres" style={{ flex: "1 1 120px", textAlign: "right" }}>
+                              {c.resultatNet
+                                ? `${Number(c.resultatNet) >= 0 ? "+ " : "− "}${formaterMontantCourt(Math.abs(Number(c.resultatNet)))}`
+                                : "—"}
+                            </span>
+                            <span
+                              style={{
+                                flex: "1 1 170px",
+                                textAlign: "right",
+                                fontSize: 12.5,
+                                color: retard ? "var(--rfi-ambre)" : "var(--rf-texte-3)",
+                              }}
+                            >
+                              {c.dateDepot ? formatDate(c.dateDepot) : "dépôt non trouvé"}
+                              {retard ? " — en retard" : ""}
+                              {c.confidentiel ? " — confidentiel" : ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      <p className="rfi-legende" style={{ marginTop: 12 }}>
+                        Montants issus des comptes annuels déposés au greffe et publiés au BODACC. Le dépôt est dû
+                        dans les sept mois suivant la clôture de l’exercice.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="rfi-legende">
+                      Aucun dépôt de comptes annuels n’a été trouvé dans les annonces BODACC consultées.
+                    </p>
+                  ),
+                },
+                {
+                  cle: "dirigeants",
+                  titre: "Dirigeants et capital",
+                  indice: "Fonction du représentant légal, capital social",
+                  contenu: (
+                    <>
+                      <div className="rfi-grille" style={{ gap: "0 44px" }}>
+                        <div>
+                          <Paire
+                            cle="Représentant légal"
+                            valeur={qualiteDirigeant(entreprise.representantLegal) ?? "Non publié"}
+                          />
+                          <Paire
+                            cle="Capital social"
+                            valeur={entreprise.capital ? formatMontant(Number(entreprise.capital)) : "Non publié"}
+                          />
+                          <Paire cle="Forme juridique" valeur={entreprise.formeJuridique ?? "Non renseignée"} />
+                        </div>
+                        <div>
+                          <Paire cle="Greffe compétent" valeur={entreprise.greffe ?? "Non renseigné"} />
+                          <Paire cle="Numéro de TVA" valeur={entreprise.numeroTva ?? "Non publié"} />
+                          <Paire
+                            cle="Dernière mise à jour RNE"
+                            valeur={entreprise.syncRne ? formatDate(entreprise.syncRne) : "Source non connectée"}
+                          />
+                        </div>
+                      </div>
+                      <p className="rfi-legende" style={{ marginTop: 14 }}>
+                        Le nom des personnes physiques dirigeantes n’est pas publié sur cette fiche. Source : RNE /
+                        INPI.
+                      </p>
+                    </>
+                  ),
+                },
+                {
+                  cle: "etablissements",
+                  titre: "Siège et établissements",
+                  indice: `${formatNombre(etablissementsOuverts)} établissement${etablissementsOuverts > 1 ? "s" : ""} actif${etablissementsOuverts > 1 ? "s" : ""}, dont le siège`,
+                  contenu: (
+                    <>
+                      <div className="rfi-grille" style={{ gap: "0 44px" }}>
+                        <div>
+                          <Paire cle="Siège social" valeur={adressePostale(entreprise) ?? "Non renseigné"} />
+                          <Paire cle="SIRET du siège" valeur={formatSiret(entreprise.siretSiege)} />
+                          <Paire cle="Greffe compétent" valeur={entreprise.greffe ?? "Non renseigné"} />
+                        </div>
+                        <div>
+                          {etablissements
+                            .filter((e) => !e.estSiege)
+                            .slice(0, 6)
+                            .map((e) => (
+                              <Paire
+                                key={e.siret}
+                                cle={e.actif ? "Établissement actif" : "Établissement fermé"}
+                                valeur={`${e.commune ?? "Commune inconnue"}${e.departement ? ` (${e.departement})` : ""}${
+                                  e.dateCreation ? ` — depuis ${e.dateCreation.getFullYear()}` : ""
+                                }`}
+                              />
+                            ))}
+                          {etablissements.filter((e) => !e.estSiege).length === 0 ? (
+                            <Paire
+                              cle="Autres établissements"
+                              valeur={`${formatNombre(Math.max(0, entreprise.nombreEtablissements - 1))} recensés au répertoire`}
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+                      <p className="rfi-legende" style={{ marginTop: 14 }}>
+                        Adresses issues du répertoire Sirene, mises à jour le {formatDate(entreprise.syncSirene)}.
+                        Source : Sirene (Insee).
+                      </p>
+                    </>
+                  ),
+                },
+                {
+                  cle: "historique",
+                  titre: "Historique juridique",
+                  indice: `${evenements.length} événement${evenements.length > 1 ? "s" : ""} enregistré${evenements.length > 1 ? "s" : ""}`,
+                  contenu: evenements.length ? (
+                    <div>
+                      {evenements.slice(0, 12).map((e) => (
+                        <div
+                          key={e.id}
                           style={{
-                            flex: "1 1 170px",
-                            textAlign: "right",
-                            fontSize: 12.5,
-                            color: retard ? "var(--rfi-ambre)" : "var(--rf-texte-3)",
+                            display: "grid",
+                            gridTemplateColumns: "minmax(96px,110px) minmax(0,1fr) minmax(70px,90px)",
+                            gap: 20,
+                            padding: "13px 0",
+                            borderBottom: "1px solid var(--rfi-filet-ligne)",
+                            alignItems: "baseline",
                           }}
                         >
-                          {c.dateDepot ? formatDate(c.dateDepot) : "dépôt non trouvé"}
-                          {retard ? " — en retard" : ""}
-                          {c.confidentiel ? " — confidentiel" : ""}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <p className="rfi-legende" style={{ marginTop: 12 }}>
-                    Montants issus des comptes annuels déposés au greffe et publiés au BODACC. Le dépôt est dû
-                    dans les sept mois suivant la clôture de l’exercice.
-                  </p>
-                </div>
-              ) : (
-                <p className="rfi-legende">
-                  Aucun dépôt de comptes annuels n’a été trouvé dans les annonces BODACC consultées pour cette
-                  entreprise.
-                </p>
-              ),
-            },
-            {
-              cle: "dirigeants",
-              titre: "Dirigeants et capital",
-              indice: "Fonction du représentant légal, capital social",
-              contenu: (
-                <>
-                  <div className="rfi-grille" style={{ gap: "0 44px" }}>
-                    <div>
-                      <Paire cle="Représentant légal" valeur={qualiteDirigeant(entreprise.representantLegal) ?? "Non publié"} />
-                      <Paire
-                        cle="Capital social"
-                        valeur={entreprise.capital ? formatMontant(Number(entreprise.capital)) : "Non publié"}
-                      />
-                      <Paire cle="Forme juridique" valeur={entreprise.formeJuridique ?? "Non renseignée"} />
+                          <span
+                            className="rf-nombres"
+                            style={{ fontSize: 13, fontWeight: 600, color: "var(--rf-texte-2)" }}
+                          >
+                            {formatDateCourte(e.date)}
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: "block", fontSize: 14.5, fontWeight: 600 }}>{e.titre}</span>
+                            {e.detail ? (
+                              <span
+                                style={{
+                                  display: "block",
+                                  fontSize: 13,
+                                  color: "var(--rf-texte-2)",
+                                  lineHeight: 1.55,
+                                  marginTop: 4,
+                                }}
+                              >
+                                {e.detail}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="rfi-source" style={{ textAlign: "right", fontSize: 11.5 }}>
+                            {libelleSourceCourt(e.source)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <Paire cle="Greffe compétent" valeur={entreprise.greffe ?? "Non renseigné"} />
-                      <Paire cle="Numéro de TVA" valeur={entreprise.numeroTva ?? "Non publié"} />
-                      <Paire
-                        cle="Dernière mise à jour RNE"
-                        valeur={entreprise.syncRne ? formatDate(entreprise.syncRne) : "Source non connectée"}
-                      />
-                    </div>
-                  </div>
-                  <p className="rfi-legende" style={{ marginTop: 14 }}>
-                    Le nom des personnes physiques dirigeantes n’est pas publié sur cette fiche. Source : RNE /
-                    INPI.
-                  </p>
-                </>
-              ),
-            },
-            {
-              cle: "etablissements",
-              titre: "Siège et établissements",
-              indice: `${formatNombre(entreprise.nombreEtablissementsOuverts)} établissement${entreprise.nombreEtablissementsOuverts > 1 ? "s" : ""} actif${entreprise.nombreEtablissementsOuverts > 1 ? "s" : ""}, dont le siège`,
-              contenu: (
-                <>
-                  <div className="rfi-grille" style={{ gap: "0 44px" }}>
-                    <div>
-                      <Paire cle="Siège social" valeur={adressePostale(entreprise) ?? "Non renseigné"} />
-                      <Paire cle="SIRET du siège" valeur={formatSiret(entreprise.siretSiege)} />
-                      <Paire cle="Greffe compétent" valeur={entreprise.greffe ?? "Non renseigné"} />
-                    </div>
-                    <div>
-                      {etablissements
-                        .filter((e) => !e.estSiege)
-                        .slice(0, 5)
-                        .map((e) => (
-                          <Paire
-                            key={e.siret}
-                            cle={e.actif ? "Établissement actif" : "Établissement fermé"}
-                            valeur={`${e.commune ?? "Commune inconnue"}${e.departement ? ` (${e.departement})` : ""}${
-                              e.dateCreation ? ` — depuis ${e.dateCreation.getFullYear()}` : ""
-                            }`}
-                          />
-                        ))}
-                      {etablissements.filter((e) => !e.estSiege).length === 0 ? (
-                        <Paire
-                          cle="Autres établissements"
-                          valeur={`${formatNombre(Math.max(0, entreprise.nombreEtablissements - 1))} recensés au répertoire`}
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-                  <p className="rfi-legende" style={{ marginTop: 14 }}>
-                    Adresses issues du répertoire Sirene, mises à jour le {formatDate(entreprise.syncSirene)}.
-                    Source : Sirene (Insee).
-                  </p>
-                </>
-              ),
-            },
-            {
-              cle: "historique",
-              titre: "Historique juridique",
-              indice: `${evenements.length} événement${evenements.length > 1 ? "s" : ""} enregistré${evenements.length > 1 ? "s" : ""}`,
-              contenu: evenements.length ? (
+                  ) : (
+                    <p className="rfi-legende">Aucun événement légal publié dans les sources consultées.</p>
+                  ),
+                },
+              ]}
+            />
+
+            <Repli titre="Identité complète" indice="Dénomination, SIREN, SIRET, code NAF, greffe, TVA">
+              <div className="rfi-grille" style={{ gap: "0 44px" }}>
                 <div>
-                  {evenements.slice(0, 12).map((e) => (
+                  {identite.slice(0, 7).map((l) => (
+                    <Paire key={l.cle} cle={l.cle} valeur={l.valeur} />
+                  ))}
+                </div>
+                <div>
+                  {identite.slice(7).map((l) => (
+                    <Paire key={l.cle} cle={l.cle} valeur={l.valeur} />
+                  ))}
+                </div>
+              </div>
+              <p className="rfi-legende" style={{ marginTop: 14 }}>
+                Les données brutes de cette fiche sont accessibles en lecture via l’
+                <Link href={`/api/entreprises/${entreprise.siren}`}>API publique</Link>.
+              </p>
+            </Repli>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 18,
+                flexWrap: "wrap",
+                fontSize: 12,
+                color: "var(--rf-texte-3)",
+                paddingTop: 16,
+              }}
+            >
+              <span>Sources : Sirene (Insee) · RNE (INPI) · BODACC</span>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+                <Link href={`/entreprises/${slug}/signaler-une-erreur`}>Signaler une information inexacte</Link>
+                <Link href={`/entreprises/${slug}/revendiquer`}>Demander la rectification d’une donnée publique</Link>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {/* ── Onglet : médiation et recours ─────────────────────────────────── */}
+      {onglet === "recours" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Médiation et voies de recours</h2>
+              <span className="rfi-source">Dispositifs applicables à cette entreprise</span>
+            </div>
+
+            <div
+              className="rfi-ouverture rfi-grille--320"
+              style={{ display: "grid", marginTop: 20, paddingTop: 16, alignItems: "start" }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>
+                  {entreprise.mediateur?.nom ?? "Médiateur non identifié"}
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  {entreprise.mediateur ? (
+                    <>
+                      <Paire
+                        cle="Rattachement"
+                        valeur={entreprise.mediateurAdhesionDepuis ?? "Présumé d’après le secteur d’activité"}
+                      />
+                      <Paire
+                        cle="Délai de traitement annoncé"
+                        valeur={entreprise.mediateur.delaiInstruction ?? "90 jours"}
+                      />
+                      <Paire
+                        cle="Coût pour le consommateur"
+                        valeur={entreprise.mediateur.coutConsommateur ?? "Gratuit"}
+                      />
+                      <Paire
+                        cle="Condition préalable"
+                        valeur={
+                          entreprise.mediateur.conditionPrealable ??
+                          "Réclamation écrite restée sans réponse satisfaisante"
+                        }
+                      />
+                    </>
+                  ) : (
+                    <p className="rfi-legende">
+                      Aucun médiateur n’a pu être rattaché à cette entreprise à partir de la liste publique des
+                      médiateurs de la consommation. Le médiateur compétent doit figurer dans les conditions
+                      générales du professionnel : la loi l’oblige à le communiquer.
+                    </p>
+                  )}
+                </div>
+                <p className="rfi-legende" style={{ marginTop: 14 }}>
+                  Informations générales et parcours prédéfinis. Recours France ne délivre pas de consultation
+                  juridique personnalisée et ne transmet pas les réclamations aux professionnels.
+                </p>
+                {entreprise.mediateur?.siteWeb ? (
+                  <p style={{ marginTop: 10 }}>
+                    <a
+                      href={entreprise.mediateur.siteWeb}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      style={{ fontSize: 13.5 }}
+                    >
+                      Site du médiateur
+                    </a>
+                  </p>
+                ) : null}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>Les démarches possibles, dans l’ordre</div>
+                <div style={{ marginTop: 12 }}>
+                  {guide.etapes.map((e) => (
                     <div
-                      key={e.id}
+                      key={e.numero}
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "minmax(96px,110px) minmax(0,1fr) minmax(70px,90px)",
-                        gap: 20,
-                        padding: "13px 0",
+                        gridTemplateColumns: "22px minmax(0,1fr) minmax(80px,110px)",
+                        gap: 14,
+                        padding: "12px 0",
                         borderBottom: "1px solid var(--rfi-filet-ligne)",
                         alignItems: "baseline",
                       }}
                     >
-                      <span className="rf-nombres" style={{ fontSize: 13, fontWeight: 600, color: "var(--rf-texte-2)" }}>
-                        {formatDateCourte(e.date)}
-                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rfi-bleu)" }}>{e.numero}</span>
                       <span style={{ minWidth: 0 }}>
-                        <span style={{ display: "block", fontSize: 14.5, fontWeight: 600 }}>{e.titre}</span>
-                        {e.detail ? (
-                          <span
-                            style={{ display: "block", fontSize: 13, color: "var(--rf-texte-2)", lineHeight: 1.55, marginTop: 4 }}
-                          >
-                            {e.detail}
-                          </span>
-                        ) : null}
+                        <span style={{ display: "block", fontSize: 14, fontWeight: 600 }}>{e.titre}</span>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 12.5,
+                            color: "var(--rf-texte-2)",
+                            lineHeight: 1.55,
+                            marginTop: 3,
+                          }}
+                        >
+                          {e.description}
+                        </span>
                       </span>
                       <span className="rfi-source" style={{ textAlign: "right", fontSize: 11.5 }}>
-                        {libelleSourceCourt(e.source)}
+                        {e.delai}
                       </span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="rfi-legende">Aucun événement légal publié dans les sources consultées.</p>
-              ),
-            },
-          ]}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 18,
-            flexWrap: "wrap",
-            fontSize: 12,
-            color: "var(--rf-texte-3)",
-            padding: "14px 0 0",
-          }}
-        >
-          <span>Sources : Sirene (Insee) · RNE (INPI) · BODACC · déclarations des consommateurs</span>
-          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            <Link href={`/entreprises/${entreprise.slug}/signaler-une-erreur`}>Signaler une information inexacte</Link>
-            <Link href={`/entreprises/${entreprise.slug}/revendiquer`}>Demander la rectification d’une donnée publique</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Appréciation générale ─────────────────────────────────────────── */}
-      <section className="rfi-section rfi-section--filet">
-        <div className="rfi-conteneur">
-          <h2 className="rfi-h2">Appréciation générale de Recours France</h2>
-          <p className="rfi-chapo" style={{ maxWidth: 760 }}>
-            Appréciation établie à partir des registres publics et des dossiers vérifiés. Elle ne constitue ni
-            une recommandation, ni un avertissement officiel.
-          </p>
-
-          <div
-            className="rfi-ouverture"
-            style={{
-              marginTop: 20,
-              paddingTop: 22,
-              display: "grid",
-              gridTemplateColumns: "minmax(0,1fr) minmax(240px,300px)",
-              gap: 44,
-              alignItems: "start",
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.015em" }}>
-                Niveau de vigilance :{" "}
-                <span style={{ color: couleurVigilance(appreciation.niveauVigilance) }}>
-                  {appreciation.niveauVigilance}
-                </span>
-              </div>
-              <div style={{ fontSize: 15, marginTop: 10 }}>{resumerAlertes(alertes)}.</div>
-              <p style={{ fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.65, marginTop: 8, maxWidth: 620 }}>
-                {appreciation.commentaire}
-              </p>
-              <div style={{ marginTop: 14 }}>
-                <Repli
-                  variante="lien"
-                  libelleFerme="Consulter les critères →"
-                  libelleOuvert="Masquer les critères"
-                >
-                  <div style={{ marginTop: 24 }}>
-                    <div className="rfi-tete-tableau">
-                      <span style={{ flex: "1 1 260px" }}>Critère</span>
-                      <span style={{ flex: "1 1 320px" }}>Constat</span>
-                      <span style={{ flex: "none", width: 110, textAlign: "right" }}>Appréciation</span>
-                    </div>
-                    {appreciation.criteres.map((c) => (
-                      <div
-                        key={c.cle}
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "8px 20px",
-                          borderBottom: "1px solid var(--rfi-filet-ligne)",
-                          padding: "14px 0",
-                          alignItems: "baseline",
-                        }}
-                      >
-                        <span style={{ flex: "1 1 260px", fontSize: 14.5, fontWeight: 600 }}>{c.libelle}</span>
-                        <span style={{ flex: "1 1 320px", fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.6 }}>
-                          {c.constat}
-                        </span>
-                        <span
-                          style={{
-                            flex: "none",
-                            width: 110,
-                            textAlign: "right",
-                            fontSize: 13.5,
-                            fontWeight: 600,
-                            color: couleurVerdict(c.verdict),
-                          }}
-                        >
-                          {c.verdict}
-                        </span>
-                      </div>
-                    ))}
-                    <p className="rfi-legende" style={{ marginTop: 12 }}>
-                      Trois critères reposent sur les registres publics, deux sur les dossiers vérifiés et les
-                      déclarations des consommateurs. Les deux familles ne sont jamais fondues dans un même
-                      critère.
-                    </p>
-                  </div>
-                </Repli>
-              </div>
-            </div>
-
-            <div style={{ minWidth: 0, borderLeft: "1px solid var(--rfi-filet)", paddingLeft: 24 }}>
-              <div className="rfi-etiquette" style={{ fontSize: 12 }}>
-                Indice de confiance
-              </div>
-              <div className="rf-nombres" style={{ fontSize: 15, marginTop: 8 }}>
-                {appreciation.indice}/100 — {appreciation.bande}
-              </div>
-              <p className="rfi-legende" style={{ marginTop: 8 }}>
-                Recalculé chaque jour. Un signalement non vérifié ne fait pas varier cet indice.
-                {appreciation.comportementPublie
-                  ? ""
-                  : ` Faute de ${SEUIL_PUBLICATION_EXPERIENCE} dossiers vérifiés sur douze mois, il repose ici sur les seuls registres publics.`}
-              </p>
-              <div style={{ marginTop: 10 }}>
-                <Link href="/methodologie#m4" style={{ fontSize: 12.5 }}>
-                  Méthodologie de calcul
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 18, borderTop: "1px solid var(--rfi-filet)" }}>
-            <Repli titre="Méthodologie et origine des données">
-              <div className="rfi-grille">
-                {METHODOLOGIE.map((m) => (
-                  <div key={m.q}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{m.q}</div>
-                    <p style={{ fontSize: 13, color: "var(--rf-texte-2)", lineHeight: 1.65, marginTop: 5 }}>{m.a}</p>
-                  </div>
-                ))}
-              </div>
-            </Repli>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Médiation et avis ─────────────────────────────────────────────── */}
-      <section className="rfi-section rfi-section--alternee">
-        <div className="rfi-conteneur rfi-grille--330" style={{ display: "grid", alignItems: "start" }}>
-          <div style={{ minWidth: 0 }}>
-            <h2 className="rfi-h2 rfi-h2--secondaire">Médiation et voies de recours</h2>
-            <p className="rfi-chapo" style={{ fontSize: 13.5, marginTop: 7 }}>
-              Dispositifs applicables à cette entreprise.
-            </p>
-            <div className="rfi-ouverture" style={{ marginTop: 16, paddingTop: 14 }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>
-                {entreprise.mediateur?.nom ?? "Médiateur non identifié"}
-              </div>
-              <div style={{ marginTop: 10 }}>
-                {entreprise.mediateur ? (
-                  <>
-                    <Paire
-                      cle="Rattachement"
-                      valeur={entreprise.mediateurAdhesionDepuis ?? "Présumé d’après le secteur d’activité"}
-                      bordure="var(--rfi-filet)"
-                    />
-                    <Paire
-                      cle="Délai de traitement annoncé"
-                      valeur={entreprise.mediateur.delaiInstruction ?? "90 jours"}
-                      bordure="var(--rfi-filet)"
-                    />
-                    <Paire
-                      cle="Coût pour le consommateur"
-                      valeur={entreprise.mediateur.coutConsommateur ?? "Gratuit"}
-                      bordure="var(--rfi-filet)"
-                    />
-                    <Paire
-                      cle="Condition préalable"
-                      valeur={entreprise.mediateur.conditionPrealable ?? "Réclamation écrite restée sans réponse satisfaisante"}
-                      bordure="var(--rfi-filet)"
-                    />
-                  </>
-                ) : (
-                  <p className="rfi-legende">
-                    Aucun médiateur n’a pu être rattaché à cette entreprise à partir de la liste publique des
-                    médiateurs de la consommation. Le médiateur compétent doit figurer dans les conditions
-                    générales du professionnel : la loi l’oblige à le communiquer.
-                  </p>
-                )}
-              </div>
-              <div style={{ paddingTop: 4 }}>
-                <Repli
-                  variante="lien"
-                  libelleFerme="Consulter les démarches possibles, dans l’ordre"
-                  libelleOuvert="Masquer les démarches"
-                >
-                  <div style={{ marginTop: 12 }}>
-                    {guide.etapes.map((e) => (
-                      <div
-                        key={e.numero}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "22px minmax(0,1fr) minmax(80px,110px)",
-                          gap: 14,
-                          padding: "12px 0",
-                          borderBottom: "1px solid var(--rfi-filet)",
-                          alignItems: "baseline",
-                        }}
-                      >
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rfi-marine)" }}>{e.numero}</span>
-                        <span style={{ minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 14, fontWeight: 600 }}>{e.titre}</span>
-                          <span
-                            style={{ display: "block", fontSize: 12.5, color: "var(--rf-texte-2)", lineHeight: 1.55, marginTop: 3 }}
-                          >
-                            {e.description}
-                          </span>
-                        </span>
-                        <span className="rfi-source" style={{ textAlign: "right", fontSize: 11.5 }}>
-                          {e.delai}
-                        </span>
-                      </div>
-                    ))}
-                    <p className="rfi-legende" style={{ marginTop: 12 }}>
-                      Informations générales et parcours prédéfinis. Recours France ne délivre pas de
-                      consultation juridique personnalisée et ne transmet pas les réclamations aux
-                      professionnels.
-                    </p>
-                  </div>
-                </Repli>
-              </div>
-            </div>
-          </div>
-
-          <div id="avis" style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "baseline", flexWrap: "wrap" }}>
-              <div>
-                <h2 className="rfi-h2 rfi-h2--secondaire">Avis des consommateurs</h2>
-                <p className="rfi-chapo" style={{ fontSize: 13.5, marginTop: 7 }}>
-                  Appréciations subjectives, distinctes des dossiers documentés.
+                <p style={{ marginTop: 12 }}>
+                  <Link href="/demarches-officielles" style={{ fontSize: 13.5 }}>
+                    Démarches officielles disponibles en parallèle
+                  </Link>
                 </p>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div className="rf-nombres" style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
-                  {moyenne === null ? "—" : moyenne.toFixed(1).replace(".", ",")}
-                  <span style={{ fontSize: 14, color: "var(--rf-texte-3)", fontWeight: 400 }}>/5</span>
-                </div>
-                <div className="rfi-source" style={{ fontSize: 11.5, marginTop: 3 }}>
-                  {formatNombre(notesVerifiees.length)} avis vérifié{notesVerifiees.length > 1 ? "s" : ""}
-                </div>
-              </div>
             </div>
+          </section>
+        </div>
+      ) : null}
 
-            <div className="rfi-ouverture" style={{ marginTop: 16 }}>
+      {/* ── Onglet : avis ─────────────────────────────────────────────────── */}
+      {onglet === "avis" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Avis des consommateurs</h2>
+              <span className="rfi-source">Appréciations subjectives, distinctes des dossiers documentés</span>
+            </div>
+            <div
+              className="rfi-ouverture"
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 14,
+                marginTop: 20,
+                paddingTop: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              <span className="rf-nombres" style={{ fontSize: 30, fontWeight: 700, lineHeight: 1 }}>
+                {moyenne === null ? "—" : moyenne.toFixed(1).replace(".", ",")}
+                <span style={{ fontSize: 16, color: "var(--rf-texte-3)", fontWeight: 400 }}>/5</span>
+              </span>
+              <span style={{ fontSize: 13.5, color: "var(--rf-texte-2)" }}>
+                {formatNombre(notesVerifiees.length)} avis rattaché{notesVerifiees.length > 1 ? "s" : ""} à un dossier
+                vérifié · {formatNombre(nbAvisNonVerifies)} avis non vérifié{nbAvisNonVerifies > 1 ? "s" : ""}, exclu
+                {nbAvisNonVerifies > 1 ? "s" : ""} de la moyenne
+              </span>
+            </div>
+            <div style={{ marginTop: 8 }}>
               {avisPublies.length === 0 ? (
                 <p className="rfi-legende" style={{ padding: "16px 0" }}>
                   Aucun avis rattaché à un dossier vérifié n’a encore été publié pour cette entreprise.
@@ -1033,7 +1058,15 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               ) : (
                 avisPublies.map((a) => (
                   <article key={a.id} style={{ padding: "16px 0", borderBottom: "1px solid var(--rfi-filet)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 14,
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                      }}
+                    >
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 13.5, color: "var(--rf-texte-2)", letterSpacing: 2 }} aria-hidden="true">
                           {"★".repeat(a.note)}
@@ -1072,57 +1105,115 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   </article>
                 ))
               )}
+              <div style={{ paddingTop: 14, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                <Link href={`/entreprises/${slug}/tous-les-avis`} style={{ fontSize: 13.5 }}>
+                  Consulter les {formatNombre(notesVerifiees.length)} avis vérifié{notesVerifiees.length > 1 ? "s" : ""}
+                </Link>
+                <Link href={`/entreprises/${slug}/avis`} style={{ fontSize: 13.5 }}>
+                  Laisser un avis
+                </Link>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {/* ── Onglet : méthodologie ─────────────────────────────────────────── */}
+      {onglet === "methodo" ? (
+        <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
+          <section className="rfi-bloc">
+            <div className="rfi-bloc__tete">
+              <h2 className="rfi-pastille-titre">Méthodologie et origine des données</h2>
+              <span className="rfi-source">
+                Mise à jour le {formatDateLongue(entreprise.syncSirene ?? entreprise.majLe)}
+              </span>
+            </div>
+            <div className="rfi-ouverture rfi-grille" style={{ display: "grid", marginTop: 20, paddingTop: 20 }}>
+              {METHODOLOGIE.map((m) => (
+                <div key={m.q}>
+                  <div style={{ fontSize: 14.5, fontWeight: 700 }}>{m.q}</div>
+                  <p style={{ fontSize: 13.5, color: "var(--rf-texte-2)", lineHeight: 1.65, marginTop: 6 }}>{m.a}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ marginTop: 18 }}>
+              <Link href="/methodologie" style={{ fontSize: 13.5 }}>
+                Consulter la méthodologie complète et opposable
+              </Link>
+            </p>
+          </section>
+        </div>
+      ) : null}
+
+      {/* ── Bloc d'action, sous tous les onglets ──────────────────────────── */}
+      <div className="rfi-conteneur" style={{ padding: "26px 32px 34px" }}>
+        <div className="rfi-action">
+          <div>
+            <h2 style={{ fontSize: 23, fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.28 }}>
+              Vous rencontrez un litige avec cette entreprise&nbsp;?
+            </h2>
+            <p style={{ fontSize: 15.5, color: "var(--rfi-sur-bleu)", lineHeight: 1.65, marginTop: 12, maxWidth: 600 }}>
+              Signalez gratuitement votre litige. Recours France structure votre situation, identifie les
+              justificatifs utiles et vous indique les démarches à effectuer dans le bon ordre.
+            </p>
+            <div style={{ borderTop: "1px solid var(--rfi-filet-bleu)", marginTop: 20, paddingTop: 16 }}>
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  paddingTop: 13,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--rfi-sur-bleu-attenue)",
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
                 }}
               >
-                <Link href={`/entreprises/${entreprise.slug}/tous-les-avis`} style={{ fontSize: 13.5 }}>
-                  Consulter les {formatNombre(notesVerifiees.length)} avis vérifié
-                  {notesVerifiees.length > 1 ? "s" : ""}
-                </Link>
-                <span className="rfi-source">
-                  {formatNombre(nbAvisNonVerifies)} avis non vérifié{nbAvisNonVerifies > 1 ? "s" : ""}, exclu
-                  {nbAvisNonVerifies > 1 ? "s" : ""} de la moyenne
-                </span>
+                Ce que vous obtenez gratuitement
               </div>
+              <ul className="rfi-grille--250" style={{ display: "grid", marginTop: 12 }}>
+                {[
+                  "Les démarches à effectuer dans le bon ordre",
+                  "Les justificatifs et preuves à conserver",
+                  "Les coordonnées utiles du professionnel",
+                  "Le médiateur compétent lorsqu’il est identifié",
+                  "Les recours officiels disponibles",
+                  "SignalConso lorsque cette démarche est pertinente",
+                ].map((d) => (
+                  <li key={d} style={{ fontSize: 13.5, color: "var(--rfi-sur-bleu)", lineHeight: 1.5 }}>
+                    — {d}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div style={{ maxWidth: 340, width: "100%", justifySelf: "end" }}>
+            <Link href={`/signaler?siren=${entreprise.siren}`} className="rfi-bouton rfi-bouton--blanc">
+              Signaler mon litige gratuitement
+            </Link>
+            <div
+              style={{
+                fontSize: 12.5,
+                color: "var(--rfi-sur-bleu-attenue)",
+                textAlign: "center",
+                lineHeight: 1.55,
+                marginTop: 10,
+              }}
+            >
+              Gratuit · 3 à 5 minutes · justificatifs facultatifs
+              {stats.total12Mois > 0 ? (
+                <>
+                  <br />
+                  {formatNombre(stats.total12Mois)} consommateur{stats.total12Mois > 1 ? "s ont" : " a"} déjà signalé
+                  un litige avec cette entreprise.
+                </>
+              ) : null}
+            </div>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <Link href={lien("avis")} style={{ fontSize: 12.5 }}>
+                Laisser seulement un avis
+              </Link>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* ── Informations légales détaillées ───────────────────────────────── */}
-      <div className="rfi-conteneur" style={{ padding: "0 32px" }}>
-        <Repli titre="Informations légales détaillées" indice="Identité complète, établissements, greffe, coordonnées déclarées">
-          <div className="rfi-grille" style={{ gap: "0 44px" }}>
-            <div>
-              {identite.slice(0, 7).map((l) => (
-                <Paire key={l.cle} cle={l.cle} valeur={l.valeur} />
-              ))}
-            </div>
-            <div>
-              {identite.slice(7).map((l) => (
-                <Paire key={l.cle} cle={l.cle} valeur={l.valeur} />
-              ))}
-              {entreprise.emailReclamation || entreprise.telephoneReclamation ? (
-                <Paire
-                  cle="Service consommateurs déclaré"
-                  valeur={[entreprise.emailReclamation, entreprise.telephoneReclamation].filter(Boolean).join(" · ")}
-                />
-              ) : null}
-            </div>
-          </div>
-          <p className="rfi-legende" style={{ marginTop: 14 }}>
-            Le nom des personnes physiques dirigeantes n’est pas publié. Les données brutes de cette fiche sont
-            accessibles en lecture via l’<Link href={`/api/entreprises/${entreprise.siren}`}>API publique</Link>.
-          </p>
-        </Repli>
-        <div style={{ padding: "16px 0 30px", fontSize: 12, color: "var(--rf-texte-3)" }}>
+        <div style={{ fontSize: 12, color: "var(--rf-texte-3)", paddingTop: 14 }}>
           Fiche consultée {formatNombre(entreprise.vues)} fois depuis sa création.
         </div>
       </div>
@@ -1161,15 +1252,49 @@ function Chiffre({
   );
 }
 
-function Paire({ cle, valeur, bordure }: { cle: string; valeur: string; bordure?: string }) {
+function Paire({ cle, valeur }: { cle: string; valeur: string }) {
   return (
-    <div className="rfi-paire" style={bordure ? { borderBottomColor: bordure } : undefined}>
+    <div className="rfi-paire">
       <span>{cle}</span>
       <span>{valeur}</span>
     </div>
   );
 }
 
-
-
-
+/** Premier alinéa du paragraphe de synthèse, rédigé en prose à partir des registres. */
+function phraseIdentite(
+  e: {
+    denomination: string;
+    formeJuridique: string | null;
+    dateImmatriculation: Date | null;
+    nafLibelle: string | null;
+    trancheEffectif: string | null;
+    etatAdministratif: string;
+  },
+  anciennete: number | null,
+) {
+  const effectif = libelleEffectif(e.trancheEffectif).replace(" (tranche Insee)", "");
+  return (
+    <>
+      La société <strong>{e.denomination}</strong>
+      {e.dateImmatriculation ? (
+        <>
+          {" "}
+          a été créée le <strong>{formatDateLongue(e.dateImmatriculation)}</strong>
+          {anciennete !== null ? `, il y a ${anciennete} an${anciennete > 1 ? "s" : ""}` : ""}
+        </>
+      ) : (
+        " est immatriculée aux registres publics"
+      )}
+      .{" "}
+      {e.formeJuridique ? (
+        <>
+          Sa forme juridique est <strong>{e.formeJuridique}</strong>.{" "}
+        </>
+      ) : null}
+      {e.nafLibelle ? <>Son domaine d’activité est : {e.nafLibelle.toLowerCase()}. </> : null}
+      {e.trancheEffectif && e.trancheEffectif !== "NN" ? <>Elle comptait {effectif.toLowerCase()}. </> : null}
+      {e.etatAdministratif === "ACTIVE" ? null : <>Elle est déclarée cessée dans le répertoire Sirene. </>}
+    </>
+  );
+}

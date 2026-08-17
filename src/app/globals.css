@@ -1738,58 +1738,99 @@ button {
 }
 
 /* ==========================================================================
-   Fiche entreprise — direction artistique institutionnelle (handoff v2)
-   Bleu institutionnel #16235C, sections ouvertes par un filet et non
-   encadrées, couleurs d'état désaturées employées comme signal.
+   Fiche entreprise — direction artistique institutionnelle
+   Bleu d'action #1B3FA0 (blanc sur ce fond ≈ 8,3:1), sections en blocs
+   encadrés introduits par une pastille de titre, navigation par onglets.
    Portée : la fiche entreprise et ses composants (préfixe .rfi-).
    ========================================================================== */
 
 :root {
-  --rfi-marine: #16235c;
-  --rfi-marine-survol: #101528;
-  --rfi-lien-survol: #1e4bd2;
+  --rfi-bleu: #1b3fa0;
+  --rfi-bleu-survol: #12256b;
+  --rfi-lien-survol: #2e5fe0;
+  --rfi-bleu-pale: #e7eeff;
+  --rfi-bandeau: #12256b;
+
   --rfi-fond-alterne: #f8fafd;
+  --rfi-bordure-bloc: #d7dce5;
   --rfi-filet: #e4e9f2;
   --rfi-filet-ligne: #eef1f7;
-  --rfi-separateur-inline: #c7cede;
+  --rfi-separateur-inline: #c6d2ea;
 
   --rfi-vert: #1b7a4b;
   --rfi-vert-fond: #edf6f0;
+  --rfi-vert-actif: #14603c;
   --rfi-ambre: #8a5200;
   --rfi-ambre-fond: #fbf3e8;
   --rfi-rouge: #a32a22;
   --rfi-rouge-fond: #fbeeec;
   --rfi-neutre: #5f6673;
   --rfi-neutre-fond: #f2f4f8;
-  --rfi-verifie-fond: #edf1fa;
 
-  --rfi-barre-1: #16235c;
-  --rfi-barre-2: #4a5f9e;
-  --rfi-barre-3: #8b96b4;
+  --rfi-sur-bleu: #dde7ff;
+  --rfi-sur-bleu-attenue: #b9ccff;
+  --rfi-filet-bleu: #3a5fc0;
+  --rfi-sur-bandeau: #c6d2ea;
+  --rfi-sur-bandeau-attenue: #98a3be;
+  --rfi-filet-bandeau: #2e4a9e;
+
+  --rfi-barre-1: #1b3fa0;
+  --rfi-barre-2: #4a72d8;
+  --rfi-barre-3: #94aae6;
 }
 
-.rfi {
-  color: var(--rf-encre);
+/* Liens de contenu et navigation. Boutons, onglets, bloc bleu et pied de page
+   gardent leurs propres contrastes. */
+.rfi main a:not([class*="btn"]):not([class*="bouton"]):not([class*="onglet"]) {
+  color: var(--rfi-bleu);
 }
-/* Les liens de contenu passent en bleu institutionnel. Les boutons, l'en-tête,
-   le pied de page et le bloc marine conservent leurs propres contrastes. */
-.rfi main a:not([class*="btn"]):not([class*="bouton"]) {
-  color: var(--rfi-marine);
-}
-.rfi main a:not([class*="btn"]):not([class*="bouton"]):hover {
+.rfi main a:not([class*="btn"]):not([class*="bouton"]):not([class*="onglet"]):hover {
   color: var(--rfi-lien-survol);
 }
 .rfi .rf-entete .rf-nav a:not([class*="btn"]) {
-  color: var(--rfi-marine);
+  color: var(--rfi-bleu);
 }
-.rfi .rf-entete .rf-nav a:not([class*="btn"]):hover {
-  color: var(--rfi-lien-survol);
+.rfi main .rfi-action a:not([class*="bouton"]),
+.rfi main .rfi-action button {
+  color: var(--rfi-sur-bleu);
 }
-.rfi main .rfi-section--marine a:not([class*="bouton"]) {
-  color: var(--rf-sur-marine);
-}
-.rfi main .rfi-section--marine a:not([class*="bouton"]):hover {
+.rfi main .rfi-action a:not([class*="bouton"]):hover,
+.rfi main .rfi-action button:hover {
   color: #fff;
+}
+
+/* Bandeau d'indépendance et pied de page passent en bleu profond. */
+.rfi .rf-bandeau-independance,
+.rfi .rf-pied {
+  background: var(--rfi-bandeau);
+  color: var(--rfi-sur-bandeau);
+}
+.rfi .rf-pied a {
+  color: var(--rfi-sur-bandeau);
+}
+.rfi .rf-pied a:hover {
+  color: #fff;
+}
+.rfi .rf-pied__barre {
+  border-top-color: var(--rfi-filet-bandeau);
+}
+.rfi .rf-pied__barre a {
+  color: var(--rfi-sur-bandeau-attenue);
+}
+.rfi .rf-pied__barre a:hover {
+  color: #fff;
+}
+.rfi .rf-logo__marque {
+  background: var(--rfi-bleu);
+}
+.rfi .rf-logo__nom {
+  color: var(--rfi-bleu);
+}
+.rfi .rf-btn--marine {
+  background: var(--rfi-bleu);
+}
+.rfi .rf-btn--marine:hover {
+  background: var(--rfi-bleu-survol);
 }
 
 .rfi-conteneur {
@@ -1798,50 +1839,151 @@ button {
   padding: 0 32px;
 }
 
-/* Sections : ouvertes par un filet, jamais encadrées. */
-.rfi-section {
-  padding: 34px 0 38px;
+/* ── En-tête entreprise ─────────────────────────────────────────────────── */
+
+.rfi-titre {
+  display: inline-block;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  border-bottom: 3px solid var(--rfi-bleu);
+  padding-bottom: 5px;
 }
-.rfi-section--filet {
-  border-top: 1px solid var(--rfi-filet);
+.rfi-identification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
-.rfi-section--dominante {
-  border-top: 2px solid var(--rfi-marine);
-  padding: 34px 0 40px;
+.rfi-jeton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rfi-neutre-fond);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rf-encre);
 }
-.rfi-section--alternee {
-  background: var(--rfi-fond-alterne);
-  border-top: 1px solid var(--rfi-filet);
+.rfi-marqueur {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
-.rfi-section--marine {
-  background: var(--rfi-marine);
-  color: #fff;
+.rfi-marqueur--actif {
+  background: var(--rfi-vert-fond);
+  color: var(--rfi-vert-actif);
+}
+.rfi-marqueur--cesse {
+  background: var(--rfi-rouge-fond);
+  color: var(--rfi-rouge);
+}
+.rfi-marqueur--verifie {
+  background: var(--rfi-bleu-pale);
+  color: var(--rfi-bleu);
+}
+/* Arborescence : coude tracé en bordures, sans image. */
+.rfi-arbre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-left: 14px;
+}
+.rfi-arbre__coude {
+  width: 14px;
+  height: 14px;
+  border-left: 1px solid var(--rf-bordure-champ);
+  border-bottom: 1px solid var(--rf-bordure-champ);
+  display: block;
+  flex: none;
+}
+.rfi-synthese {
+  font-size: 16px;
+  color: var(--rf-encre);
+  line-height: 1.75;
+  max-width: 960px;
+  text-wrap: pretty;
+}
+.rfi-synthese + .rfi-synthese {
+  margin-top: 12px;
+}
+
+/* ── Barre d'onglets ────────────────────────────────────────────────────── */
+
+.rfi-onglets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--rfi-bleu);
+}
+.rfi-onglet {
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--rfi-neutre-fond);
+  color: var(--rfi-bleu);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 13px 18px;
+  border: 1px solid var(--rfi-filet);
+  border-bottom: 0;
+  margin-bottom: -1px;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  min-height: 44px;
+}
+.rfi-onglet:hover {
+  background: #fff;
+  color: var(--rfi-bleu);
+}
+.rfi-onglet[aria-selected="true"] {
+  background: #fff;
+  border-color: var(--rfi-bleu);
+}
+
+/* ── Blocs encadrés à pastille de titre ─────────────────────────────────── */
+
+.rfi-bloc {
+  border: 1px solid var(--rfi-bordure-bloc);
+  padding: 26px 28px 28px;
+  background: #fff;
+}
+/* Les blocs successifs d'un même onglet se collent. */
+.rfi-bloc + .rfi-bloc {
+  border-top: 0;
+}
+.rfi-bloc__tete {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rfi-pastille-titre {
+  background: var(--rfi-bleu-pale);
+  color: var(--rfi-bleu);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0;
+  padding: 9px 15px;
+  letter-spacing: -0.01em;
+  display: inline-block;
 }
 .rfi-ouverture {
-  border-top: 1px solid var(--rfi-marine);
+  border-top: 1px solid var(--rfi-bleu);
 }
 .rfi-ouverture--legere {
   border-top: 1px solid var(--rfi-filet);
 }
 
-.rfi-h1 {
-  font-size: 38px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.12;
-}
-.rfi-h2 {
-  font-size: 25px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-.rfi-h2--secondaire {
-  font-size: 20px;
-  letter-spacing: -0.015em;
-}
 .rfi-h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
 }
 .rfi-h3--petit {
@@ -1850,8 +1992,9 @@ button {
 .rfi-chapo {
   font-size: 14px;
   color: var(--rf-texte-2);
-  line-height: 1.6;
-  margin-top: 8px;
+  line-height: 1.65;
+  margin-top: 16px;
+  max-width: 840px;
 }
 .rfi-source {
   font-size: 12px;
@@ -1874,35 +2017,25 @@ button {
   color: var(--rfi-separateur-inline);
 }
 
-.rfi-entete-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-.rfi-entete-section > div:first-child {
-  max-width: 760px;
-}
+/* ── Bandeau de chiffres ────────────────────────────────────────────────── */
 
-/* Bandeau de chiffres : filet vertical sur chaque tuile sauf la première. */
 .rfi-chiffres {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
-  border-top: 1px solid var(--rfi-marine);
-  border-bottom: 1px solid var(--rfi-filet);
-  margin-top: 22px;
+  border-top: 1px solid var(--rfi-bleu);
+  margin-top: 20px;
 }
 .rfi-chiffre {
   min-width: 0;
-  padding: 22px 24px 20px;
+  padding: 20px 22px;
   border-left: 1px solid var(--rfi-filet);
+  border-bottom: 1px solid var(--rfi-filet-ligne);
 }
 .rfi-chiffre:first-child {
   border-left: 0;
 }
 .rfi-chiffre__valeur {
-  font-size: 34px;
+  font-size: 33px;
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1;
@@ -1925,16 +2058,21 @@ button {
   margin-top: 5px;
 }
 
+/* ── Grilles ────────────────────────────────────────────────────────────── */
+
 .rfi-deux-colonnes {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
-  gap: 44px;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+  gap: 40px;
   align-items: start;
+}
+.rfi-deux-colonnes--large {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
 }
 .rfi-grille {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 18px 44px;
+  gap: 20px 44px;
 }
 .rfi-grille--160 {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
@@ -1944,15 +2082,14 @@ button {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
   gap: 8px 28px;
 }
-.rfi-grille--330 {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+.rfi-grille--320 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 44px;
 }
-/* Données publiques : 4 colonnes fixes, 8 items = 2 rangées pleines. */
 .rfi-faits {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--rfi-marine);
+  border-top: 1px solid var(--rfi-bleu);
   margin-top: 20px;
 }
 .rfi-fait {
@@ -1968,7 +2105,8 @@ button {
   line-height: 1.4;
 }
 
-/* Badges d'état, désaturés. */
+/* ── Badges et statuts ──────────────────────────────────────────────────── */
+
 .rfi-badge {
   display: inline-block;
   font-size: 11.5px;
@@ -1977,8 +2115,8 @@ button {
   white-space: nowrap;
 }
 .rfi-badge--verifie {
-  background: var(--rfi-verifie-fond);
-  color: var(--rfi-marine);
+  background: var(--rfi-bleu-pale);
+  color: var(--rfi-bleu);
 }
 .rfi-badge--neutre {
   background: var(--rfi-neutre-fond);
@@ -2008,10 +2146,11 @@ button {
   color: var(--rfi-neutre);
 }
 
-/* Boutons et liens d'action. */
+/* ── Boutons et liens d'action ──────────────────────────────────────────── */
+
 .rfi-bouton {
   display: block;
-  background: var(--rfi-marine);
+  background: var(--rfi-bleu);
   color: #fff;
   text-align: center;
   font-size: 15px;
@@ -2021,19 +2160,19 @@ button {
   min-height: 44px;
 }
 .rfi-bouton:hover {
-  background: var(--rfi-marine-survol);
+  background: var(--rfi-bleu-survol);
   color: #fff;
 }
 .rfi-bouton--blanc {
   background: #fff;
-  color: var(--rfi-marine);
+  color: var(--rfi-bleu);
   font-size: 17px;
   font-weight: 700;
   padding: 18px;
 }
 .rfi-bouton--blanc:hover {
-  background: var(--rf-badge-bleu);
-  color: var(--rfi-marine);
+  background: #dce6ff;
+  color: var(--rfi-bleu);
 }
 .rfi-lien-action {
   font-family: inherit;
@@ -2043,10 +2182,9 @@ button {
   padding: 0;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--rfi-marine);
+  color: var(--rfi-bleu);
   text-decoration: underline;
   text-underline-offset: 3px;
-  min-height: 44px;
 }
 .rfi-lien-action:hover {
   color: var(--rfi-lien-survol);
@@ -2065,11 +2203,12 @@ button {
 }
 .rfi-filtre[aria-pressed="true"] {
   font-weight: 600;
-  color: var(--rfi-marine);
+  color: var(--rfi-bleu);
   text-decoration: underline;
 }
 
-/* Lignes de dossiers. */
+/* ── Dossiers ───────────────────────────────────────────────────────────── */
+
 .rfi-dossier {
   border-bottom: 1px solid var(--rfi-filet-ligne);
   padding: 18px 0;
@@ -2083,11 +2222,11 @@ button {
 }
 .rfi-dossier__detail {
   background: var(--rfi-fond-alterne);
+  border: 1px solid var(--rfi-filet);
   padding: 18px 20px;
   margin-top: 15px;
 }
 
-/* Barres de motifs, 4 px. */
 .rfi-barre {
   height: 4px;
   background: var(--rfi-filet-ligne);
@@ -2096,10 +2235,11 @@ button {
 .rfi-barre > span {
   display: block;
   height: 4px;
-  background: var(--rfi-marine);
+  background: var(--rfi-bleu);
 }
 
-/* Rubriques dépliables. */
+/* ── Rubriques dépliables ───────────────────────────────────────────────── */
+
 .rfi-rubrique {
   border-bottom: 1px solid var(--rfi-filet);
 }
@@ -2131,7 +2271,7 @@ button {
 }
 .rfi-rubrique__action {
   font-size: 13px;
-  color: var(--rfi-marine);
+  color: var(--rfi-bleu);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -2144,10 +2284,11 @@ button {
   padding: 2px 0 24px;
 }
 
-/* Tableaux internes (comptes, critères). */
+/* ── Tableaux internes ──────────────────────────────────────────────────── */
+
 .rfi-tete-tableau {
   display: flex;
-  border-bottom: 1px solid var(--rfi-marine);
+  border-bottom: 1px solid var(--rfi-bleu);
   padding-bottom: 9px;
   font-size: 11.5px;
   font-weight: 600;
@@ -2180,12 +2321,13 @@ button {
   text-align: right;
 }
 
-/* Points de vigilance : gravité | contenu | source. */
+/* ── Points de vigilance ────────────────────────────────────────────────── */
+
 .rfi-alerte {
   border-bottom: 1px solid var(--rfi-filet);
-  padding: 17px 0;
+  padding: 16px 0;
   display: grid;
-  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr) minmax(140px, 180px);
+  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr) minmax(130px, 170px);
   gap: 24px;
   align-items: baseline;
 }
@@ -2203,19 +2345,41 @@ button {
   display: block;
 }
 
-/* En-tête entreprise : le bouton passe sous l'identité en dessous de 760 px. */
+/* ── Bloc d'action ──────────────────────────────────────────────────────── */
+
+.rfi-action {
+  border: 1px solid var(--rfi-bleu);
+  background: var(--rfi-bleu);
+  color: #fff;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 40px;
+  align-items: start;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .rfi-onglets {
+    gap: 4px;
+  }
+  .rfi-onglet {
+    font-size: 13px;
+    padding: 11px 13px;
+  }
+}
+
 @media (max-width: 760px) {
   .rfi-entete-entreprise {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 20px !important;
   }
-  .rfi-entete-entreprise > div:last-child {
-    min-width: 0 !important;
-  }
 }
 
 @media (max-width: 1100px) {
-  .rfi-deux-colonnes {
+  .rfi-deux-colonnes,
+  .rfi-deux-colonnes--large {
     grid-template-columns: minmax(0, 1fr);
     gap: 32px;
   }
@@ -2228,22 +2392,25 @@ button {
   .rfi-conteneur {
     padding: 0 20px;
   }
-  .rfi-h1 {
-    font-size: 28px;
+  .rfi-bloc {
+    padding: 20px 18px 22px;
   }
-  .rfi-h2 {
-    font-size: 21px;
+  .rfi-titre {
+    font-size: 26px;
   }
-  .rfi-h2--secondaire {
-    font-size: 18px;
+  .rfi-pastille-titre {
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+  .rfi-synthese {
+    font-size: 15px;
   }
   .rfi-chiffre {
-    padding: 18px 16px;
+    padding: 16px 14px;
     border-left: 0;
-    border-bottom: 1px solid var(--rfi-filet);
   }
   .rfi-chiffre__valeur {
-    font-size: 28px;
+    font-size: 27px;
   }
   .rfi-faits {
     grid-template-columns: minmax(0, 1fr);

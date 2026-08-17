@@ -13,8 +13,15 @@ export type Rubrique = {
  * Rubriques de données publiques : accordéon exclusif — une seule ouverte à la
  * fois, libellé « Consulter le détail » / « Masquer », signe + / −.
  */
-export function Rubriques({ rubriques }: { rubriques: Rubrique[] }) {
-  const [ouverte, setOuverte] = useState<string | null>(null);
+export function Rubriques({
+  rubriques,
+  initiale = null,
+}: {
+  rubriques: Rubrique[];
+  /** Rubrique dépliée à l'arrivée, quand un lien de la page y renvoie. */
+  initiale?: string | null;
+}) {
+  const [ouverte, setOuverte] = useState<string | null>(initiale);
   const base = useId();
 
   return (

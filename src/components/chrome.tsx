@@ -6,8 +6,8 @@ const DEMO = process.env.DEMO_BANNER !== "false";
 /**
  * Deux habillages coexistent :
  *  — « standard » : charte cobalt du handoff initial (accueil, annuaire, formulaires) ;
- *  — « institutionnel » : charte bleu marine du handoff dédié à la fiche entreprise
- *    (conteneur 1180 px, logotype 38 px, action principale marine).
+ *  — « institutionnel » : charte bleu #1B3FA0 du handoff dédié à la fiche
+ *    entreprise (conteneur 1180 px, logotype 38 px, blocs encadrés, onglets).
  */
 export type Habillage = "standard" | "institutionnel";
 
@@ -55,7 +55,7 @@ export function Logo({
       <span>
         <span
           className="rf-logo__nom"
-          style={institutionnel ? { display: "block", fontSize: 19, color: "var(--rfi-marine)" } : { display: "block" }}
+          style={institutionnel ? { display: "block", fontSize: 19 } : { display: "block" }}
         >
           Recours France
         </span>
@@ -88,8 +88,13 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
       <div className={conteneur(habillage)} style={institutionnel ? { paddingTop: 16, paddingBottom: 16 } : undefined}>
         <Logo baseline={baseline} habillage={habillage} />
 
-        {recherche ? (
-          <form className="rf-entete__recherche" action="/entreprises" role="search">
+        {recherche || institutionnel ? (
+          <form
+            className="rf-entete__recherche"
+            action="/entreprises"
+            role="search"
+            style={institutionnel ? { flex: "1 1 300px", maxWidth: 440 } : undefined}
+          >
             <label className="rf-vh" htmlFor="recherche-entete">
               Rechercher une entreprise
             </label>
@@ -99,7 +104,8 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
               type="search"
               name="q"
               defaultValue={valeurRecherche}
-              placeholder="Nom, raison sociale ou SIREN"
+              placeholder={institutionnel ? "Nom, adresse, n° SIRET/SIREN…" : "Nom, raison sociale ou SIREN"}
+              style={institutionnel ? { background: "var(--rfi-fond-alterne)", fontSize: 14 } : undefined}
             />
             <button type="submit" className={`rf-btn ${institutionnel ? "rf-btn--marine" : "rf-btn--primaire"}`}>
               Rechercher
@@ -107,8 +113,8 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
           </form>
         ) : null}
 
-        <nav className="rf-nav" aria-label="Navigation principale" style={institutionnel ? { gap: 22 } : undefined}>
-          {recherche && !institutionnel ? null : navActive === "annuaire" ? (
+        <nav className="rf-nav" aria-label="Navigation principale" style={institutionnel ? { gap: 20 } : undefined}>
+          {recherche || institutionnel ? null : navActive === "annuaire" ? (
             <span className="rf-nav__actif">Annuaire des entreprises</span>
           ) : (
             <Link href="/entreprises">Annuaire des entreprises</Link>
@@ -118,7 +124,7 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
           ) : (
             <Link href="/mon-espace">Mon espace</Link>
           )}
-          {recherche && !institutionnel ? null : navActive === "aide" ? (
+          {navActive === "aide" ? (
             <span className="rf-nav__actif">Aide</span>
           ) : (
             <Link href="/aide">Aide</Link>
@@ -196,7 +202,7 @@ export function PiedDePage({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "var(--rf-cobalt-fonce)",
+                    color: institutionnel ? "var(--rfi-bleu)" : "var(--rf-cobalt-fonce)",
                     fontSize: institutionnel ? 13 : 14,
                     fontWeight: 700,
                     letterSpacing: ".04em",
