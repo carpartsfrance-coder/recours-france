@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
 import { Dossiers, type Dossier } from "@/components/fiche/dossiers";
+import { versDossier } from "@/lib/dossiers";
 import { Repli, Rubriques } from "@/components/fiche/rubriques";
 import { InfoBulle } from "@/components/ui";
 import { prisma } from "@/lib/db";
@@ -30,7 +31,6 @@ import {
   formatSiret,
   libelleEffectif,
   libelleSourceCourt,
-  LIBELLES_CATEGORIE,
   qualiteDirigeant,
 } from "@/lib/format";
 
@@ -154,48 +154,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   });
 
   // ── Dossiers récents ─────────────────────────────────────────────────────
-  const dossiers: Dossier[] = signalements.map((s) => {
-    const verifie = s.niveauVerification === "VERIFIE";
-    const clos = s.closLe !== null;
-    const jours = Math.max(
-      0,
-      Math.round(((clos ? s.closLe!.getTime() : Date.now()) - s.creeLe.getTime()) / JOUR),
-    );
-    const statut = etatDossier(s.statut, s.resolutionConfirmee, s.reponseDeclaree);
-    return {
-      reference: s.reference,
-      motif: intituleDossier(s.categorie),
-      montant: s.montant ? formatMontant(Number(s.montant)) : "montant non déclaré",
-      verifie,
-      resolu: s.resolutionConfirmee,
-      date: formatDateLongue(s.creeLe),
-      duree: clos ? libelleDuree("Clos en", jours) : libelleDuree("Ouvert depuis", jours),
-      dureeAlerte: !clos && jours > 60,
-      statut: statut.libelle,
-      statutClasse: statut.classe,
-      detail: [
-        { cle: "Catégorie", valeur: LIBELLES_CATEGORIE[s.categorie] },
-        { cle: "Montant déclaré", valeur: s.montant ? formatMontant(Number(s.montant)) : "Non déclaré" },
-        {
-          cle: "Vérification",
-          valeur: verifie ? "Pièce contrôlée par Recours France" : "Aucun justificatif contrôlé",
-        },
-        {
-          cle: "Réponse du professionnel",
-          valeur: s.reponseDeclaree ? "Oui, selon le consommateur" : "Non renseignée",
-        },
-        {
-          cle: "Résolution",
-          valeur: s.resolutionConfirmee ? "Confirmée par le consommateur" : "Non confirmée",
-        },
-        {
-          cle: clos ? "Clôture" : "Dernière mise à jour",
-          valeur: formatDateLongue(clos ? s.closLe : s.majLe),
-        },
-      ],
-      resume: resumeFactuel(s.categorie, s.statut, s.reponseDeclaree, s.resolutionConfirmee, verifie),
-    };
-  });
+  const dossiers: Dossier[] = signalements.map(versDossier);
 
   // ── Synthèse en 8 faits ──────────────────────────────────────────────────
   const dernierCompte = comptes.find((c) => c.chiffreAffaires !== null) ?? comptes[0];
@@ -1123,8 +1082,9 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   paddingTop: 13,
                 }}
               >
-                <Link href={`/entreprises/${entreprise.slug}/avis`} style={{ fontSize: 13.5 }}>
-                  Laisser un avis
+                <Link href={`/entreprises/${entreprise.slug}/tous-les-avis`} style={{ fontSize: 13.5 }}>
+                  Consulter les {formatNombre(notesVerifiees.length)} avis vérifié
+                  {notesVerifiees.length > 1 ? "s" : ""}
                 </Link>
                 <span className="rfi-source">
                   {formatNombre(nbAvisNonVerifies)} avis non vérifié{nbAvisNonVerifies > 1 ? "s" : ""}, exclu
@@ -1210,81 +1170,6 @@ function Paire({ cle, valeur, bordure }: { cle: string; valeur: string; bordure?
   );
 }
 
-function intituleDossier(categorie: string): string {
-  switch (categorie) {
-    case "REMBOURSEMENT":
-      return "Remboursement non reçu";
-    case "LIVRAISON":
-      return "Problème de livraison";
-    case "GARANTIE":
-      return "Garantie refusée";
-    case "SAV":
-      return "Service après-vente défaillant";
-    case "RESILIATION":
-      return "Prélèvement après résiliation";
-    default:
-      return "Pratique contestée";
-  }
-}
 
-/** « Ouvert depuis 1 jour » plutôt que « depuis 0 jours » pour un dépôt du jour. */
-function libelleDuree(prefixe: string, jours: number): string {
-  if (jours <= 0) return prefixe.startsWith("Clos") ? "Clos le jour même" : "Ouvert aujourd’hui";
-  if (jours === 1) return `${prefixe} 1 jour`;
-  return `${prefixe} ${jours} jours`;
-}
 
-function etatDossier(
-  statut: string,
-  resolu: boolean,
-  reponse: boolean,
-): { libelle: string; classe: string } {
-  if (resolu || statut === "RESOLU_CONFIRME") return { libelle: "Résolu", classe: "rfi-statut--vert" };
-  if (statut === "NON_RESOLU") return { libelle: "Non résolu", classe: "rfi-statut--rouge" };
-  if (statut === "ABANDONNE") return { libelle: "Abandonné", classe: "rfi-statut--neutre" };
-  if (statut === "RESOLUTION_PARTIELLE") return { libelle: "Résolution partielle", classe: "rfi-statut--ambre" };
-  if (statut === "REPONSE_DECLAREE" || statut === "SOLUTION_PROPOSEE" || reponse)
-    return { libelle: "En cours", classe: "rfi-statut--ambre" };
-  return { libelle: "Sans réponse", classe: "rfi-statut--neutre" };
-}
 
-/**
- * Résumé produit par la plateforme à partir des seules données structurées :
- * aucun texte libre du consommateur n'est publié (règle métier n° 7).
- */
-function resumeFactuel(
-  categorie: string,
-  statut: string,
-  reponse: boolean,
-  resolu: boolean,
-  verifie: boolean,
-): string {
-  const objet =
-    categorie === "REMBOURSEMENT"
-      ? "Un remboursement déclaré non reçu après annulation, rétractation ou retour"
-      : categorie === "LIVRAISON"
-        ? "Une livraison déclarée non conforme, incomplète ou très en retard"
-        : categorie === "GARANTIE"
-          ? "Une prise en charge au titre de la garantie légale déclarée refusée"
-          : categorie === "SAV"
-            ? "Une intervention de service après-vente déclarée non assurée"
-            : categorie === "RESILIATION"
-              ? "Des prélèvements déclarés poursuivis après une demande de résiliation"
-              : "Un litige de consommation déclaré";
-
-  const suite = reponse
-    ? "Le consommateur déclare avoir reçu une réponse du professionnel."
-    : "Le consommateur ne déclare aucune réponse du professionnel à ce jour.";
-
-  const fin = resolu
-    ? "La résolution a été confirmée par le consommateur après clôture."
-    : statut === "NON_RESOLU"
-      ? "Aucune résolution n’a été confirmée : le dossier est déclaré non résolu."
-      : statut === "ABANDONNE"
-        ? "Le dossier a été clôturé sans suite par le consommateur."
-        : "Aucune résolution n’a été confirmée à ce jour.";
-
-  const niveau = verifie ? "" : " Dossier non vérifié : exclu des taux publiés.";
-
-  return `${objet}. ${suite} ${fin}${niveau}`;
-}

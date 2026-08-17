@@ -31,7 +31,18 @@ type Filtre = (typeof FILTRES)[number]["cle"];
  * ouverte à la fois. Aucun texte libre de consommateur n'est publié : le résumé
  * affiché est produit par la plateforme à partir des données structurées.
  */
-export function Dossiers({ dossiers, total, lienTous }: { dossiers: Dossier[]; total: number; lienTous: string }) {
+export function Dossiers({
+  dossiers,
+  total,
+  lienTous,
+  titre = "Dossiers récents",
+}: {
+  dossiers: Dossier[];
+  total: number;
+  /** Absent sur la page de liste complète : il n'y a plus de « voir tout ». */
+  lienTous?: string;
+  titre?: string;
+}) {
   const [filtre, setFiltre] = useState<Filtre>("tous");
   const [ouvert, setOuvert] = useState<string | null>(null);
 
@@ -52,7 +63,7 @@ export function Dossiers({ dossiers, total, lienTous }: { dossiers: Dossier[]; t
           paddingBottom: 11,
         }}
       >
-        <h3 className="rfi-h3">Dossiers récents</h3>
+        <h3 className="rfi-h3">{titre}</h3>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }} role="group" aria-label="Filtrer les dossiers">
           {FILTRES.map((f) => (
             <button
@@ -182,9 +193,17 @@ export function Dossiers({ dossiers, total, lienTous }: { dossiers: Dossier[]; t
           paddingTop: 14,
         }}
       >
-        <a href={lienTous} style={{ fontSize: 13.5 }}>
-          Consulter les {total.toLocaleString("fr-FR")} dossier{total > 1 ? "s" : ""} enregistré{total > 1 ? "s" : ""}
-        </a>
+        {lienTous ? (
+          <a href={lienTous} style={{ fontSize: 13.5 }}>
+            Consulter les {total.toLocaleString("fr-FR")} dossier{total > 1 ? "s" : ""} enregistré
+            {total > 1 ? "s" : ""}
+          </a>
+        ) : (
+          <span className="rfi-source">
+            {visibles.length.toLocaleString("fr-FR")} dossier{visibles.length > 1 ? "s" : ""} affiché
+            {visibles.length > 1 ? "s" : ""} sur {total.toLocaleString("fr-FR")}
+          </span>
+        )}
         <span className="rfi-source">Aucun texte libre de consommateur n’est publié tel quel.</span>
       </div>
     </div>
