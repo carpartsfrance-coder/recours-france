@@ -1,0 +1,20 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+.env
+.env.local
+.env.*.local
+
+# Pièces justificatives : privées, jamais publiées, jamais versionnées.
+storage/
+
+# Boîte d'envoi de développement (aucun envoi réel en local).
+.mail-outbox/
+
+.DS_Store
+npm-debug.log*

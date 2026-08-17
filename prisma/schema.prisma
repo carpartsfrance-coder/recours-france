@@ -1,0 +1,553 @@
+// Recours France — modèle de données
+//
+// Principes structurants, opposables car affichés à l'utilisateur :
+//  1. Un signalement sans justificatif contrôlé est NON VÉRIFIÉ : il n'entre dans
+//     aucune statistique de comportement, seulement dans le volume agrégé.
+//  2. Une résolution n'est comptabilisée qu'après confirmation explicite du consommateur.
+//  3. Le score d'expérience n'est publié qu'à partir de 30 signalements vérifiés / 12 mois.
+//  4. L'indice de transparence ne dépend QUE des données publiques.
+//  5. Chaque donnée affichée porte sa source et sa date de vérification (modèle DonneeSource).
+//  6. Aucun texte libre du consommateur n'est publié tel quel.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Énumérations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Provenance d'une donnée. Affichée systématiquement à côté de la donnée.
+enum Source {
+  SIRENE
+  RNE
+  BODACC
+  MEDIATEURS
+  SITE_OFFICIEL
+  CONSOMMATEUR
+  RECOURS_FRANCE
+}
+
+enum EtatAdministratif {
+  ACTIVE
+  CESSEE
+}
+
+enum CategorieLitige {
+  REMBOURSEMENT
+  LIVRAISON
+  GARANTIE
+  SAV
+  RESILIATION
+  AUTRE
+}
+
+enum ContactPrealable {
+  ECRIT
+  TELEPHONE
+  AUCUN
+}
+
+/// Niveau de vérification d'un signalement. « verifie » suppose un justificatif
+/// contrôlé manuellement par Recours France.
+enum NiveauVerification {
+  DECLARE
+  VERIFIE
+}
+
+/// Statuts déclarés par le consommateur. Recours France ne les vérifie pas
+/// auprès du professionnel (hors périmètre MVP).
+enum StatutSignalement {
+  EN_COURS
+  REPONSE_DECLAREE
+  SOLUTION_PROPOSEE
+  RESOLUTION_PARTIELLE
+  RESOLU_CONFIRME
+  NON_RESOLU
+  ABANDONNE
+}
+
+enum EtatModeration {
+  EN_ATTENTE
+  PUBLIE
+  REJETE
+  RETIRE
+}
+
+enum EtatJustificatif {
+  EN_ATTENTE
+  CONTROLE
+  REFUSE
+}
+
+enum EtatDemande {
+  EN_ATTENTE
+  EN_COURS
+  ACCEPTEE
+  REFUSEE
+}
+
+enum TypeJetonAcces {
+  SUIVI_SIGNALEMENT
+  RECAPITULATIF_EMAIL
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Entreprises et données publiques
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Entreprise {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  siren       String  @unique
+  siretSiege  String?
+  denomination String
+  enseigne    String?
+  sigle       String?
+
+  formeJuridique     String?
+  categorieJuridique String?
+  naf                String?
+  nafLibelle         String?
+  secteur            String?
+
+  dateImmatriculation DateTime?
+  dateCessation       DateTime?
+  capital             Decimal?  @db.Decimal(16, 2)
+  devise              String?   @default("EUR")
+  trancheEffectif     String?
+  representantLegal   String?
+  numeroTva           String?
+  greffe              String?
+
+  adresseSiege String?
+  codePostal   String?
+  commune      String?
+  departement  String?
+  region       String?
+  latitude     Float?
+  longitude    Float?
+
+  etatAdministratif   EtatAdministratif @default(ACTIVE)
+  nombreEtablissements Int              @default(0)
+  nombreEtablissementsOuverts Int       @default(0)
+
+  // Coordonnées issues de l'enrichissement du site officiel ou déclarées.
+  siteWeb            String?
+  emailReclamation   String?
+  telephoneReclamation String?
+  urlCgv             String?
+  urlContactSav      String?
+  urlMentionsLegales String?
+  mediationDeclaree  String?
+
+  // Dates de dernière synchronisation, par source.
+  syncSirene       DateTime?
+  syncRne          DateTime?
+  syncBodacc       DateTime?
+  syncMediateurs   DateTime?
+  syncSiteOfficiel DateTime?
+
+  // Indices publiés (recalculés quotidiennement, historisés dans ScoreSnapshot).
+  indiceTransparence Int?
+  indiceExperience   Int?
+  indicesCalculeLe   DateTime?
+
+  vues      Int      @default(0)
+  creeeLe   DateTime @default(now())
+  majLe     DateTime @updatedAt
+
+  etablissements Etablissement[]
+  evenements     Evenement[]
+  signalements   Signalement[]
+  avis           Avis[]
+  donnees        DonneeSource[]
+  scores         ScoreSnapshot[]
+  corrections    Correction[]
+  revendications Revendication[]
+  comptes        CompteAnnuel[]
+  suivis         SuiviEntreprise[]
+  mediateur      Mediateur?      @relation(fields: [mediateurId], references: [id])
+  mediateurId    String?
+  mediateurAdhesionDepuis String?
+
+  @@index([denomination])
+  @@index([departement])
+  @@index([naf])
+  @@index([etatAdministratif])
+}
+
+model Etablissement {
+  id           String  @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  siret        String  @unique
+  estSiege     Boolean @default(false)
+  enseigne     String?
+  adresse      String?
+  codePostal   String?
+  commune      String?
+  departement  String?
+  naf          String?
+  actif        Boolean @default(true)
+  dateCreation DateTime?
+  dateFermeture DateTime?
+
+  source     Source   @default(SIRENE)
+  verifieLe  DateTime @default(now())
+
+  @@index([entrepriseId])
+}
+
+/// Événement légal enregistré : dépôt de comptes, modification, procédure collective…
+model Evenement {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  date      DateTime
+  source    Source
+  categorie String?
+  titre     String
+  detail    String?
+  reference String?
+  urlSource String?
+  /// Vrai pour une procédure collective (sauvegarde, redressement, liquidation).
+  procedureCollective Boolean @default(false)
+
+  collecteLe DateTime @default(now())
+
+  @@unique([entrepriseId, source, reference])
+  @@index([entrepriseId, date])
+}
+
+model CompteAnnuel {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  exercice      Int
+  dateCloture   DateTime?
+  dateDepot     DateTime?
+  confidentiel  Boolean  @default(false)
+  chiffreAffaires Decimal? @db.Decimal(16, 2)
+  resultatNet     Decimal? @db.Decimal(16, 2)
+
+  source    Source   @default(BODACC)
+  verifieLe DateTime @default(now())
+
+  @@unique([entrepriseId, exercice])
+}
+
+/// Traçabilité fine : pour chaque donnée affichée, sa source et sa date de vérification.
+/// Règle métier n° 6 du handoff, opposable car affichée à l'utilisateur.
+model DonneeSource {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  /// Nom du champ documenté, ex. « capital », « adresseSiege », « emailReclamation ».
+  champ     String
+  valeur    String?
+  source    Source
+  urlSource String?
+  collecteLe DateTime @default(now())
+  verifieLe  DateTime @default(now())
+
+  @@unique([entrepriseId, champ])
+  @@index([entrepriseId])
+}
+
+model ScoreSnapshot {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  transparence Int
+  experience   Int?
+  detail       Json
+  calculeLe    DateTime @default(now())
+
+  @@index([entrepriseId, calculeLe])
+}
+
+model Mediateur {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  nom            String
+  organisme      String?
+  secteurs       String[]
+  siteWeb        String?
+  email          String?
+  adresse        String?
+  telephone      String?
+  delaiInstruction String? @default("90 jours")
+  coutConsommateur String? @default("Gratuit")
+  conditionPrealable String? @default("Réclamation écrite restée sans réponse")
+  agrementCecmc  Boolean @default(true)
+
+  source    Source   @default(MEDIATEURS)
+  verifieLe DateTime @default(now())
+
+  entreprises Entreprise[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Signalements de consommateurs
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Signalement {
+  id        String @id @default(cuid())
+  /// Référence publique, format RF-AAAA-MM-NNNNN.
+  reference String @unique
+
+  entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id], onDelete: SetNull)
+  entrepriseId String?
+  /// Saisie libre lorsque l'entreprise n'a pas été trouvée dans l'annuaire.
+  /// Rapprochement avec les registres publics sous 48 heures ouvrées.
+  entrepriseLibreNom  String?
+  entrepriseLibreSite String?
+  rapprochementFait   Boolean @default(false)
+
+  categorie   CategorieLitige
+  montant     Decimal? @db.Decimal(12, 2)
+  dateFaits   DateTime
+  contactPrealable ContactPrealable
+  /// Texte libre du consommateur : JAMAIS publié tel quel (règle métier n° 7).
+  resume      String   @db.Text
+
+  prenom String
+  nom    String
+  email  String
+
+  certifie     Boolean @default(false)
+  consentement Boolean @default(false)
+
+  niveauVerification NiveauVerification @default(DECLARE)
+  verifieLe          DateTime?
+  verifiePar         String?
+
+  statut            StatutSignalement @default(EN_COURS)
+  /// Le consommateur déclare avoir reçu une réponse du professionnel.
+  reponseDeclaree   Boolean   @default(false)
+  reponseDeclareeLe DateTime?
+  /// Une résolution n'est comptabilisée qu'après confirmation explicite (règle n° 2).
+  resolutionConfirmee   Boolean   @default(false)
+  resolutionConfirmeeLe DateTime?
+
+  moderation      EtatModeration @default(PUBLIE)
+  motifModeration String?
+
+  creeLe   DateTime  @default(now())
+  majLe    DateTime  @updatedAt
+  closLe   DateTime?
+
+  ipHash     String?
+  userAgent  String?
+
+  justificatifs Justificatif[]
+  evenements    EvenementSignalement[]
+  avis          Avis[]
+  jetons        JetonAcces[]
+
+  @@index([entrepriseId, creeLe])
+  @@index([email])
+  @@index([niveauVerification])
+  @@index([statut])
+}
+
+/// Pièce déposée par le consommateur. Stockée hors du dossier public, jamais publiée.
+model Justificatif {
+  id            String @id @default(cuid())
+  signalement   Signalement @relation(fields: [signalementId], references: [id], onDelete: Cascade)
+  signalementId String
+
+  nomOrigine  String
+  typeMime    String
+  taille      Int
+  /// Chemin relatif dans storage/justificatifs — jamais servi publiquement.
+  cheminStockage String
+  sommeControle  String?
+
+  etat       EtatJustificatif @default(EN_ATTENTE)
+  controleLe DateTime?
+  controlePar String?
+  motifRefus String?
+
+  deposeLe DateTime @default(now())
+
+  @@index([signalementId])
+  @@index([etat])
+}
+
+/// Journal horodaté du signalement, alimenté par le consommateur et par l'administration.
+model EvenementSignalement {
+  id            String @id @default(cuid())
+  signalement   Signalement @relation(fields: [signalementId], references: [id], onDelete: Cascade)
+  signalementId String
+
+  date    DateTime @default(now())
+  titre   String
+  detail  String?
+  /// « CONSOMMATEUR » ou « RECOURS_FRANCE » : jamais le professionnel (hors périmètre MVP).
+  auteur  Source   @default(CONSOMMATEUR)
+  etiquette String?
+
+  @@index([signalementId, date])
+}
+
+model Avis {
+  id String @id @default(cuid())
+
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  /// Un avis rattaché à un signalement vérifié entre dans la moyenne publiée.
+  signalement   Signalement? @relation(fields: [signalementId], references: [id], onDelete: SetNull)
+  signalementId String?
+
+  note   Int
+  texte  String @db.Text
+  auteur String
+  ville  String?
+  email  String
+
+  verifie    Boolean @default(false)
+  moderation EtatModeration @default(EN_ATTENTE)
+  motifModeration String?
+
+  creeLe   DateTime  @default(now())
+  publieLe DateTime?
+
+  @@index([entrepriseId, moderation])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demandes utilisateurs
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Correction {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  champ       String
+  valeurActuelle String?
+  valeurProposee String?
+  explication String  @db.Text
+  email       String
+  qualite     String?
+
+  etat      EtatDemande @default(EN_ATTENTE)
+  reponse   String?
+  traiteLe  DateTime?
+  traitePar String?
+
+  creeLe DateTime @default(now())
+
+  @@index([entrepriseId, etat])
+}
+
+model Revendication {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  nomContact  String
+  fonction    String
+  emailPro    String
+  telephone   String?
+  siretJustifie String?
+  message     String? @db.Text
+
+  etat      EtatDemande @default(EN_ATTENTE)
+  reponse   String?
+  traiteLe  DateTime?
+  traitePar String?
+
+  creeLe DateTime @default(now())
+
+  @@index([entrepriseId, etat])
+}
+
+model SuiviEntreprise {
+  id           String @id @default(cuid())
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  entrepriseId String
+
+  email    String
+  confirme Boolean  @default(false)
+  creeLe   DateTime @default(now())
+
+  @@unique([entrepriseId, email])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Accès
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Lien signé envoyé par email : le consommateur retrouve et met à jour son
+/// signalement sans créer de compte.
+model JetonAcces {
+  id       String @id @default(cuid())
+  jeton    String @unique
+  type     TypeJetonAcces @default(SUIVI_SIGNALEMENT)
+
+  signalement   Signalement? @relation(fields: [signalementId], references: [id], onDelete: Cascade)
+  signalementId String?
+  email         String
+
+  expireLe   DateTime
+  utiliseLe  DateTime?
+  creeLe     DateTime @default(now())
+
+  @@index([email])
+}
+
+model AdminUser {
+  id    String @id @default(cuid())
+  email String @unique
+  nom   String
+  motDePasseHash String
+  role  String @default("moderateur")
+  actif Boolean @default(true)
+
+  dernierAccesLe DateTime?
+  creeLe DateTime @default(now())
+
+  sessions AdminSession[]
+  actions  JournalAction[]
+}
+
+model AdminSession {
+  id      String @id @default(cuid())
+  jeton   String @unique
+  admin   AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId String
+
+  expireLe DateTime
+  creeLe   DateTime @default(now())
+}
+
+/// Journal d'audit : toute action de modération est traçable.
+model JournalAction {
+  id      String @id @default(cuid())
+  admin   AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  adminId String?
+
+  action    String
+  cible     String
+  cibleId   String?
+  detail    String?
+  creeLe    DateTime @default(now())
+
+  @@index([creeLe])
+}
