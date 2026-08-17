@@ -44,27 +44,13 @@ export function Logo({
 }) {
   const institutionnel = habillage === "institutionnel";
   return (
-    <Link href="/" className="rf-logo" style={institutionnel ? { gap: 14 } : undefined}>
-      <span
-        className="rf-logo__marque"
-        aria-hidden="true"
-        style={institutionnel ? { width: 38, height: 38, fontSize: 14 } : undefined}
-      >
+    <Link href="/" className={`rf-logo${institutionnel ? " rf-logo--institutionnel" : ""}`}>
+      <span className="rf-logo__marque" aria-hidden="true">
         RF
       </span>
       <span>
-        <span
-          className="rf-logo__nom"
-          style={institutionnel ? { display: "block", fontSize: 19 } : { display: "block" }}
-        >
-          Recours France
-        </span>
-        <span
-          className="rf-logo__baseline"
-          style={institutionnel ? { display: "block", fontSize: 11.5, marginTop: 1 } : { display: "block" }}
-        >
-          {baseline}
-        </span>
+        <span className="rf-logo__nom">Recours France</span>
+        <span className="rf-logo__baseline">{baseline}</span>
       </span>
     </Link>
   );
@@ -84,16 +70,15 @@ type EnteteProps = {
 export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActive, habillage = "standard" }: EnteteProps) {
   const institutionnel = habillage === "institutionnel";
   return (
-    <header className="rf-entete">
-      <div className={conteneur(habillage)} style={institutionnel ? { paddingTop: 16, paddingBottom: 16 } : undefined}>
+    <header className={`rf-entete${institutionnel ? " rf-entete--institutionnel" : ""}`}>
+      <div className={conteneur(habillage)}>
         <Logo baseline={baseline} habillage={habillage} />
 
         {recherche || institutionnel ? (
           <form
-            className="rf-entete__recherche"
+            className={`rf-entete__recherche${institutionnel ? " rf-entete__recherche--institutionnel" : ""}`}
             action="/entreprises"
             role="search"
-            style={institutionnel ? { flex: "1 1 300px", maxWidth: 440 } : undefined}
           >
             <label className="rf-vh" htmlFor="recherche-entete">
               Rechercher une entreprise
@@ -105,7 +90,6 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
               name="q"
               defaultValue={valeurRecherche}
               placeholder={institutionnel ? "Nom, adresse, n° SIRET/SIREN…" : "Nom, raison sociale ou SIREN"}
-              style={institutionnel ? { background: "var(--rfi-fond-alterne)", fontSize: 14 } : undefined}
             />
             <button type="submit" className={`rf-btn ${institutionnel ? "rf-btn--marine" : "rf-btn--primaire"}`}>
               Rechercher
@@ -113,7 +97,7 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
           </form>
         ) : null}
 
-        <nav className="rf-nav" aria-label="Navigation principale" style={institutionnel ? { gap: 20 } : undefined}>
+        <nav className="rf-nav" aria-label="Navigation principale">
           {recherche || institutionnel ? null : navActive === "annuaire" ? (
             <span className="rf-nav__actif">Annuaire des entreprises</span>
           ) : (
@@ -148,8 +132,8 @@ export function FilAriane({ items, habillage = "standard" }: { items: MailleFil[
     ? { color: "var(--rf-texte-3)", textDecoration: "none" as const }
     : undefined;
   return (
-    <nav className="rf-fil" aria-label="Fil d’Ariane">
-      <div className={conteneur(habillage)} style={institutionnel ? { paddingTop: 9, paddingBottom: 9 } : undefined}>
+    <nav className={`rf-fil${institutionnel ? " rf-fil--institutionnel" : ""}`} aria-label="Fil d’Ariane">
+      <div className={conteneur(habillage)}>
         <Link href="/" style={styleLien}>
           Accueil
         </Link>
