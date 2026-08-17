@@ -1736,3 +1736,528 @@ button {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Fiche entreprise — direction artistique institutionnelle (handoff v2)
+   Bleu institutionnel #16235C, sections ouvertes par un filet et non
+   encadrées, couleurs d'état désaturées employées comme signal.
+   Portée : la fiche entreprise et ses composants (préfixe .rfi-).
+   ========================================================================== */
+
+:root {
+  --rfi-marine: #16235c;
+  --rfi-marine-survol: #101528;
+  --rfi-lien-survol: #1e4bd2;
+  --rfi-fond-alterne: #f8fafd;
+  --rfi-filet: #e4e9f2;
+  --rfi-filet-ligne: #eef1f7;
+  --rfi-separateur-inline: #c7cede;
+
+  --rfi-vert: #1b7a4b;
+  --rfi-vert-fond: #edf6f0;
+  --rfi-ambre: #8a5200;
+  --rfi-ambre-fond: #fbf3e8;
+  --rfi-rouge: #a32a22;
+  --rfi-rouge-fond: #fbeeec;
+  --rfi-neutre: #5f6673;
+  --rfi-neutre-fond: #f2f4f8;
+  --rfi-verifie-fond: #edf1fa;
+
+  --rfi-barre-1: #16235c;
+  --rfi-barre-2: #4a5f9e;
+  --rfi-barre-3: #8b96b4;
+}
+
+.rfi {
+  color: var(--rf-encre);
+}
+/* Les liens de contenu passent en bleu institutionnel. Les boutons, l'en-tête,
+   le pied de page et le bloc marine conservent leurs propres contrastes. */
+.rfi main a:not([class*="btn"]):not([class*="bouton"]) {
+  color: var(--rfi-marine);
+}
+.rfi main a:not([class*="btn"]):not([class*="bouton"]):hover {
+  color: var(--rfi-lien-survol);
+}
+.rfi .rf-entete .rf-nav a:not([class*="btn"]) {
+  color: var(--rfi-marine);
+}
+.rfi .rf-entete .rf-nav a:not([class*="btn"]):hover {
+  color: var(--rfi-lien-survol);
+}
+.rfi main .rfi-section--marine a:not([class*="bouton"]) {
+  color: var(--rf-sur-marine);
+}
+.rfi main .rfi-section--marine a:not([class*="bouton"]):hover {
+  color: #fff;
+}
+
+.rfi-conteneur {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* Sections : ouvertes par un filet, jamais encadrées. */
+.rfi-section {
+  padding: 34px 0 38px;
+}
+.rfi-section--filet {
+  border-top: 1px solid var(--rfi-filet);
+}
+.rfi-section--dominante {
+  border-top: 2px solid var(--rfi-marine);
+  padding: 34px 0 40px;
+}
+.rfi-section--alternee {
+  background: var(--rfi-fond-alterne);
+  border-top: 1px solid var(--rfi-filet);
+}
+.rfi-section--marine {
+  background: var(--rfi-marine);
+  color: #fff;
+}
+.rfi-ouverture {
+  border-top: 1px solid var(--rfi-marine);
+}
+.rfi-ouverture--legere {
+  border-top: 1px solid var(--rfi-filet);
+}
+
+.rfi-h1 {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+.rfi-h2 {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.rfi-h2--secondaire {
+  font-size: 20px;
+  letter-spacing: -0.015em;
+}
+.rfi-h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.rfi-h3--petit {
+  font-size: 15px;
+}
+.rfi-chapo {
+  font-size: 14px;
+  color: var(--rf-texte-2);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.rfi-source {
+  font-size: 12px;
+  color: var(--rf-texte-3);
+  line-height: 1.5;
+}
+.rfi-legende {
+  font-size: 12.5px;
+  color: var(--rf-texte-3);
+  line-height: 1.6;
+}
+.rfi-etiquette {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rf-texte-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rfi-sep {
+  color: var(--rfi-separateur-inline);
+}
+
+.rfi-entete-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.rfi-entete-section > div:first-child {
+  max-width: 760px;
+}
+
+/* Bandeau de chiffres : filet vertical sur chaque tuile sauf la première. */
+.rfi-chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  border-top: 1px solid var(--rfi-marine);
+  border-bottom: 1px solid var(--rfi-filet);
+  margin-top: 22px;
+}
+.rfi-chiffre {
+  min-width: 0;
+  padding: 22px 24px 20px;
+  border-left: 1px solid var(--rfi-filet);
+}
+.rfi-chiffre:first-child {
+  border-left: 0;
+}
+.rfi-chiffre__valeur {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rfi-chiffre__libelle {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rf-encre);
+  line-height: 1.4;
+  margin-top: 11px;
+}
+.rfi-chiffre__base {
+  font-size: 12px;
+  color: var(--rf-texte-3);
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.rfi-deux-colonnes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
+  gap: 44px;
+  align-items: start;
+}
+.rfi-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 18px 44px;
+}
+.rfi-grille--160 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 14px 20px;
+}
+.rfi-grille--250 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 8px 28px;
+}
+.rfi-grille--330 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: 44px;
+}
+/* Données publiques : 4 colonnes fixes, 8 items = 2 rangées pleines. */
+.rfi-faits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--rfi-marine);
+  margin-top: 20px;
+}
+.rfi-fait {
+  padding: 15px 20px 15px 0;
+  border-bottom: 1px solid var(--rfi-filet-ligne);
+  min-width: 0;
+}
+.rfi-fait__valeur {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rf-encre);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* Badges d'état, désaturés. */
+.rfi-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.rfi-badge--verifie {
+  background: var(--rfi-verifie-fond);
+  color: var(--rfi-marine);
+}
+.rfi-badge--neutre {
+  background: var(--rfi-neutre-fond);
+  color: var(--rfi-neutre);
+}
+.rfi-statut {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+.rfi-statut--vert {
+  background: var(--rfi-vert-fond);
+  color: var(--rfi-vert);
+}
+.rfi-statut--ambre {
+  background: var(--rfi-ambre-fond);
+  color: var(--rfi-ambre);
+}
+.rfi-statut--rouge {
+  background: var(--rfi-rouge-fond);
+  color: var(--rfi-rouge);
+}
+.rfi-statut--neutre {
+  background: var(--rfi-neutre-fond);
+  color: var(--rfi-neutre);
+}
+
+/* Boutons et liens d'action. */
+.rfi-bouton {
+  display: block;
+  background: var(--rfi-marine);
+  color: #fff;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 22px;
+  text-decoration: none;
+  min-height: 44px;
+}
+.rfi-bouton:hover {
+  background: var(--rfi-marine-survol);
+  color: #fff;
+}
+.rfi-bouton--blanc {
+  background: #fff;
+  color: var(--rfi-marine);
+  font-size: 17px;
+  font-weight: 700;
+  padding: 18px;
+}
+.rfi-bouton--blanc:hover {
+  background: var(--rf-badge-bleu);
+  color: var(--rfi-marine);
+}
+.rfi-lien-action {
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--rfi-marine);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+}
+.rfi-lien-action:hover {
+  color: var(--rfi-lien-survol);
+}
+.rfi-filtre {
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--rf-texte-3);
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+.rfi-filtre[aria-pressed="true"] {
+  font-weight: 600;
+  color: var(--rfi-marine);
+  text-decoration: underline;
+}
+
+/* Lignes de dossiers. */
+.rfi-dossier {
+  border-bottom: 1px solid var(--rfi-filet-ligne);
+  padding: 18px 0;
+}
+.rfi-dossier__tete {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.rfi-dossier__detail {
+  background: var(--rfi-fond-alterne);
+  padding: 18px 20px;
+  margin-top: 15px;
+}
+
+/* Barres de motifs, 4 px. */
+.rfi-barre {
+  height: 4px;
+  background: var(--rfi-filet-ligne);
+  margin-top: 6px;
+}
+.rfi-barre > span {
+  display: block;
+  height: 4px;
+  background: var(--rfi-marine);
+}
+
+/* Rubriques dépliables. */
+.rfi-rubrique {
+  border-bottom: 1px solid var(--rfi-filet);
+}
+.rfi-rubrique__bouton {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  color: inherit;
+}
+.rfi-rubrique__titre {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--rf-encre);
+}
+.rfi-rubrique__indice {
+  display: block;
+  font-size: 12.5px;
+  color: var(--rf-texte-3);
+  margin-top: 3px;
+}
+.rfi-rubrique__action {
+  font-size: 13px;
+  color: var(--rfi-marine);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rfi-rubrique__signe {
+  font-size: 17px;
+  color: var(--rf-texte-3);
+  line-height: 1;
+}
+.rfi-rubrique__contenu {
+  padding: 2px 0 24px;
+}
+
+/* Tableaux internes (comptes, critères). */
+.rfi-tete-tableau {
+  display: flex;
+  border-bottom: 1px solid var(--rfi-marine);
+  padding-bottom: 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--rf-texte-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rfi-ligne-tableau {
+  display: flex;
+  border-bottom: 1px solid var(--rfi-filet-ligne);
+  padding: 12px 0;
+  font-size: 14px;
+  align-items: baseline;
+}
+.rfi-paire {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rfi-filet-ligne);
+  align-items: baseline;
+}
+.rfi-paire > span:first-child {
+  font-size: 13.5px;
+  color: var(--rf-texte-3);
+}
+.rfi-paire > span:last-child {
+  font-size: 13.5px;
+  color: var(--rf-encre);
+  text-align: right;
+}
+
+/* Points de vigilance : gravité | contenu | source. */
+.rfi-alerte {
+  border-bottom: 1px solid var(--rfi-filet);
+  padding: 17px 0;
+  display: grid;
+  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr) minmax(140px, 180px);
+  gap: 24px;
+  align-items: baseline;
+}
+.rfi-alerte__niveau {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.rfi-alerte__carre {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  display: block;
+}
+
+/* En-tête entreprise : le bouton passe sous l'identité en dessous de 760 px. */
+@media (max-width: 760px) {
+  .rfi-entete-entreprise {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 20px !important;
+  }
+  .rfi-entete-entreprise > div:last-child {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .rfi-deux-colonnes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .rfi-faits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .rfi-conteneur {
+    padding: 0 20px;
+  }
+  .rfi-h1 {
+    font-size: 28px;
+  }
+  .rfi-h2 {
+    font-size: 21px;
+  }
+  .rfi-h2--secondaire {
+    font-size: 18px;
+  }
+  .rfi-chiffre {
+    padding: 18px 16px;
+    border-left: 0;
+    border-bottom: 1px solid var(--rfi-filet);
+  }
+  .rfi-chiffre__valeur {
+    font-size: 28px;
+  }
+  .rfi-faits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rfi-alerte {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .rfi-alerte > div:last-child {
+    text-align: left !important;
+  }
+  .rfi-tete-tableau,
+  .rfi-ligne-tableau {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+}

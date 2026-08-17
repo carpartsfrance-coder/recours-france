@@ -74,7 +74,8 @@ export function formatDateLongue(valeur: Date | string | null | undefined): stri
   if (!valeur) return "—";
   const d = valeur instanceof Date ? valeur : new Date(valeur);
   if (Number.isNaN(d.getTime())) return "—";
-  return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+  const jour = d.getDate() === 1 ? "1er" : String(d.getDate());
+  return `${jour} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export function formatDateCourte(valeur: Date | string | null | undefined): string {
@@ -82,7 +83,8 @@ export function formatDateCourte(valeur: Date | string | null | undefined): stri
   const d = valeur instanceof Date ? valeur : new Date(valeur);
   if (Number.isNaN(d.getTime())) return "—";
   const abbr = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-  return `${d.getDate()} ${abbr[d.getMonth()]} ${d.getFullYear()}`;
+  const jour = d.getDate() === 1 ? "1er" : String(d.getDate());
+  return `${jour} ${abbr[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export function formatDateISO(valeur: Date | string | null | undefined): string {
@@ -281,6 +283,22 @@ export function tronquer(texte: string, longueur: number): string {
 export function auteurAnonyme(prenom: string, nom: string): string {
   const initiale = nom.trim().charAt(0).toUpperCase();
   return initiale ? `${prenom.trim()} ${initiale}.` : prenom.trim();
+}
+
+/**
+ * Qualité d'un dirigeant, sans son nom.
+ * Le nom des personnes physiques dirigeantes n'est pas publié sur une fiche :
+ * seule leur fonction l'est.
+ */
+export function qualiteDirigeant(representantLegal: string | null | undefined): string | null {
+  if (!representantLegal) return null;
+  const apresVirgule = representantLegal.includes(",")
+    ? representantLegal.slice(representantLegal.lastIndexOf(",") + 1)
+    : null;
+  const brut = (apresVirgule ?? representantLegal).replace(/[()]/g, "").trim();
+  // Sans qualité identifiable, on n'affiche jamais la chaîne d'origine.
+  if (!brut || /\d/.test(brut) || brut === representantLegal.trim()) return "Représentant légal";
+  return brut.charAt(0).toUpperCase() + brut.slice(1);
 }
 
 export function masquerEmail(email: string): string {

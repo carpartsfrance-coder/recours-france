@@ -40,6 +40,10 @@ export type StatistiquesEntreprise = {
   avecReponse: number;
   tauxReponse: number | null;
   clotures: number;
+  /** Dossiers vérifiés non clôturés à ce jour, quel que soit leur statut déclaré. */
+  enCours: number;
+  /** Ancienneté, en jours, de chaque dossier vérifié encore ouvert. */
+  ouverts: { jours: number }[];
   resolus: number;
   tauxResolution: number | null;
   nonResolus: number;
@@ -80,6 +84,12 @@ export async function statistiquesEntreprise(entrepriseId: string): Promise<Stat
   );
   const resolus = clotures.filter((s) => s.resolutionConfirmee).length;
   const nonResolus = clotures.length - resolus;
+
+  // Dossiers vérifiés encore ouverts : base des points de vigilance sur les délais.
+  const ouverts = verifies
+    .filter((s) => s.closLe === null && !STATUTS_CLOTURE.includes(s.statut as (typeof STATUTS_CLOTURE)[number]))
+    .map((s) => ({ jours: Math.max(0, Math.round((Date.now() - s.creeLe.getTime()) / JOUR)) }))
+    .sort((a, b) => b.jours - a.jours);
 
   // Délai médian : uniquement sur les résolutions confirmées.
   const delais = verifies
@@ -137,6 +147,8 @@ export async function statistiquesEntreprise(entrepriseId: string): Promise<Stat
     avecReponse,
     tauxReponse: verifies.length ? (avecReponse / verifies.length) * 100 : null,
     clotures: clotures.length,
+    enCours: ouverts.length,
+    ouverts,
     resolus,
     tauxResolution: clotures.length ? (resolus / clotures.length) * 100 : null,
     nonResolus,
