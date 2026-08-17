@@ -35,12 +35,12 @@ export default async function LayoutInterne({ children }: { children: React.Reac
       <nav className="rf-admin__nav" aria-label="Navigation de l’administration">
         <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "center", gap: 12 }}>
           <Image
-            src="/pictogramme-rf.png"
+            src="/pictogramme-rf-blanc.png"
             alt=""
             aria-hidden="true"
-            width={30}
+            width={36}
             height={32}
-            style={{ height: 32, width: "auto", filter: "brightness(0) invert(1)" }}
+            style={{ height: 32, width: "auto" }}
           />
           <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>Recours France</span>
           <span style={{ color: "var(--rf-sur-nuit)", fontWeight: 600, fontSize: 12.5 }}>Administration</span>

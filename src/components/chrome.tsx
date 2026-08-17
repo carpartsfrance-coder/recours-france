@@ -11,8 +11,10 @@ const LOGO = {
   verrou: "/recours-france.png",
   verrouBlanc: "/recours-france-blanc.png",
   picto: "/pictogramme-rf.png",
+  pictoBlanc: "/pictogramme-rf-blanc.png",
   ratioVerrou: 1205 / 325,
-  ratioPicto: 272 / 287,
+  // Pictogramme + filet tricolore : le filet fait partie de la marque.
+  ratioPicto: 352 / 309,
 };
 
 const DEMO = process.env.DEMO_BANNER !== "false";
