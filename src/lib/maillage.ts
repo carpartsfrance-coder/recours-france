@@ -231,14 +231,25 @@ export async function voisines(entreprise: {
   secteur: string | null;
   departement: string | null;
   commune: string | null;
+  communeSlug: string | null;
 }): Promise<{ memeVille: Voisine[]; memeDepartement: Voisine[]; memeSecteur: Voisine[] }> {
   const hors = { siren: { not: entreprise.siren } };
   const actives = { etatAdministratif: "ACTIVE" as const };
 
   const [memeVille, memeDepartement, memeSecteur] = await Promise.all([
-    entreprise.commune && entreprise.secteur
+    // Sur la forme normalisée, et avec le département : c'est la seule
+    // combinaison que couvre l'index composite. Filtrer sur le libellé de
+    // commune, un texte sans index, coûtait 1 327 ms — l'essentiel du temps
+    // d'affichage de la fiche.
+    entreprise.communeSlug && entreprise.departement && entreprise.secteur
       ? prisma.entreprise.findMany({
-          where: { ...hors, ...actives, commune: entreprise.commune, secteur: entreprise.secteur },
+          where: {
+            ...hors,
+            ...actives,
+            secteur: entreprise.secteur,
+            departement: entreprise.departement,
+            communeSlug: entreprise.communeSlug,
+          },
           select: CHAMPS,
           orderBy: { denomination: "asc" },
           take: 8,
