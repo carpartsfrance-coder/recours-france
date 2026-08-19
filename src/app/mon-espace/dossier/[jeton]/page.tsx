@@ -9,6 +9,8 @@ import { construireGuide, type Categorie, type ContactPrealable } from "@/lib/de
 import { NOMBRE_MAX } from "@/lib/upload-constantes";
 import {
   FormulaireCloture,
+  FormulaireContestation,
+  FormulaireRappels,
   FormulairePieces,
   FormulaireReponse,
   FormulaireResolution,
@@ -22,6 +24,9 @@ import {
   formatMontant,
   LIBELLES_CATEGORIE,
   LIBELLES_STATUT,
+  avecJustificatif,
+  LIBELLES_VERIFICATION_COURTS,
+  LIBELLES_VERIFICATION,
 } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -40,15 +45,19 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
     include: {
       entreprise: { include: { mediateur: true } },
       justificatifs: { orderBy: { deposeLe: "desc" } },
+      contestations: { where: { etat: "PIECE_DEMANDEE" }, orderBy: { creeLe: "desc" }, take: 1 },
       evenements: { orderBy: { date: "desc" } },
     },
   });
   if (!signalement) notFound();
 
   const supprime = signalement.moderation === "RETIRE";
+  // Une contestation en cours prime sur tout le reste : sans réponse avant
+  // l'échéance, la publication tombe.
+  const contestation = signalement.contestations[0] ?? null;
   const entreprise = signalement.entreprise;
   const nomEntreprise = entreprise?.denomination ?? signalement.entrepriseLibreNom ?? "Entreprise non identifiée";
-  const verifie = signalement.niveauVerification === "VERIFIE";
+  const verifie = avecJustificatif(signalement.niveauVerification);
   const clos = signalement.closLe !== null;
 
   const guide = construireGuide({
@@ -60,12 +69,12 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
     mediateur: entreprise?.mediateur ?? null,
   });
 
-  // Avancement : 1 déposé · 2 vérifié · 3 réclamation écrite · 4 médiation possible · 5 clôture
+  // Avancement : 1 déposé · 2 justificatif · 3 réclamation écrite · 4 médiation possible · 5 clôture
   const ouvertureMediation = guide.etapes[3].echeance ?? new Date();
   const etapeCourante = clos ? 5 : Date.now() >= ouvertureMediation.getTime() ? 4 : verifie ? 3 : 2;
   const etapes = [
     { titre: "Signalement déposé", note: formatDate(signalement.creeLe) },
-    { titre: "Signalement vérifié", note: verifie ? formatDate(signalement.verifieLe) : "en attente de pièce" },
+    { titre: "Justificatif déposé", note: verifie ? formatDate(signalement.verifieLe) : "en attente de pièce" },
     {
       titre: "Réclamation écrite",
       note: signalement.contactPrealable === "ECRIT" ? "déclarée effectuée" : "à votre initiative",
@@ -82,7 +91,7 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
     { cle: "Catégorie", valeur: LIBELLES_CATEGORIE[signalement.categorie] },
     { cle: "Montant déclaré", valeur: signalement.montant ? formatMontant(Number(signalement.montant)) : "non déclaré" },
     { cle: "Date des faits", valeur: formatDateLongue(signalement.dateFaits) },
-    { cle: "Niveau de vérification", valeur: verifie ? "✓ Vérifié" : "Déclaré" },
+    { cle: "Niveau de preuve", valeur: LIBELLES_VERIFICATION_COURTS[signalement.niveauVerification] },
     { cle: "Statut", valeur: LIBELLES_STATUT[signalement.statut] },
     { cle: "Réponse déclarée", valeur: signalement.reponseDeclaree ? "oui" : "non" },
   ];
@@ -98,12 +107,28 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
       ) : null}
 
       {/* ── En-tête du signalement ───────────────────────────────────────── */}
+      {contestation ? (
+        <section className="rf-conteneur" style={{ padding: "24px 32px 0" }}>
+          <div
+            className="rf-carte"
+            style={{ padding: "22px 26px", border: "2px solid var(--rf-ambre, #8a5200)" }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Une réponse vous est demandée</div>
+            <FormulaireContestation
+              jeton={jeton}
+              echeance={formatDateLongue(contestation.echeanceReponse ?? new Date())}
+              aUneiece={signalement.justificatifs.length > 0}
+            />
+          </div>
+        </section>
+      ) : null}
+
       <section className="rf-conteneur" style={{ padding: "32px 32px 28px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
           <div style={{ flex: "1 1 520px", minWidth: 0 }}>
             <div className="rf-ligne" style={{ gap: 8, marginBottom: 14 }}>
               <span className={`rf-badge rf-badge--sm ${verifie ? "rf-badge--verifie" : "rf-badge--non-verifie"}`}>
-                {verifie ? "✓ Signalement vérifié" : "Signalement déclaré"}
+                {LIBELLES_VERIFICATION[signalement.niveauVerification]}
               </span>
               <span className={classeBadgeStatut(signalement.statut)}>{LIBELLES_STATUT[signalement.statut]}</span>
               <span className="rf-badge rf-badge--contour">{LIBELLES_CATEGORIE[signalement.categorie]}</span>
@@ -239,8 +264,8 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
                   titre="Ajouter un justificatif"
                   sousTitre={
                     verifie
-                      ? "Votre signalement est déjà vérifié — vous pouvez compléter le dossier"
-                      : "Une pièce contrôlée fait passer votre signalement en signalement vérifié"
+                      ? "Votre signalement est déjà accompagné d’un justificatif — vous pouvez compléter le dossier"
+                      : "Une pièce déposée est horodatée et scellée, et appuie votre signalement"
                   }
                   ouvertParDefaut={!verifie}
                 >
@@ -253,6 +278,17 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
                   <FormulaireCloture jeton={jeton} />
                 </Accordeon>
               ) : null}
+
+                <Accordeon
+                  titre="Rappels d’échéance"
+                  sousTitre={
+                    signalement.relancesActives
+                      ? "Vous êtes prévenu le jour où une démarche devient possible"
+                      : "Désactivés pour ce dossier"
+                  }
+                >
+                  <FormulaireRappels jeton={jeton} actifs={signalement.relancesActives} />
+                </Accordeon>
 
               <Accordeon titre="Supprimer mon signalement" sousTitre="Suppression définitive, sur simple demande, sans justification">
                 <FormulaireSuppression jeton={jeton} />
@@ -318,7 +354,7 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
               </div>
             ))}
             <p className="rf-carte__pied">
-              Les pièces déposées restent privées. Elles servent uniquement à vérifier la réalité du
+              Les pièces déposées restent privées. Elles servent uniquement à établir la réalité du
               signalement et ne sont jamais publiées.
             </p>
           </div>
@@ -456,7 +492,7 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
             <div className="rf-carte" style={{ padding: "18px 20px" }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>Votre signalement compte</div>
               <p className="rf-texte rf-mt-8" style={{ fontSize: 13 }}>
-                Une fois vérifié, votre signalement alimente les statistiques publiques de l’entreprise, sous
+                Accompagné d’un justificatif, votre signalement alimente les statistiques publiques de l’entreprise, sous
                 forme agrégée et anonyme. Aucun texte libre n’est publié.
               </p>
               <p className="rf-mt-10">
@@ -485,7 +521,7 @@ export default async function Dossier({ params }: { params: Promise<{ jeton: str
 }
 
 function prochaineAction(contact: string, verifie: boolean, reponse: boolean, jours: number): string {
-  if (!verifie) return "Ajoutez un justificatif pour faire vérifier votre signalement";
+  if (!verifie) return "Ajoutez un justificatif pour appuyer votre signalement";
   if (contact !== "ECRIT") return "Envoyez votre réclamation écrite au professionnel";
   if (!reponse) return jours > 0 ? `Attendre la réponse du professionnel — ${jours} jours avant la médiation` : "Saisir le médiateur de la consommation";
   return "Enregistrez la suite donnée, ou confirmez la résolution";
@@ -493,7 +529,7 @@ function prochaineAction(contact: string, verifie: boolean, reponse: boolean, jo
 
 function detailProchaineAction(contact: string, verifie: boolean, reponse: boolean, dateMediation: string): string {
   if (!verifie)
-    return "Une facture, une confirmation de commande ou un échange avec le professionnel suffit. Le contrôle prend 48 heures ouvrées et vos pièces ne sont jamais publiées.";
+    return "Une facture, une confirmation de commande ou un échange avec le professionnel suffit. La pièce est horodatée et scellée immédiatement, et n’est jamais publiée.";
   if (contact !== "ECRIT")
     return `Le modèle de relance ci-dessus est prérempli avec les références de votre signalement. Une réclamation écrite est indispensable : elle conditionne la saisine du médiateur, possible à partir du ${dateMediation}.`;
   if (!reponse)

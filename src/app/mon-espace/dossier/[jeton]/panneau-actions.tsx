@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import {
   ajouterJustificatif,
+  basculerRappels,
+  repondreContestation,
   cloturerSignalement,
   confirmerResolution,
   enregistrerReponse,
@@ -103,9 +105,9 @@ export function FormulairePieces({ jeton, restant }: { jeton: string; restant: n
     <form action={action}>
       <input type="hidden" name="jeton" value={jeton} />
       <p className="rf-texte" style={{ fontSize: 13.5 }}>
-        Une pièce contrôlée fait passer votre signalement en ✓ signalement vérifié : il entre alors dans les
-        statistiques publiques de l’entreprise, sous forme agrégée et anonyme. Vos pièces ne sont jamais
-        publiées.
+        Votre pièce est enregistrée, horodatée et scellée. Elle n’est pas examinée systématiquement : elle
+        le sera si l’entreprise conteste votre signalement. Un dossier accompagné d’un justificatif entre
+        dans les statistiques publiques, sous forme agrégée et anonyme. Vos pièces ne sont jamais publiées.
       </p>
       <label className="rf-depot rf-mt-14" htmlFor="pieces-fichier">
         <span style={{ display: "block", fontSize: 14.5, fontWeight: 700 }}>Déposer une pièce</span>
@@ -173,6 +175,63 @@ export function FormulaireCloture({ jeton }: { jeton: string }) {
       </p>
       <button type="submit" className="rf-btn rf-btn--neutre rf-mt-14" disabled={enCours}>
         {enCours ? "Clôture…" : "Clôturer le signalement"}
+      </button>
+      <Retour etat={etat} />
+    </form>
+  );
+}
+
+export function FormulaireContestation({
+  jeton,
+  echeance,
+  aUneiece,
+}: {
+  jeton: string;
+  echeance: string;
+  aUneiece: boolean;
+}) {
+  const [etat, action, enCours] = useActionState<EtatDossier, FormData>(repondreContestation, {});
+  return (
+    <form action={action}>
+      <input type="hidden" name="jeton" value={jeton} />
+      <p className="rf-texte" style={{ fontSize: 14.5, fontWeight: 600 }}>
+        L’entreprise conteste l’authenticité de votre signalement.
+      </p>
+      <p className="rf-texte rf-mt-8" style={{ fontSize: 13.5 }}>
+        {aUneiece
+          ? `Confirmez votre signalement avant le ${echeance}. Votre pièce sera examinée — elle n’est ni publiée, ni transmise à l’entreprise.`
+          : `Déposez d’abord une pièce justificative avec « Ajouter un justificatif », puis confirmez ici avant le ${echeance}.`}
+      </p>
+      <p className="rf-texte rf-mt-8" style={{ fontSize: 13.5, fontWeight: 600 }}>
+        Sans réponse à cette date, votre signalement est retiré de la publication. Votre dossier personnel et
+        vos démarches restent accessibles.
+      </p>
+      <button type="submit" className="rf-btn rf-btn--primaire rf-mt-14" disabled={enCours || !aUneiece}>
+        {enCours ? "Envoi…" : "Confirmer mon signalement"}
+      </button>
+      <Retour etat={etat} />
+    </form>
+  );
+}
+
+export function FormulaireRappels({ jeton, actifs }: { jeton: string; actifs: boolean }) {
+  const [etat, action, enCours] = useActionState<EtatDossier, FormData>(basculerRappels, {});
+  return (
+    <form action={action}>
+      <input type="hidden" name="jeton" value={jeton} />
+      <input type="hidden" name="activer" value={actifs ? "non" : "oui"} />
+      <p className="rf-texte" style={{ fontSize: 13.5 }}>
+        {actifs
+          ? "Vous recevez un rappel le jour où une démarche devient possible : la relance écrite à trente jours, puis l’ouverture de la médiation. Aucun autre message ne vous est envoyé."
+          : "Les rappels sont désactivés pour ce dossier. Les échéances restent affichées ci-dessus, mais rien ne vous sera envoyé."}
+      </p>
+      <p className="rf-legende rf-mt-10">
+        Une exception : si l’entreprise entre en procédure collective, vous serez prévenu même sans rappels.
+        Le délai de déclaration de créance est de deux mois, et son dépassement éteint définitivement votre
+        droit à réclamer.
+      </p>
+      <button type="submit" className="rf-btn rf-btn--neutre rf-mt-14" disabled={enCours}>
+        {enCours ? "Enregistrement…" : actifs ? "Ne plus recevoir de rappels" : "Recevoir à nouveau les rappels"}
       </button>
       <Retour etat={etat} />
     </form>

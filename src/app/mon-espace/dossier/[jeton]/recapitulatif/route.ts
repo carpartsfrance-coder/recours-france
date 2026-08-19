@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { resoudreJetonSuivi } from "@/lib/auth";
 import { genererPdf } from "@/lib/pdf";
 import { construireGuide, type Categorie, type ContactPrealable } from "@/lib/demarches";
-import { adressePostale, formatDateLongue, formatMontant, LIBELLES_CATEGORIE, LIBELLES_STATUT } from "@/lib/format";
+import { adressePostale, formatDateLongue, formatMontant, LIBELLES_CATEGORIE, LIBELLES_STATUT, avecJustificatif} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ jet
 
   const entreprise = signalement.entreprise;
   const nomEntreprise = entreprise?.denomination ?? signalement.entrepriseLibreNom ?? "Entreprise non identifiée";
-  const verifie = signalement.niveauVerification === "VERIFIE";
+  const verifie = avecJustificatif(signalement.niveauVerification);
 
   const guide = construireGuide({
     categorie: signalement.categorie as Categorie,
@@ -83,7 +83,12 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ jet
 
       { type: "filet" },
       { type: "titre", texte: "Faits declares" },
-      { type: "paragraphe", texte: signalement.resume },
+      {
+        type: "paragraphe",
+        texte:
+          signalement.resume ??
+          "Aucun recit libre n'a ete saisi. Les elements structures ci-dessus decrivent le litige.",
+      },
       {
         type: "petit",
         texte:

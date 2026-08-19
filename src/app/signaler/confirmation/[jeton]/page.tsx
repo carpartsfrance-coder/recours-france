@@ -5,8 +5,19 @@ import { Page } from "@/components/chrome";
 import { Puce } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { resoudreJetonSuivi } from "@/lib/auth";
-import { construireGuide, type Categorie, type ContactPrealable } from "@/lib/demarches";
-import { formatDateLongue, formatMontant, LIBELLES_CATEGORIE, masquerEmail } from "@/lib/format";
+import { construireGuide, modeleRelance, type Categorie, type ContactPrealable } from "@/lib/demarches";
+import { echeances } from "@/lib/relances";
+import { CopierTexte } from "./copier-texte";
+import {
+  adressePostale,
+  formatDateLongue,
+  formatMontant,
+  LIBELLES_CATEGORIE,
+  masquerEmail,
+  avecJustificatif,
+  LIBELLES_VERIFICATION_COURTS,
+  LIBELLES_VERIFICATION,
+} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Signalement enregistré", robots: { index: false, follow: false } };
@@ -23,15 +34,37 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
         include: { mediateur: true },
       })
     : null;
-  const nbPieces = await prisma.justificatif.count({ where: { signalementId: signalement.id } });
+  const pieces = await prisma.justificatif.findMany({
+    where: { signalementId: signalement.id },
+    select: { nomOrigine: true, conseil: true },
+  });
+  const nbPieces = pieces.length;
+  // Conseils du contrôle automatique : purement indicatifs, jamais bloquants.
+  // La pièce est enregistrée quoi qu'il arrive.
+  const conseils = pieces.filter((p) => p.conseil);
 
   const nomEntreprise = entreprise?.denomination ?? signalement.entrepriseLibreNom ?? "Entreprise non identifiée";
+  // Les deux seules dates qui comptent pour l'utilisateur, et les seules que
+  // Recours France soit en mesure de lui rappeler le jour venu.
+  const { relance30j, ouvertureMediation } = echeances(signalement.creeLe, signalement.contactPrealable);
+
+  const courrier = modeleRelance({
+    reference: signalement.reference,
+    entreprise: nomEntreprise,
+    adresseEntreprise: entreprise ? adressePostale(entreprise) : null,
+    categorie: signalement.categorie as Categorie,
+    montant: signalement.montant ? formatMontant(Number(signalement.montant)) : null,
+    dateFaits: signalement.dateFaits,
+    prenom: signalement.prenom,
+    nom: signalement.nom,
+  });
+
   const guide = construireGuide({
     categorie: signalement.categorie as Categorie,
     contactPrealable: signalement.contactPrealable as ContactPrealable,
     dateSignalement: signalement.creeLe,
     reference: signalement.reference,
-    verifie: signalement.niveauVerification === "VERIFIE",
+    verifie: avecJustificatif(signalement.niveauVerification),
     mediateur: entreprise?.mediateur ?? null,
   });
 
@@ -42,7 +75,7 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
     { cle: "Déposé le", valeur: formatDateLongue(signalement.creeLe) },
     {
       cle: "Niveau de vérification",
-      valeur: signalement.niveauVerification === "VERIFIE" ? "Vérifié" : "Déclaré",
+      valeur: LIBELLES_VERIFICATION_COURTS[signalement.niveauVerification],
     },
   ];
 
@@ -51,9 +84,9 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
       n: "1",
       titre: "Vérification",
       desc: nbPieces
-        ? `Vos ${nbPieces} pièce${nbPieces > 1 ? "s" : ""} sont en attente de contrôle. Nous vérifions la cohérence du nom, de la date et du montant. Le signalement passe alors en signalement vérifié.`
-        : "Si vous ajoutez un justificatif, nous contrôlons la relation commerciale sous 48 heures ouvrées. Le signalement passe alors en signalement vérifié.",
-      quand: nbPieces ? "Sous 48 h ouvrées" : "Sous 48 h ouvrées, après ajout d’une pièce",
+        ? `Vos ${nbPieces} pièce${nbPieces > 1 ? "s" : ""} sont enregistrées, horodatées et scellées. Elles ne sont pas examinées systématiquement : elles le seront si l’entreprise conteste votre signalement.`
+        : "Ajoutez un justificatif : il sera horodaté et scellé, et votre dossier entrera dans les statistiques publiques de l’entreprise.",
+      quand: nbPieces ? "Immédiat" : "Dès l’ajout d’une pièce",
       actif: true,
     },
     {
@@ -105,6 +138,10 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
         : "Non identifié pour cette entreprise : le médiateur doit figurer dans ses conditions générales.",
     },
     {
+      titre: "Veille sur les publications légales",
+      desc: "Procédure collective ou cessation d’activité : vous êtes prévenu, avec le délai qui court.",
+    },
+    {
       titre: "Démarches officielles disponibles",
       desc: "Notamment SignalConso lorsqu’elles sont pertinentes pour votre situation.",
     },
@@ -145,14 +182,40 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
               Signalement enregistré
             </span>
             <h1 className="rf-h1" style={{ fontSize: 38, marginTop: 18, lineHeight: 1.15 }}>
-              Votre signalement est créé.
-              <br />
-              Voici ce que vous pouvez faire maintenant.
+              {`Le ${formatDateLongue(ouvertureMediation)}, vous pourrez saisir le médiateur.`}
             </h1>
             <p className="rf-texte rf-mt-14" style={{ fontSize: 16, maxWidth: 660 }}>
-              Un récapitulatif vient d’être envoyé à {masquerEmail(signalement.email)}. Conservez la référence
-              de votre signalement : elle figure sur chaque document et courrier que vous enverrez au
-              professionnel.
+              <strong>Nous vous préviendrons ce jour-là.</strong> La saisine n’est recevable que deux mois
+              après une réclamation écrite : c’est le délai que la plupart des dossiers laissent passer sans
+              s’en apercevoir. Vous n’avez rien à noter.
+            </p>
+
+            <div className="rf-carte rf-mt-20" style={{ padding: "18px 20px", maxWidth: 620 }}>
+              <div className="rf-etiquette">D’ici là, une seule chose à faire</div>
+              <p className="rf-texte rf-mt-8" style={{ fontSize: 15 }}>
+                Relancer {nomEntreprise} <strong>par écrit</strong>,{" "}
+                {`avant le ${formatDateLongue(relance30j)}.`} Sans trace écrite, le médiateur déclarera votre
+                saisine irrecevable — c’est la première cause de rejet.
+              </p>
+              <p className="rf-legende rf-mt-10">
+                Le courrier est prêt plus bas, avec vos références et le délai légal. Vous l’envoyez
+                vous-même : Recours France ne contacte jamais le professionnel à votre place.
+              </p>
+            </div>
+
+            <div className="rf-carte rf-mt-14" style={{ padding: "18px 20px", maxWidth: 620 }}>
+              <div className="rf-etiquette">Nous surveillons aussi l’entreprise</div>
+              <p className="rf-texte rf-mt-8" style={{ fontSize: 15 }}>
+                Si {nomEntreprise} entre en procédure collective, vous serez prévenu :{" "}
+                <strong>vous n’aurez alors que deux mois</strong> pour déclarer votre créance auprès du
+                mandataire, faute de quoi elle est éteinte. Nous lisons les publications légales à votre
+                place, tant que votre dossier est ouvert.
+              </p>
+            </div>
+
+            <p className="rf-legende rf-mt-16">
+              Récapitulatif envoyé à {masquerEmail(signalement.email)} · référence{" "}
+              <span className="rf-mono">{signalement.reference}</span>
             </p>
           </div>
 
@@ -176,6 +239,77 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
         </div>
       </section>
 
+      {/* ── Le courrier, disponible immédiatement ───────────────────────── */}
+      <section className="rf-conteneur" style={{ padding: "36px 32px 0" }}>
+        <div className="rf-carte" style={{ padding: 24 }}>
+          <div className="rf-ligne--entre" style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            <div className="rf-min0">
+              <h2 className="rf-h2" style={{ fontSize: 21 }}>
+                Votre courrier de réclamation, prêt à envoyer
+              </h2>
+              <p className="rf-texte rf-mt-8" style={{ fontSize: 14.5, maxWidth: 620 }}>
+                Prérempli avec vos références, l’adresse du service consommateurs et le délai de trente jours
+                qui fait courir la suite. Complétez le paragraphe entre crochets, puis envoyez-le — de
+                préférence en recommandé, pour la preuve d’envoi.
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 240 }}>
+              <CopierTexte texte={courrier} />
+              <Link
+                href={`/mon-espace/dossier/${jeton}/modele-relance`}
+                className="rf-btn rf-btn--secondaire rf-btn--bloc"
+              >
+                Télécharger en PDF
+              </Link>
+            </div>
+          </div>
+          <pre
+            className="rf-carte rf-carte--legere rf-mt-18"
+            style={{
+              padding: "18px 20px",
+              margin: 0,
+              maxHeight: 320,
+              overflow: "auto",
+              whiteSpace: "pre-wrap",
+              fontFamily: "inherit",
+              fontSize: 13.5,
+              lineHeight: 1.65,
+            }}
+          >
+            {courrier}
+          </pre>
+        </div>
+      </section>
+
+      {conseils.length ? (
+        <section className="rf-conteneur" style={{ padding: "36px 32px 0" }}>
+          <div
+            className="rf-carte"
+            style={{ padding: "20px 24px", borderLeft: "4px solid var(--rf-ambre, #8a5200)" }}
+          >
+            <div style={{ fontSize: 16.5, fontWeight: 700 }}>
+              Vérifiez {conseils.length > 1 ? "vos pièces" : "votre pièce"}
+            </div>
+            <p className="rf-texte rf-mt-8" style={{ fontSize: 14.5 }}>
+              {conseils.length > 1
+                ? "Vos pièces sont bien enregistrées. Deux points méritent tout de même votre attention :"
+                : "Votre pièce est bien enregistrée. Un point mérite tout de même votre attention :"}
+            </p>
+            <ul className="rf-mt-12" style={{ margin: 0, paddingLeft: 18 }}>
+              {conseils.map((p) => (
+                <li key={p.nomOrigine} className="rf-texte" style={{ fontSize: 14, marginBottom: 8 }}>
+                  <strong>{p.nomOrigine}</strong> — {p.conseil}
+                </li>
+              ))}
+            </ul>
+            <p className="rf-legende rf-mt-12">
+              Ces vérifications sont automatiques et n’empêchent rien. Elles ne sont jamais publiées et ne
+              préjugent pas du contenu de votre dossier.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       {/* ── Vérification par justificatif ────────────────────────────────── */}
       <section className="rf-conteneur" style={{ padding: "36px 32px 0" }}>
         <div
@@ -191,17 +325,18 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
         >
           <div className="rf-min0">
             <span className="rf-badge rf-badge--sm rf-badge--non-verifie">
-              Statut actuel : {signalement.niveauVerification === "VERIFIE" ? "signalement vérifié" : "signalement déclaré"}
+              Statut actuel : {LIBELLES_VERIFICATION[signalement.niveauVerification]}
             </span>
             <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12, lineHeight: 1.3 }}>
-              {signalement.niveauVerification === "VERIFIE"
-                ? "Votre signalement est vérifié"
-                : "Ajoutez une pièce pour faire vérifier votre signalement"}
+              {avecJustificatif(signalement.niveauVerification)
+                ? "Votre signalement est accompagné d’un justificatif"
+                : "Ajoutez une pièce pour appuyer votre signalement"}
             </div>
             <p className="rf-texte rf-mt-8" style={{ fontSize: 14.5 }}>
-              Un signalement vérifié pèse davantage : il entre dans les statistiques publiques de l’entreprise
-              et sert de base au récapitulatif utilisé en médiation. Une facture ou une confirmation de
-              commande suffit. Vos pièces ne sont jamais publiées.
+              Un signalement accompagné d’un justificatif pèse davantage : il entre dans les statistiques
+              publiques de l’entreprise et sert de base au récapitulatif utilisé en médiation. Une facture ou
+              une confirmation de commande suffit. La pièce est horodatée et scellée, jamais publiée, et n’est
+              examinée que si l’entreprise conteste.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, width: "100%", justifySelf: "end" }}>
@@ -301,12 +436,12 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
           <div style={{ fontSize: 17, fontWeight: 700 }}>Partager votre expérience</div>
           <p className="rf-texte rf-mt-8" style={{ fontSize: 13.5 }}>
             Une fois votre signalement clôturé, vous pourrez publier depuis votre email un avis rattaché à ce
-            signalement. Les avis rattachés à un signalement vérifié sont distingués des avis simples.
+            signalement. Les avis rattachés à un dossier accompagné d’un justificatif sont distingués des avis simples.
           </p>
           {entreprise ? (
             <p className="rf-mt-12">
               <Link href={`/entreprises/${entreprise.slug}/avis`} style={{ fontSize: 13.5, fontWeight: 600 }}>
-                Comprendre les avis vérifiés
+                Comprendre les avis avec justificatif
               </Link>
             </p>
           ) : null}

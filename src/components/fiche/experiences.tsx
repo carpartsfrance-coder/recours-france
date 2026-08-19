@@ -57,7 +57,7 @@ export function ListeExperiences({ experiences }: { experiences: Experience[] })
                     <span
                       className={`rf-badge rf-badge--sm ${e.verifie ? "rf-badge--verifie-doux" : "rf-badge--non-verifie"}`}
                     >
-                      {e.verifie ? "✓ Signalement vérifié" : "Signalement non vérifié"}
+                      {e.verifie ? "✓ Justificatif déposé" : "Signalement sans justificatif"}
                     </span>
                     <span className="rf-legende">{e.meta}</span>
                   </div>
@@ -125,7 +125,7 @@ export function ListeExperiences({ experiences }: { experiences: Experience[] })
               </p>
               <p className="rf-chip-mono rf-mt-14">
                 Signalement {e.reference}
-                {e.verifie ? " — justificatif contrôlé par Recours France" : " — sans justificatif contrôlé"}
+                {e.verifie ? " — justificatif déposé, horodaté et scellé" : " — aucun justificatif"}
               </p>
 
               {e.afficherTeaser ? (

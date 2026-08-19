@@ -17,8 +17,8 @@ export const METHODOLOGIE: { q: string; a: string }[] = [
     a: "Les signalements, montants, motifs et avis sont déclarés par les consommateurs. Ils portent toujours la mention de leur niveau de vérification.",
   },
   {
-    q: "Ce qu’est un signalement vérifié, et comment un justificatif est contrôlé",
-    a: "Une pièce est demandée puis contrôlée manuellement : facture, commande, contrat, preuve de paiement ou échange avec le professionnel. Nous vérifions la cohérence du nom, de la date et du montant avec le signalement. La vérification atteste la réalité du signalement, pas le bien-fondé de la réclamation.",
+    q: "Ce qu’est un signalement accompagné d’un justificatif, et quand la pièce est examinée",
+    a: "Une pièce peut être déposée : facture, commande, contrat, preuve de paiement ou échange avec le professionnel. Elle est horodatée et scellée, et un contrôle automatique compare le nom de l’entreprise, la date et le montant avec le signalement. Elle n’est examinée par une personne que si l’entreprise conteste le signalement — et cet examen porte alors sur la réalité du signalement, jamais sur le bien-fondé de la réclamation.",
   },
   {
     q: "Comment une résolution est confirmée",
@@ -26,11 +26,11 @@ export const METHODOLOGIE: { q: string; a: string }[] = [
   },
   {
     q: "Comment les statistiques sont calculées",
-    a: "Les taux de réponse, de résolution et les délais sont calculés sur les seuls signalements vérifiés, en base glissante de douze mois, à partir de ce que déclarent les consommateurs. Les délais sont des médianes, jamais des moyennes.",
+    a: "Les taux de réponse, de résolution et les délais sont calculés sur les seuls signalements avec justificatif, en base glissante de douze mois, à partir de ce que déclarent les consommateurs. Les délais sont des médianes, jamais des moyennes.",
   },
   {
     q: "À partir de quel volume un score est publié",
-    a: "Le score d’expérience des consommateurs n’est publié qu’à partir de 30 signalements vérifiés sur douze mois. En dessous, seul l’indice de transparence, fondé sur les données publiques, est affiché.",
+    a: "Le score d’expérience des consommateurs n’est publié qu’à partir de 30 signalements avec justificatif sur douze mois. En dessous, seul l’indice de transparence, fondé sur les données publiques, est affiché.",
   },
   {
     q: "Ce que Recours France ne fait pas encore",
@@ -44,7 +44,12 @@ export const METHODOLOGIE: { q: string; a: string }[] = [
 
 export const STATUTS_EXPLIQUES: { libelle: string; description: string; ton: string }[] = [
   { libelle: "Déclaré", description: "Signalement enregistré, sans contrôle de justificatif.", ton: "var(--rf-texte-desactive)" },
-  { libelle: "Vérifié", description: "Justificatif contrôlé par Recours France.", ton: "var(--rf-cobalt)" },
+  {
+    libelle: "Justificatif déposé",
+    description:
+      "Pièce déposée par le consommateur, horodatée et scellée. Elle n’est examinée qu’en cas de contestation par l’entreprise.",
+    ton: "var(--rf-cobalt)",
+  },
   {
     libelle: "Réponse déclarée",
     description: "Le consommateur indique avoir reçu une réponse du professionnel.",
@@ -109,19 +114,19 @@ export const REGLES_STATISTIQUES = [
   },
   {
     metric: "Signalements vérifiés",
-    rule: "Sous-ensemble des signalements déclarés pour lesquels une pièce a été contrôlée. C’est la base de tous les indicateurs de comportement.",
+    rule: "Sous-ensemble des signalements déclarés accompagnés d’une pièce déposée, horodatée et scellée. C’est la base de tous les indicateurs de comportement.",
   },
   {
     metric: "Taux de réponse déclaré",
-    rule: "Part des signalements vérifiés pour lesquels le consommateur déclare avoir reçu une réponse du professionnel. Recours France ne reçoit pas ces réponses.",
+    rule: "Part des signalements avec justificatif pour lesquels le consommateur déclare avoir reçu une réponse du professionnel. Recours France ne reçoit pas ces réponses.",
   },
   {
     metric: "Taux de résolution",
-    rule: "Part des signalements vérifiés clôturés dont la résolution a été confirmée par le consommateur. Un signalement abandonné ou sans retour n’est jamais compté comme résolu.",
+    rule: "Part des signalements avec justificatif clôturés dont la résolution a été confirmée par le consommateur. Un signalement abandonné ou sans retour n’est jamais compté comme résolu.",
   },
   {
     metric: "Délai médian de résolution",
-    rule: "Médiane des délais entre le signalement et la confirmation de résolution, sur les signalements vérifiés résolus des douze derniers mois.",
+    rule: "Médiane des délais entre le signalement et la confirmation de résolution, sur les signalements avec justificatif résolus des douze derniers mois.",
   },
 ];
 
@@ -131,12 +136,12 @@ export const DROITS_ET_RECTIFICATION = [
     desc: "Une donnée inexacte est corrigée sous 15 jours après examen des pièces fournies, avec information du consommateur concerné.",
   },
   {
-    title: "Contestation d’un signalement vérifié",
+    title: "Contestation d’un signalement",
     desc: "Une entreprise peut contester la réalité d’un signalement en produisant des éléments contraires. Le signalement est réexaminé et, le cas échéant, déclassé ou retiré.",
   },
   {
     title: "Aucun retrait sur simple demande",
-    desc: "Un signalement vérifié n’est pas retiré à la demande de l’entreprise ni contre paiement. Seule une erreur établie justifie un retrait.",
+    desc: "Un signalement avec justificatif n’est pas retiré à la demande de l’entreprise ni contre paiement. Seule une erreur établie justifie un retrait.",
   },
   {
     title: "Droit de réponse publique",

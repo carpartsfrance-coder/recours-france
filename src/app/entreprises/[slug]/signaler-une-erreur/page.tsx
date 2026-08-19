@@ -146,7 +146,7 @@ export default async function SignalerUneErreur({ params }: { params: Promise<{ 
             <div className="rf-carte rf-carte--teintee" style={{ padding: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>Contester un signalement</div>
               <p className="rf-texte rf-mt-8" style={{ fontSize: 13 }}>
-                Un signalement vérifié n’est pas retiré sur simple demande ni contre paiement. Seule une erreur
+                Un signalement avec justificatif n’est pas retiré sur simple demande ni contre paiement. Seule une erreur
                 établie, pièces à l’appui, justifie un déclassement ou un retrait.
               </p>
               <p className="rf-mt-10">

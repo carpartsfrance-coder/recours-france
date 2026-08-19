@@ -19,9 +19,9 @@ export type Dossier = {
 };
 
 const FILTRES = [
-  { cle: "tous", libelle: "Tous les dossiers" },
-  { cle: "verifies", libelle: "Vérifiés" },
-  { cle: "ouverts", libelle: "Non résolus" },
+  { cle: "tous", libelle: "Toutes" },
+  { cle: "verifies", libelle: "Avec pièce" },
+  { cle: "ouverts", libelle: "Sans résolution confirmée" },
 ] as const;
 
 type Filtre = (typeof FILTRES)[number]["cle"];
@@ -32,11 +32,14 @@ type Filtre = (typeof FILTRES)[number]["cle"];
  * affiché est produit par la plateforme à partir des données structurées.
  */
 export function Dossiers({
+  slug,
   dossiers,
   total,
   lienTous,
-  titre = "Dossiers récents",
+  titre = "Déclarations récentes",
 }: {
+  /** Slug de l'entreprise, pour ouvrir la contestation sur un dossier précis. */
+  slug?: string;
   dossiers: Dossier[];
   total: number;
   /** Absent sur la page de liste complète : il n'y a plus de « voir tout ». */
@@ -109,7 +112,7 @@ export function Dossiers({
                   }}
                 >
                   <span className={`rfi-badge ${d.verifie ? "rfi-badge--verifie" : "rfi-badge--neutre"}`}>
-                    {d.verifie ? "✓ Justificatif vérifié" : "Non vérifié"}
+                    {d.verifie ? "Pièce fournie" : "Sans pièce"}
                   </span>
                   <span>Déclaré le {d.date}</span>
                   <span className="rfi-sep" aria-hidden="true">
@@ -135,7 +138,7 @@ export function Dossiers({
                   aria-controls={`dossier-${d.reference}`}
                   onClick={() => setOuvert(estOuvert ? null : d.reference)}
                 >
-                  {estOuvert ? "Fermer" : "Consulter le dossier"}
+                  {estOuvert ? "Fermer" : "Voir le détail"}
                 </button>
               </div>
             </div>
@@ -173,10 +176,17 @@ export function Dossiers({
                 }}
               >
                 <span className="rf-mono" style={{ fontSize: 11.5, color: "var(--rf-texte-2)" }}>
-                  Dossier {d.reference}
-                  {d.verifie ? " — justificatif contrôlé par Recours France" : " — sans justificatif contrôlé"}
+                  Déclaration {d.reference}
+                  {d.verifie ? " — justificatif déposé, horodaté et scellé" : " — aucun justificatif"}
                 </span>
-                <span>Statut déclaré par le consommateur</span>
+                <span>
+                  Statut déclaré par le consommateur ·{" "}
+                  {slug ? (
+                    <a href={`/entreprises/${slug}/contester?reference=${d.reference}`}>
+                      Contester ce dossier
+                    </a>
+                  ) : null}
+                </span>
               </div>
             </div>
           </article>

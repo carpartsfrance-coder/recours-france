@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { prolongerJeton, resoudreJetonSuivi } from "@/lib/auth";
 import { enregistrerPiece, supprimerPiece, validerPiece, NOMBRE_MAX } from "@/lib/upload";
+import { controlerOctets } from "@/lib/controle-pieces";
+import { analyserCoherence } from "@/lib/coherence";
+import { reponseEncorePossible } from "@/lib/contestations";
 import { recalculerIndices } from "@/lib/stats";
 
 export type EtatDossier = { message?: string; erreur?: string };
@@ -129,6 +132,89 @@ export async function cloturerSignalement(_precedent: EtatDossier, donnees: Form
   }
 }
 
+/**
+ * Réponse du consommateur à une contestation.
+ *
+ * Il lui suffit de confirmer, à condition qu'une pièce accompagne le dossier.
+ * Sans pièce, la réponse est refusée : ce serait une confirmation sans contenu,
+ * et la contestation porte précisément sur l'absence de preuve.
+ */
+export async function repondreContestation(_precedent: EtatDossier, donnees: FormData): Promise<EtatDossier> {
+  const jeton = String(donnees.get("jeton") ?? "");
+
+  try {
+    const signalement = await ouvrir(jeton);
+    const contestation = await prisma.contestation.findFirst({
+      where: { signalementId: signalement.id, etat: "PIECE_DEMANDEE" },
+      orderBy: { creeLe: "desc" },
+    });
+    if (!contestation) return { erreur: "Aucune contestation en attente sur ce dossier." };
+    if (!reponseEncorePossible(contestation)) {
+      return { erreur: "Le délai de réponse est écoulé. Écrivez-nous si vous souhaitez rouvrir le dossier." };
+    }
+
+    const pieces = await prisma.justificatif.count({ where: { signalementId: signalement.id } });
+    if (pieces === 0) {
+      return {
+        erreur:
+          "Déposez d’abord une pièce justificative : c’est elle qui répond à la contestation. Utilisez « Ajouter un justificatif » ci-dessus.",
+      };
+    }
+
+    await prisma.contestation.update({
+      where: { id: contestation.id },
+      data: { etat: "PIECE_FOURNIE", repondueLe: new Date() },
+    });
+    await journaliser(
+      signalement.id,
+      "Réponse à la contestation",
+      "Vous avez confirmé votre signalement. Votre pièce va être examinée ; elle n’est ni publiée ni transmise à l’entreprise.",
+    );
+    revalidatePath(`/mon-espace/dossier/${jeton}`);
+    return {
+      message:
+        "Réponse enregistrée. Votre signalement reste publié pendant l’examen de votre pièce. Vous serez informé de l’issue par email.",
+    };
+  } catch (e) {
+    return { erreur: e instanceof Error ? e.message : "Action impossible." };
+  }
+}
+
+/**
+ * Coupe ou rétablit les rappels d'échéance.
+ *
+ * Volontairement une action de formulaire et non un lien dans l'email : les
+ * scanners de messagerie suivent les liens automatiquement et couperaient les
+ * rappels de gens qui n'ont rien demandé.
+ */
+export async function basculerRappels(_precedent: EtatDossier, donnees: FormData): Promise<EtatDossier> {
+  const jeton = String(donnees.get("jeton") ?? "");
+  const activer = String(donnees.get("activer") ?? "") === "oui";
+
+  try {
+    const signalement = await ouvrir(jeton);
+    await prisma.signalement.update({
+      where: { id: signalement.id },
+      data: { relancesActives: activer },
+    });
+    await journaliser(
+      signalement.id,
+      activer ? "Rappels réactivés" : "Rappels désactivés",
+      activer
+        ? "Les rappels d'échéance reprendront aux dates prévues."
+        : "Plus aucun rappel ne sera envoyé pour ce dossier.",
+    );
+    revalidatePath(`/mon-espace/dossier/${jeton}`);
+    return {
+      message: activer
+        ? "Rappels réactivés : vous serez prévenu aux prochaines échéances."
+        : "Rappels désactivés. Les échéances restent consultables dans votre dossier.",
+    };
+  } catch (e) {
+    return { erreur: e instanceof Error ? e.message : "Action impossible." };
+  }
+}
+
 /** Dépôt d'une pièce supplémentaire, en vue d'une vérification. */
 export async function ajouterJustificatif(_precedent: EtatDossier, donnees: FormData): Promise<EtatDossier> {
   const jeton = String(donnees.get("jeton") ?? "");
@@ -140,23 +226,72 @@ export async function ajouterJustificatif(_precedent: EtatDossier, donnees: Form
     const deja = await prisma.justificatif.count({ where: { signalementId: signalement.id } });
     if (deja + fichiers.length > NOMBRE_MAX) return { erreur: "Cinq pièces au maximum par signalement." };
 
+    const controlesParFichier = new Map<File, { anomalies: string[]; octets: Buffer }>();
     for (const f of fichiers) {
       const erreur = validerPiece(f);
       if (erreur) return { erreur };
+      const octets = Buffer.from(await f.arrayBuffer());
+      const controle = controlerOctets(octets, f.type);
+      if (controle.refus) return { erreur: controle.refus };
+      controlesParFichier.set(f, { anomalies: controle.anomalies, octets });
     }
+
+    const denomination = signalement.entrepriseId
+      ? ((
+          await prisma.entreprise.findUnique({
+            where: { id: signalement.entrepriseId },
+            select: { denomination: true },
+          })
+        )?.denomination ?? null)
+      : signalement.entrepriseLibreNom;
+
+    const conseils: string[] = [];
     for (const f of fichiers) {
       const piece = await enregistrerPiece(f, signalement.reference);
-      await prisma.justificatif.create({ data: { ...piece, signalementId: signalement.id } });
+      const controle = controlesParFichier.get(f);
+      const anomalies = [...(controle?.anomalies ?? [])];
+      const coherence = controle
+        ? analyserCoherence({
+            octets: controle.octets,
+            typeMime: f.type,
+            entreprise: denomination,
+            dateFaits: signalement.dateFaits,
+            montant: signalement.montant ? Number(signalement.montant) : null,
+          })
+        : null;
+      if (coherence?.conseil) conseils.push(coherence.conseil);
+      const dejaVu = await prisma.justificatif.findFirst({
+        where: { sommeControle: piece.sommeControle, signalement: { email: { not: signalement.email } } },
+        select: { id: true },
+      });
+      if (dejaVu) anomalies.push("fichier déjà déposé sous une autre identité");
+      await prisma.justificatif.create({
+        data: {
+          ...piece,
+          signalementId: signalement.id,
+          anomalies,
+          observations: coherence?.observations ?? [],
+          conseil: coherence?.conseil ?? null,
+        },
+      });
+    }
+    if (signalement.niveauVerification === "DECLARE") {
+      await prisma.signalement.update({
+        where: { id: signalement.id },
+        data: { niveauVerification: "PIECE_DEPOSEE" },
+      });
     }
     await journaliser(
       signalement.id,
       "Pièces déposées",
-      `${fichiers.length} pièce${fichiers.length > 1 ? "s" : ""} en attente de contrôle. Les pièces ne sont jamais publiées.`,
+      `${fichiers.length} pièce${fichiers.length > 1 ? "s" : ""} déposée${fichiers.length > 1 ? "s" : ""}, horodatée${fichiers.length > 1 ? "s" : ""} et scellée${fichiers.length > 1 ? "s" : ""}. Les pièces ne sont jamais publiées.`,
     );
     revalidatePath(`/mon-espace/dossier/${jeton}`);
     return {
-      message:
-        "Pièce reçue. Elle est contrôlée sous 48 heures ouvrées : votre signalement passera alors en signalement vérifié.",
+      message: [
+        "Pièce enregistrée, horodatée et scellée. Elle n’est pas examinée systématiquement : elle le sera si l’entreprise conteste votre signalement.",
+        ...conseils,
+      ].join(" "),
     };
   } catch (e) {
     return { erreur: e instanceof Error ? e.message : "Dépôt impossible." };

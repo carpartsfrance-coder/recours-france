@@ -25,6 +25,30 @@ const CATEGORIES = [
   { cle: "AUTRE", libelle: "Autre motif", desc: "Information trompeuse, pratique contestée, autre situation." },
 ];
 
+const DEMANDES = [
+  { cle: "REMBOURSEMENT_INTEGRAL", libelle: "Remboursement intégral" },
+  { cle: "REMBOURSEMENT_PARTIEL", libelle: "Remboursement partiel" },
+  { cle: "LIVRAISON", libelle: "Livraison de la commande" },
+  { cle: "REPARATION", libelle: "Réparation" },
+  { cle: "REMPLACEMENT", libelle: "Remplacement" },
+  { cle: "RESILIATION", libelle: "Résiliation" },
+  { cle: "AUTRE", libelle: "Autre" },
+];
+
+const ETATS_PRO = [
+  { cle: "AUCUNE_REPONSE", libelle: "Aucune réponse" },
+  { cle: "REPONSE_SANS_SOLUTION", libelle: "Réponse sans solution" },
+  { cle: "PROMESSE_NON_TENUE", libelle: "Promesse non tenue" },
+  { cle: "REFUS_MOTIVE", libelle: "Refus motivé" },
+  { cle: "SOLUTION_PARTIELLE", libelle: "Solution partielle" },
+];
+
+const RELANCES = [
+  { cle: "1", libelle: "Une" },
+  { cle: "2", libelle: "Deux" },
+  { cle: "3", libelle: "Trois ou plus" },
+];
+
 const CONTACTS = [
   { cle: "ECRIT", libelle: "Oui, par écrit" },
   { cle: "TELEPHONE", libelle: "Par téléphone" },
@@ -34,9 +58,14 @@ const CONTACTS = [
 export function FormulaireSignalement({
   entrepriseInitiale,
   modeInitial,
+  siteInitial = null,
+  nomInitial = null,
 }: {
   entrepriseInitiale: EntrepriseChoisie | null;
   modeInitial: "annuaire" | "libre";
+  /** Domaine prérempli lorsqu'on arrive depuis une fiche boutique. */
+  siteInitial?: string | null;
+  nomInitial?: string | null;
 }) {
   const [etat, action, enCours] = useActionState<EtatFormulaire, FormData>(deposerSignalement, {});
   const [mode, setMode] = useState<"annuaire" | "libre">(modeInitial);
@@ -46,11 +75,115 @@ export function FormulaireSignalement({
   const [recherche, setRecherche] = useState<"repos" | "chargement" | "vide" | "erreur">("repos");
   const [categorie, setCategorie] = useState("");
   const [contact, setContact] = useState("");
+  const [demande, setDemande] = useState("");
+  const [etatPro, setEtatPro] = useState("");
+  const [relances, setRelances] = useState("");
   const [resume, setResume] = useState("");
+  const [detailOuvert, setDetailOuvert] = useState(false);
+  // Un seul écouteur au niveau du formulaire plutôt qu'un état par champ :
+  // suffisant pour savoir ce qui reste à remplir, sans transformer chaque
+  // saisie en re-rendu de toute la page.
+  const [saisi, setSaisi] = useState<Record<string, string>>({});
+
+  // Chaque champ appartient à une section : c'est ce qui permet de renvoyer
+  // l'utilisateur au bon endroit au lieu d'un « corrigez quelque chose ».
+  const SECTION_DU_CHAMP: Record<string, string> = {
+    siren: "entreprise",
+    entrepriseNom: "entreprise",
+    entrepriseSite: "entreprise",
+    categorie: "litige",
+    montant: "litige",
+    dateFaits: "litige",
+    contactPrealable: "litige",
+    demande: "demande",
+    etatProfessionnel: "demande",
+    relances: "demande",
+    resume: "demande",
+    justificatifs: "demande",
+    prenom: "coordonnees",
+    nom: "coordonnees",
+    email: "coordonnees",
+    certifie: "coordonnees",
+    consentement: "coordonnees",
+  };
+
+  // Ce qui manque, section par section. Le libellé sert deux fois : la pastille
+  // et le récapitulatif au-dessus du bouton d'envoi.
+  const sections = [
+    {
+      cle: "entreprise",
+      titre: "L’entreprise concernée",
+      complete: mode === "annuaire" ? Boolean(choisie) : Boolean(saisi.entrepriseNom),
+      manque: "l’entreprise concernée",
+    },
+    {
+      cle: "litige",
+      titre: "Le litige",
+      complete: Boolean(categorie && saisi.dateFaits && contact),
+      manque: !categorie
+        ? "la catégorie du litige"
+        : !saisi.dateFaits
+          ? "la date des faits"
+          : "si vous avez déjà contacté l’entreprise",
+    },
+    {
+      cle: "demande",
+      titre: "Ce que vous demandez",
+      complete: Boolean(demande) && (contact === "AUCUN" || !contact || Boolean(etatPro)),
+      manque: !demande ? "ce que vous demandez au professionnel" : "où en est le professionnel",
+    },
+    {
+      cle: "coordonnees",
+      titre: "Vos coordonnées",
+      complete: Boolean(saisi.prenom && saisi.nom && saisi.email && saisi.certifie && saisi.consentement),
+      manque: !saisi.prenom || !saisi.nom || !saisi.email
+        ? "vos coordonnées"
+        : "les deux cases à cocher en bas du formulaire",
+    },
+  ];
+  const restant = sections.filter((s) => !s.complete);
+
+  function noterSaisie(e: React.FormEvent<HTMLFormElement>) {
+    const donnees = new FormData(e.currentTarget);
+    const valeurs: Record<string, string> = {};
+    for (const [cle, valeur] of donnees.entries()) {
+      if (typeof valeur === "string" && valeur.trim()) valeurs[cle] = valeur.trim();
+    }
+    setSaisi(valeurs);
+  }
   const [pieces, setPieces] = useState<File[]>([]);
   const [erreurPiece, setErreurPiece] = useState<string | null>(null);
   const champFichier = useRef<HTMLInputElement>(null);
   const erreurs = etat.erreurs ?? {};
+  // React 19 réinitialise le formulaire dès que l'action serveur rend la main,
+  // même en erreur. Les champs non contrôlés se repeuplent via defaultValue ;
+  // ceux pilotés par l'état sont restaurés ici.
+  const valeurs = etat.valeurs ?? {};
+  useEffect(() => {
+    const premier = Object.keys(etat.erreurs ?? {})[0];
+    if (!premier) return;
+    // Sans cela, le message d'erreur peut se trouver à plusieurs écrans du
+    // champ fautif : l'utilisateur lit « corrigez » sans savoir quoi.
+    const cible =
+      document.getElementById(premier) ??
+      document.getElementById(`section-${SECTION_DU_CHAMP[premier] ?? "entreprise"}`);
+    cible?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (cible instanceof HTMLInputElement || cible instanceof HTMLTextAreaElement) cible.focus();
+  }, [etat.erreurs]);
+
+  useEffect(() => {
+    if (!etat.valeurs) return;
+    setCategorie(etat.valeurs.categorie ?? "");
+    setContact(etat.valeurs.contactPrealable ?? "");
+    setDemande(etat.valeurs.demande ?? "");
+    setEtatPro(etat.valeurs.etatProfessionnel ?? "");
+    setRelances(etat.valeurs.relances ?? "");
+    if (etat.valeurs.resume) {
+      setResume(etat.valeurs.resume);
+      setDetailOuvert(true);
+    }
+    setSaisi(etat.valeurs);
+  }, [etat.valeurs]);
 
   // Ramène l'utilisateur sur le premier champ en erreur.
   useEffect(() => {
@@ -104,7 +237,13 @@ export function FormulaireSignalement({
   }, [pieces]);
 
   return (
-    <form action={action} className="rf-conteneur" style={{ padding: "20px 32px 56px" }} noValidate>
+    <form
+      action={action}
+      onChange={noterSaisie}
+      className="rf-conteneur"
+      style={{ padding: "20px 32px 56px" }}
+      noValidate
+    >
       <input type="hidden" name="mode" value={mode} />
       {choisie ? <input type="hidden" name="siren" value={choisie.siren} /> : null}
 
@@ -117,10 +256,12 @@ export function FormulaireSignalement({
       <div className="rf-deux-colonnes--etroite">
         <div className="rf-pile">
           {/* ── 1. L'entreprise concernée ───────────────────────────────── */}
-          <section className="rf-carte" data-en-erreur={erreurs.siren || erreurs.entrepriseNom ? "true" : undefined}>
+          <section id="section-entreprise" className="rf-carte" data-en-erreur={erreurs.siren || erreurs.entrepriseNom ? "true" : undefined}>
             <div className="rf-carte__tete">
               <div className="rf-ligne" style={{ gap: 14, flexWrap: "nowrap" }}>
-                <span className="rf-pastille">1</span>
+                <span className={`rf-pastille ${sections.find((x) => x.cle === "entreprise")?.complete ? "rf-pastille--faite" : ""}`}>
+                    {sections.find((x) => x.cle === "entreprise")?.complete ? "✓" : "1"}
+                  </span>
                 <div>
                   <h2 className="rf-carte__titre">L’entreprise concernée</h2>
                   <div className="rf-carte__sous-titre">Cherchez-la dans l’annuaire ou saisissez-la vous-même</div>
@@ -258,14 +399,14 @@ export function FormulaireSignalement({
                     <label className="rf-champ__label" htmlFor="entrepriseNom">
                       Nom commercial de l’entreprise
                     </label>
-                    <input id="entrepriseNom" name="entrepriseNom" className="rf-input" placeholder="ex. Mobivolt" />
+                    <input id="entrepriseNom" name="entrepriseNom" defaultValue={valeurs.entrepriseNom ?? nomInitial ?? ""} className="rf-input" placeholder="ex. Mobivolt" />
                     <ChampErreur message={erreurs.entrepriseNom} />
                   </div>
                   <div>
                     <label className="rf-champ__label" htmlFor="entrepriseSite">
                       Site internet ou lieu de l’achat
                     </label>
-                    <input id="entrepriseSite" name="entrepriseSite" className="rf-input" placeholder="ex. mobivolt.fr ou magasin de Lille" />
+                    <input id="entrepriseSite" name="entrepriseSite" defaultValue={valeurs.entrepriseSite ?? siteInitial ?? ""} className="rf-input" placeholder="ex. mobivolt.fr ou magasin de Lille" />
                   </div>
                   <p className="rf-legende" style={{ gridColumn: "1/-1" }}>
                     Nous rapprochons l’entreprise des registres publics sous 48 heures ouvrées. Si
@@ -278,10 +419,12 @@ export function FormulaireSignalement({
           </section>
 
           {/* ── 2. Le litige ────────────────────────────────────────────── */}
-          <section className="rf-carte" data-en-erreur={erreurs.categorie || erreurs.dateFaits || erreurs.contactPrealable ? "true" : undefined}>
+          <section id="section-litige" className="rf-carte" data-en-erreur={erreurs.categorie || erreurs.dateFaits || erreurs.contactPrealable ? "true" : undefined}>
             <div className="rf-carte__tete">
               <div className="rf-ligne" style={{ gap: 14, flexWrap: "nowrap" }}>
-                <span className="rf-pastille">2</span>
+                <span className={`rf-pastille ${sections.find((x) => x.cle === "litige")?.complete ? "rf-pastille--faite" : ""}`}>
+                    {sections.find((x) => x.cle === "litige")?.complete ? "✓" : "2"}
+                  </span>
                 <div>
                   <h2 className="rf-carte__titre">Le litige</h2>
                   <div className="rf-carte__sous-titre">La catégorie détermine les démarches et les délais proposés</div>
@@ -317,7 +460,7 @@ export function FormulaireSignalement({
                     Montant en jeu <span className="rf-champ__label-facultatif">(facultatif)</span>
                   </label>
                   <div className="rf-groupe-champ">
-                    <input id="montant" name="montant" className="rf-input" inputMode="decimal" placeholder="486" />
+                    <input id="montant" name="montant" defaultValue={valeurs.montant ?? ""} className="rf-input" inputMode="decimal" placeholder="486" />
                     <span className="rf-suffixe">€</span>
                   </div>
                 </div>
@@ -325,7 +468,7 @@ export function FormulaireSignalement({
                   <label className="rf-champ__label" htmlFor="dateFaits">
                     Date des faits
                   </label>
-                  <input id="dateFaits" name="dateFaits" type="date" className="rf-input" max={new Date().toISOString().slice(0, 10)} />
+                  <input id="dateFaits" name="dateFaits" defaultValue={valeurs.dateFaits ?? ""} type="date" className="rf-input" max={new Date().toISOString().slice(0, 10)} />
                   <ChampErreur message={erreurs.dateFaits} />
                 </div>
                 <div>
@@ -354,47 +497,131 @@ export function FormulaireSignalement({
             </div>
           </section>
 
-          {/* ── 3. Que s'est-il passé ? ─────────────────────────────────── */}
-          <section className="rf-carte" data-en-erreur={erreurs.resume ? "true" : undefined}>
+          {/* ── 3. Ce que vous demandez ─────────────────────────────────── */}
+          <section id="section-demande" className="rf-carte" data-en-erreur={erreurs.demande ? "true" : undefined}>
             <div className="rf-carte__tete">
               <div className="rf-ligne" style={{ gap: 14, flexWrap: "nowrap" }}>
-                <span className="rf-pastille">3</span>
+                <span className={`rf-pastille ${sections.find((x) => x.cle === "demande")?.complete ? "rf-pastille--faite" : ""}`}>
+                    {sections.find((x) => x.cle === "demande")?.complete ? "✓" : "3"}
+                  </span>
                 <div>
-                  <h2 className="rf-carte__titre">Que s’est-il passé&nbsp;?</h2>
-                  <div className="rf-carte__sous-titre">Cinq lignes suffisent : faits, dates, ce que vous demandez</div>
+                  <h2 className="rf-carte__titre">Ce que vous demandez</h2>
+                  <div className="rf-carte__sous-titre">
+                    Trois choix : c’est ce qui apparaît publiquement, sous forme anonyme
+                  </div>
                 </div>
               </div>
             </div>
             <div className="rf-carte__corps">
-              <label className="rf-vh" htmlFor="resume">
-                Résumé des faits
-              </label>
-              <textarea
-                id="resume"
-                name="resume"
-                rows={5}
-                className={`rf-textarea ${erreurs.resume ? "rf-textarea--erreur" : ""}`}
-                maxLength={600}
-                value={resume}
-                onChange={(e) => setResume(e.target.value.slice(0, 600))}
-                aria-describedby="compteur-resume"
-                placeholder="ex. Commande annulée le 4 août dans le délai de rétractation. Retour envoyé le 6 août, réception confirmée. Aucun remboursement à ce jour malgré deux relances par courriel."
-              />
-              <div className="rf-ligne--entre rf-mt-8" style={{ display: "flex", flexWrap: "wrap" }}>
-                <p className="rf-legende" style={{ maxWidth: 520 }}>
-                  Ce résumé n’est pas publié tel quel : seules la catégorie, le montant, la date et le statut
-                  apparaissent publiquement. Restez factuel, sans propos injurieux ni données personnelles de
-                  tiers.
-                </p>
-                <span
-                  id="compteur-resume"
-                  className="rf-nombres"
-                  style={{ fontSize: 12.5, whiteSpace: "nowrap", color: resume.length > 540 ? "var(--rf-alerte)" : "var(--rf-texte-3)" }}
-                >
-                  {resume.length} / 600 caractères
-                </span>
+              <div>
+                <span className="rf-champ__label">Que demandez-vous au professionnel&nbsp;?</span>
+                <div className="rf-segments rf-segments--enroule">
+                  {DEMANDES.map((d) => (
+                    <label key={d.cle} className={`rf-segment ${demande === d.cle ? "rf-segment--actif" : ""}`}>
+                      <input
+                        type="radio"
+                        name="demande"
+                        value={d.cle}
+                        checked={demande === d.cle}
+                        onChange={() => setDemande(d.cle)}
+                      />
+                      {d.libelle}
+                    </label>
+                  ))}
+                </div>
+                <ChampErreur message={erreurs.demande} />
               </div>
-              <ChampErreur message={erreurs.resume} />
+
+              {/* Sans contact préalable, ces deux questions n'ont pas d'objet. */}
+              {contact && contact !== "AUCUN" ? (
+                <>
+                  <div className="rf-mt-20">
+                    <span className="rf-champ__label">Où en est le professionnel&nbsp;?</span>
+                    <div className="rf-segments rf-segments--enroule">
+                      {ETATS_PRO.map((e) => (
+                        <label
+                          key={e.cle}
+                          className={`rf-segment ${etatPro === e.cle ? "rf-segment--actif" : ""}`}
+                        >
+                          <input
+                            type="radio"
+                            name="etatProfessionnel"
+                            value={e.cle}
+                            checked={etatPro === e.cle}
+                            onChange={() => setEtatPro(e.cle)}
+                          />
+                          {e.libelle}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rf-mt-20">
+                    <span className="rf-champ__label">Combien de fois l’avez-vous relancé&nbsp;?</span>
+                    <div className="rf-segments">
+                      {RELANCES.map((r) => (
+                        <label key={r.cle} className={`rf-segment ${relances === r.cle ? "rf-segment--actif" : ""}`}>
+                          <input
+                            type="radio"
+                            name="relances"
+                            value={r.cle}
+                            checked={relances === r.cle}
+                            onChange={() => setRelances(r.cle)}
+                          />
+                          {r.libelle}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              <div className="rf-mt-20">
+                {detailOuvert ? (
+                  <>
+                    <label className="rf-champ__label" htmlFor="resume">
+                      Précisions <span className="rf-champ__label-facultatif">(facultatif)</span>
+                    </label>
+                    <textarea
+                      id="resume"
+                      name="resume"
+                      rows={4}
+                      className={`rf-textarea ${erreurs.resume ? "rf-textarea--erreur" : ""}`}
+                      maxLength={600}
+                      value={resume}
+                      onChange={(e) => setResume(e.target.value.slice(0, 600))}
+                      aria-describedby="compteur-resume"
+                      placeholder="ex. Commande annulée le 4 août dans le délai de rétractation. Retour envoyé le 6 août, réception confirmée."
+                    />
+                    <div className="rf-ligne--entre rf-mt-8" style={{ display: "flex", flexWrap: "wrap" }}>
+                      <p className="rf-legende" style={{ maxWidth: 520 }}>
+                        Ces précisions ne sont <strong>jamais publiées</strong>. Elles figurent seulement dans
+                        votre récapitulatif, qui vous sert devant le médiateur.
+                      </p>
+                      <span
+                        id="compteur-resume"
+                        className="rf-nombres"
+                        style={{
+                          fontSize: 12.5,
+                          whiteSpace: "nowrap",
+                          color: resume.length > 540 ? "var(--rf-alerte)" : "var(--rf-texte-3)",
+                        }}
+                      >
+                        {resume.length} / 600
+                      </span>
+                    </div>
+                    <ChampErreur message={erreurs.resume} />
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="rf-btn rf-btn--secondaire rf-btn--sm"
+                    onClick={() => setDetailOuvert(true)}
+                  >
+                    + Ajouter des précisions (facultatif)
+                  </button>
+                )}
+              </div>
             </div>
           </section>
 
@@ -402,13 +629,13 @@ export function FormulaireSignalement({
           <section className="rf-carte">
             <div className="rf-carte__tete">
               <div className="rf-ligne" style={{ gap: 14, flexWrap: "nowrap" }}>
-                <span className="rf-pastille">4</span>
+                <span className="rf-pastille rf-pastille--neutre">4</span>
                 <div>
                   <h2 className="rf-carte__titre">
                     Justificatifs <span className="rf-champ__label-facultatif">(facultatif)</span>
                   </h2>
                   <div className="rf-carte__sous-titre">
-                    Une pièce contrôlée fait passer le signalement en ✓ signalement vérifié
+                    Une pièce déposée est horodatée et scellée, et n’est examinée qu’en cas de contestation
                   </div>
                 </div>
               </div>
@@ -492,12 +719,15 @@ export function FormulaireSignalement({
 
           {/* ── 5. Vos coordonnées ──────────────────────────────────────── */}
           <section
+            id="section-coordonnees"
             className="rf-carte"
             data-en-erreur={erreurs.prenom || erreurs.nom || erreurs.email || erreurs.certifie || erreurs.consentement ? "true" : undefined}
           >
             <div className="rf-carte__tete">
               <div className="rf-ligne" style={{ gap: 14, flexWrap: "nowrap" }}>
-                <span className="rf-pastille">5</span>
+                <span className={`rf-pastille ${sections.find((x) => x.cle === "coordonnees")?.complete ? "rf-pastille--faite" : ""}`}>
+                    {sections.find((x) => x.cle === "coordonnees")?.complete ? "✓" : "5"}
+                  </span>
                 <div>
                   <h2 className="rf-carte__titre">Vos coordonnées</h2>
                   <div className="rf-carte__sous-titre">Aucun compte à créer : tout arrive par email</div>
@@ -510,21 +740,21 @@ export function FormulaireSignalement({
                   <label className="rf-champ__label" htmlFor="prenom">
                     Prénom
                   </label>
-                  <input id="prenom" name="prenom" className="rf-input" autoComplete="given-name" placeholder="Julien" />
+                  <input id="prenom" name="prenom" defaultValue={valeurs.prenom ?? ""} className="rf-input" autoComplete="given-name" placeholder="Julien" />
                   <ChampErreur message={erreurs.prenom} />
                 </div>
                 <div>
                   <label className="rf-champ__label" htmlFor="nom">
                     Nom
                   </label>
-                  <input id="nom" name="nom" className="rf-input" autoComplete="family-name" placeholder="Moreau" />
+                  <input id="nom" name="nom" defaultValue={valeurs.nom ?? ""} className="rf-input" autoComplete="family-name" placeholder="Moreau" />
                   <ChampErreur message={erreurs.nom} />
                 </div>
                 <div>
                   <label className="rf-champ__label" htmlFor="email">
                     Email de contact
                   </label>
-                  <input id="email" name="email" type="email" className="rf-input" autoComplete="email" placeholder="vous@courriel.fr" />
+                  <input id="email" name="email" defaultValue={valeurs.email ?? ""} type="email" className="rf-input" autoComplete="email" placeholder="vous@courriel.fr" />
                   <ChampErreur message={erreurs.email} />
                 </div>
               </div>
@@ -536,12 +766,12 @@ export function FormulaireSignalement({
 
               <div className="rf-mt-18 rf-separateur-haut rf-pile rf-pile--serree" style={{ gap: 12, paddingTop: 18 }}>
                 <label className="rf-case">
-                  <input type="checkbox" name="certifie" />
+                  <input type="checkbox" name="certifie" defaultChecked={valeurs.certifie === "on"} />
                   <span>Je certifie que les faits déclarés sont exacts et que je suis le consommateur concerné.</span>
                 </label>
                 <ChampErreur message={erreurs.certifie} />
                 <label className="rf-case">
-                  <input type="checkbox" name="consentement" />
+                  <input type="checkbox" name="consentement" defaultChecked={valeurs.consentement === "on"} />
                   <span>
                     J’accepte que les données structurées de mon litige (catégorie, montant, date, statut)
                     soient publiées de façon anonyme sur la fiche de l’entreprise.{" "}
@@ -566,12 +796,38 @@ export function FormulaireSignalement({
             }}
           >
             <div className="rf-min0">
-              <div style={{ fontSize: 17, fontWeight: 700 }}>Prêt à envoyer votre signalement</div>
-              <p className="rf-texte rf-mt-6" style={{ fontSize: 13.5 }}>
-                Vous recevez immédiatement par email votre signalement avec sa référence, la checklist des
-                preuves et les démarches dans le bon ordre. Aucun engagement, aucune démarche envoyée sans
-                votre validation : Recours France ne contacte pas le professionnel.
-              </p>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>
+                {Object.keys(erreurs).length
+                  ? "À corriger avant l’envoi"
+                  : restant.length === 0
+                    ? "Prêt à envoyer votre signalement"
+                    : restant.length === 1
+                      ? "Il reste une chose à renseigner"
+                      : `Il reste ${restant.length} choses à renseigner`}
+              </div>
+              {Object.keys(erreurs).length ? (
+                <ul className="rf-mt-10" style={{ margin: 0, paddingLeft: 18 }}>
+                  {Object.entries(erreurs).map(([champ, message]) => (
+                    <li key={champ} className="rf-texte" style={{ fontSize: 13.5, marginBottom: 4 }}>
+                      <a href={`#section-${SECTION_DU_CHAMP[champ] ?? "entreprise"}`}>{message}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : restant.length ? (
+                <ul className="rf-mt-10" style={{ margin: 0, paddingLeft: 18 }}>
+                  {restant.map((s) => (
+                    <li key={s.cle} className="rf-texte" style={{ fontSize: 13.5, marginBottom: 4 }}>
+                      <a href={`#section-${s.cle}`}>{s.manque}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="rf-texte rf-mt-6" style={{ fontSize: 13.5 }}>
+                  Vous recevez immédiatement par email votre signalement avec sa référence, la checklist des
+                  preuves et les démarches dans le bon ordre. Aucun engagement, aucune démarche envoyée sans
+                  votre validation : Recours France ne contacte pas le professionnel.
+                </p>
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 330, width: "100%", justifySelf: "end" }}>
               <button type="submit" className="rf-btn rf-btn--primaire rf-btn--bloc" style={{ fontSize: 17, fontWeight: 700, padding: "18px 20px" }} disabled={enCours}>

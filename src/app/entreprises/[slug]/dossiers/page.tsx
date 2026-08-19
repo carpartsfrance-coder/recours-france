@@ -67,7 +67,7 @@ export default async function TousLesDossiers({
           {entreprise.denomination} — SIREN {formatSiren(entreprise.siren)}. {formatNombre(total)} dossier
           {total > 1 ? "s" : ""} déposé{total > 1 ? "s" : ""} par des consommateurs, dont{" "}
           {formatNombre(stats.verifies)} vérifié{stats.verifies > 1 ? "s" : ""} sur les douze derniers mois.
-          Seuls les dossiers vérifiés entrent dans les taux publiés.
+          Seuls les dossiers avec justificatif entrent dans les taux publiés.
         </p>
       </div>
 
@@ -89,6 +89,7 @@ export default async function TousLesDossiers({
           ) : (
             <>
               <Dossiers
+                slug={slug}
                 dossiers={signalements.map(versDossier)}
                 total={total}
                 titre={`Dossiers ${page > 1 ? `— page ${page} sur ${pages}` : "les plus récents"}`}

@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { envoyerAccuseDemande } from "@/lib/emails";
-import { auteurAnonyme } from "@/lib/format";
+import { envoyerAccuseDemande, envoyerDemandeDePiece } from "@/lib/emails";
+import { auteurAnonyme, avecJustificatif} from "@/lib/format";
 import { referenceValide } from "@/lib/refs";
+import { AVIS_ACTIFS } from "@/lib/config";
+import { echeanceDepuis, motifRecevable, DELAI_REPONSE_JOURS } from "@/lib/contestations";
+import { creerJetonSuivi } from "@/lib/auth";
 
 export type EtatDemande = { message?: string; erreur?: string; succes?: boolean };
 
@@ -29,10 +32,16 @@ const schemaAvis = z.object({
 
 /**
  * Dépôt d'un avis. Un avis n'est « vérifié » que s'il est rattaché à un
- * signalement vérifié déposé avec la même adresse email : lui seul entre dans
+ * signalement avec justificatif déposé avec la même adresse email : lui seul entre dans
  * la moyenne publiée.
  */
 export async function deposerAvis(_precedent: EtatDemande, donnees: FormData): Promise<EtatDemande> {
+  if (!AVIS_ACTIFS) {
+    return {
+      erreur:
+        "Le dépôt d’avis n’est pas ouvert. Vous pouvez signaler un litige : le dossier est publié sous forme structurée, sans texte libre.",
+    };
+  }
   const analyse = schemaAvis.safeParse(Object.fromEntries(donnees.entries()));
   if (!analyse.success) {
     return { erreur: analyse.error.issues[0]?.message ?? "Certains champs doivent être corrigés." };
@@ -60,7 +69,7 @@ export async function deposerAvis(_precedent: EtatDemande, donnees: FormData): P
       return { erreur: "Ce signalement ne concerne pas cette entreprise." };
     }
     signalementId = signalement.id;
-    verifie = signalement.niveauVerification === "VERIFIE";
+    verifie = avecJustificatif(signalement.niveauVerification);
   }
 
   const doublon = await prisma.avis.findFirst({ where: { entrepriseId: entreprise.id, email: d.email } });
@@ -84,8 +93,8 @@ export async function deposerAvis(_precedent: EtatDemande, donnees: FormData): P
   return {
     succes: true,
     message: verifie
-      ? "Merci. Votre avis est rattaché à un signalement vérifié : il sera publié après modération et entrera dans la moyenne."
-      : "Merci. Votre avis sera publié après modération, signalé comme non vérifié : il n’entre ni dans la moyenne, ni dans les statistiques.",
+      ? "Merci. Votre avis est rattaché à un signalement avec justificatif : il sera publié après modération et entrera dans la moyenne."
+      : "Merci. Votre avis sera publié après modération, signalé comme sans justificatif : il n’entre ni dans la moyenne, ni dans les statistiques.",
   };
 }
 
@@ -216,5 +225,114 @@ export async function suivreEntreprise(_precedent: EtatDemande, donnees: FormDat
   return {
     succes: true,
     message: `Suivi enregistré. Vous serez alerté lorsqu’un événement légal est publié sur ${entreprise.denomination} ou lorsque son indice de transparence évolue.`,
+  };
+}
+
+
+// ── Contester un signalement ───────────────────────────────────────────────
+
+const schemaContestation = z.object({
+  slug: z.string().min(1),
+  reference: z.string().trim().min(4, "Indiquez la référence du dossier contesté."),
+  nom: z.string().trim().min(2, "Indiquez votre nom.").max(120),
+  qualite: z.string().trim().min(2, "Indiquez votre fonction dans l’entreprise.").max(120),
+  email: z.string().trim().toLowerCase().email("Indiquez une adresse email valide."),
+  motif: z.string().trim().max(4000),
+});
+
+/**
+ * Fonctionnalité gratuite de contestation, imposée par l'article L111-7-2.
+ *
+ * Elle ne retire rien immédiatement : elle sollicite le consommateur et fait
+ * courir un délai. Passé ce délai sans réponse, une tâche planifiée retire le
+ * signalement — aucun humain n'arbitre ce cas-là.
+ */
+export async function contesterSignalement(
+  _precedent: EtatDemande,
+  donnees: FormData,
+): Promise<EtatDemande> {
+  const analyse = schemaContestation.safeParse(Object.fromEntries(donnees.entries()));
+  if (!analyse.success) {
+    return { erreur: analyse.error.issues[0]?.message ?? "Certains champs doivent être corrigés." };
+  }
+  const d = analyse.data;
+
+  const refus = motifRecevable(d.motif);
+  if (refus) return { erreur: refus };
+
+  const entreprise = await prisma.entreprise.findUnique({ where: { slug: d.slug } });
+  if (!entreprise) return { erreur: "Entreprise inconnue." };
+
+  const signalement = await prisma.signalement.findUnique({
+    where: { reference: d.reference.trim().toUpperCase() },
+  });
+  // Réponse volontairement identique quand la référence est inconnue ou porte
+  // sur une autre entreprise : sans cela, le formulaire deviendrait un moyen de
+  // tester l'existence de dossiers.
+  if (!signalement || signalement.entrepriseId !== entreprise.id) {
+    return { erreur: "Aucun dossier publié ne correspond à cette référence pour cette entreprise." };
+  }
+  if (signalement.moderation !== "PUBLIE") {
+    return { erreur: "Ce dossier n’est plus publié." };
+  }
+
+  const enCours = await prisma.contestation.findFirst({
+    where: { signalementId: signalement.id, etat: { in: ["OUVERTE", "PIECE_DEMANDEE", "PIECE_FOURNIE"] } },
+  });
+  if (enCours) {
+    return { erreur: "Une contestation est déjà en cours sur ce dossier. Elle suit son délai." };
+  }
+
+  const maintenant = new Date();
+  const contestation = await prisma.contestation.create({
+    data: {
+      signalementId: signalement.id,
+      email: d.email,
+      nom: d.nom,
+      qualite: d.qualite,
+      motif: d.motif,
+      etat: "PIECE_DEMANDEE",
+      pieceDemandeeLe: maintenant,
+      echeanceReponse: echeanceDepuis(maintenant),
+    },
+  });
+
+  // Le consommateur est sollicité tout de suite : le délai court à partir de
+  // l'envoi, pas de la prochaine exécution d'une tâche planifiée.
+  try {
+    const jeton = await creerJetonSuivi(signalement.id, signalement.email);
+    await envoyerDemandeDePiece({
+      email: signalement.email,
+      prenom: signalement.prenom,
+      reference: signalement.reference,
+      entreprise: entreprise.denomination,
+      jeton,
+      echeance: contestation.echeanceReponse!,
+    });
+  } catch {
+    // L'échec d'envoi ne doit pas faire échouer la contestation : la tâche
+    // planifiée relancera la sollicitation tant que l'échéance n'est pas passée.
+  }
+
+  await prisma.evenementSignalement.create({
+    data: {
+      signalementId: signalement.id,
+      titre: "Contestation reçue",
+      detail: `L’entreprise conteste ce signalement. Une pièce vous est demandée sous ${DELAI_REPONSE_JOURS} jours.`,
+      auteur: "RECOURS_FRANCE",
+      etiquette: "CONTESTATION",
+    },
+  });
+
+  await envoyerAccuseDemande(
+    d.email,
+    "Contestation enregistrée",
+    `Votre contestation du dossier ${signalement.reference} est enregistrée. Le consommateur dispose de ${DELAI_REPONSE_JOURS} jours pour produire sa pièce justificative. Sans réponse de sa part dans ce délai, le signalement est retiré automatiquement. S’il répond, sa pièce est examinée et le signalement retiré si elle ne l’étaye pas.`,
+  ).catch(() => undefined);
+
+  revalidatePath(`/entreprises/${d.slug}`);
+  return {
+    succes: true,
+    message: `Contestation enregistrée. Le consommateur a ${DELAI_REPONSE_JOURS} jours pour produire sa pièce. Sans réponse, le signalement est retiré automatiquement. Vous serez informé de l’issue par email.`,
   };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { normaliserDomaine, nomDepuisDomaine } from "@/lib/boutiques";
 import { Page } from "@/components/chrome";
 import { FormulaireSignalement, type EntrepriseChoisie } from "./formulaire";
 import { prisma } from "@/lib/db";
@@ -20,7 +21,10 @@ export default async function Signaler({
 }) {
   const params = await searchParams;
   const siren = typeof params.siren === "string" ? params.siren.replace(/\D/g, "") : "";
-  const modeInitial = params.mode === "libre" ? "libre" : "annuaire";
+  // Un domaine passé en paramètre bascule d'office en saisie libre : la
+  // boutique est l'objet du litige, indépendamment de toute personne morale.
+  const siteInitial = typeof params.site === "string" ? normaliserDomaine(params.site) : null;
+  const modeInitial = params.mode === "libre" || siteInitial ? "libre" : "annuaire";
 
   let entrepriseInitiale: EntrepriseChoisie | null = null;
   if (siren.length === 9) {
@@ -57,7 +61,12 @@ export default async function Signaler({
         </div>
       </div>
 
-      <FormulaireSignalement entrepriseInitiale={entrepriseInitiale} modeInitial={modeInitial} />
+      <FormulaireSignalement
+        entrepriseInitiale={entrepriseInitiale}
+        modeInitial={modeInitial}
+        siteInitial={siteInitial}
+        nomInitial={siteInitial ? nomDepuisDomaine(siteInitial) : null}
+      />
     </Page>
   );
 }

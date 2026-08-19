@@ -29,7 +29,7 @@ export default function MonEspace() {
               <div style={{ fontSize: 15, fontWeight: 700 }}>Ce que vous pouvez faire depuis votre espace</div>
               <ul className="rf-pile rf-pile--serree rf-mt-12" style={{ gap: 8 }}>
                 {[
-                  "Ajouter un justificatif pour faire vérifier votre signalement",
+                  "Ajouter un justificatif pour appuyer votre signalement",
                   "Enregistrer une réponse reçue du professionnel",
                   "Mettre à jour le statut déclaré de votre litige",
                   "Confirmer une résolution — seule votre confirmation la rend comptabilisable",

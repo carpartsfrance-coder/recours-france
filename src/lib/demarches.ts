@@ -197,8 +197,8 @@ export function construireGuide(params: {
       titre: "Signalement sur Recours France",
       delai: "effectué",
       description: params.verifie
-        ? `Votre signalement ${params.reference} est enregistré et vérifié : un justificatif a été contrôlé.`
-        : `Votre signalement ${params.reference} est enregistré. Ajoutez un justificatif pour le faire passer en signalement vérifié.`,
+        ? `Votre signalement ${params.reference} est enregistré, avec un justificatif horodaté et scellé.`
+        : `Votre signalement ${params.reference} est enregistré. Ajoutez un justificatif pour l’appuyer.`,
       etat: "faite",
       reference: params.reference,
     },
@@ -341,5 +341,7 @@ const MOIS = [
 ];
 
 function formatLong(d: Date): string {
-  return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+  // « 1 juillet » ne s'écrit pas : le premier du mois est un ordinal.
+  const jour = d.getDate() === 1 ? "1er" : String(d.getDate());
+  return `${jour} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
 }
