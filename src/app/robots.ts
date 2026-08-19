@@ -11,6 +11,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/mon-espace", "/signaler/confirmation", "/api/justificatifs"],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
+    // L'index, et non /sitemap.xml : le plan est découpé en milliers de
+    // tranches, et Next réserve cette dernière adresse à sa convention.
+    sitemap: `${base}/sitemap-index.xml`,
   };
 }
