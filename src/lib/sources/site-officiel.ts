@@ -119,7 +119,7 @@ function meilleurTelephone(texte: string, html: string): string | null {
   return chiffres.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 
-function trouverLien(html: string, base: string, motsCles: string[]): string | null {
+export function trouverLien(html: string, base: string, motsCles: string[]): string | null {
   for (const m of html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]{0,120}?)<\/a>/gi)) {
     const href = m[1];
     const libelle = texteBrut(m[2]).toLowerCase();

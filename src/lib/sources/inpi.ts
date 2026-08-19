@@ -4,9 +4,9 @@
  * le connecteur reste inactif : la fiche s'appuie alors sur Sirene et BODACC.
  * https://www.inpi.fr/acces-api-entreprises
  */
-import { appel, appelJson, dateOuNull } from "./http";
+import { appel, appelJson, dateOuNull, variable} from "./http";
 
-const BASE = process.env.INPI_API_URL ?? "https://registre-national-entreprises.inpi.fr/api";
+const BASE = variable("INPI_API_URL", "https://registre-national-entreprises.inpi.fr/api");
 
 let jeton: { valeur: string; expire: number } | null = null;
 

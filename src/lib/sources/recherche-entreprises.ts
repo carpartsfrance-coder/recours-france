@@ -4,11 +4,11 @@
  * état administratif, effectifs, dirigeants, comptes agrégés.
  * https://recherche-entreprises.api.gouv.fr/docs
  */
-import { appelJson, dateOuNull } from "./http";
+import { appelJson, dateOuNull, variable} from "./http";
 import { NATURES_JURIDIQUES } from "../referentiels/natures-juridiques";
 import { libelleNaf, secteurDepuisNaf } from "../referentiels/naf";
 
-const BASE = process.env.RECHERCHE_ENTREPRISES_URL ?? "https://recherche-entreprises.api.gouv.fr";
+const BASE = variable("RECHERCHE_ENTREPRISES_URL", "https://recherche-entreprises.api.gouv.fr");
 
 type Siege = {
   siret?: string | null;
@@ -27,6 +27,7 @@ type Siege = {
   liste_enseignes?: string[] | null;
   nom_commercial?: string | null;
   tranche_effectif_salarie?: string | null;
+  statut_diffusion_etablissement?: string | null;
 };
 
 type Dirigeant = {
@@ -54,6 +55,8 @@ export type ResultatRecherche = {
   date_mise_a_jour_insee: string | null;
   date_mise_a_jour_rne: string | null;
   tva: string | string[] | null;
+  /** « O » diffusible, « P » opposition à la diffusion exercée par l'entreprise. */
+  statut_diffusion: string | null;
   siege: Siege | null;
   dirigeants: Dirigeant[] | null;
   finances: Record<string, { ca?: number; resultat_net?: number }> | null;
@@ -76,6 +79,23 @@ export type FiltresRecherche = {
   etat?: "A" | "C";
 };
 
+/**
+ * Droit d'opposition à la diffusion des données (article A123-96 du code de
+ * commerce) : l'Insee renvoie « O » pour un enregistrement diffusible et « P »
+ * lorsque l'entreprise s'est opposée à la diffusion. Dans ce second cas les
+ * champs d'identité sont masqués à la source — aucune fiche ne doit exister.
+ *
+ * Le filtre est posé ici, dans le connecteur, et non chez les appelants :
+ * c'est le seul passage obligé vers l'API.
+ */
+const MARQUEURS_MASQUAGE = ["non-diffusible", "non diffusible"];
+
+export function estDiffusible(r: ResultatRecherche): boolean {
+  if ((r.statut_diffusion ?? "O").toUpperCase() !== "O") return false;
+  const identite = `${r.nom_complet ?? ""} ${r.nom_raison_sociale ?? ""}`.toLowerCase();
+  return !MARQUEURS_MASQUAGE.some((marqueur) => identite.includes(marqueur));
+}
+
 export async function rechercher(
   requete: string,
   filtres: FiltresRecherche = {},
@@ -94,14 +114,37 @@ export async function rechercher(
     `${BASE}/search?${params.toString()}`,
     "recherche-entreprises",
   );
-  return { resultats: data.results ?? [], total: data.total_results ?? 0, pages: data.total_pages ?? 0 };
+  const bruts = data.results ?? [];
+  const resultats = bruts.filter(estDiffusible);
+  // Le total renvoyé par l'API compte les enregistrements masqués : on le corrige
+  // pour que la pagination ne promette pas des résultats qu'on n'affichera jamais.
+  const retires = bruts.length - resultats.length;
+  return {
+    resultats,
+    total: Math.max(0, (data.total_results ?? 0) - retires),
+    pages: data.total_pages ?? 0,
+  };
 }
 
 export async function parSiren(siren: string): Promise<ResultatRecherche | null> {
+  const resultat = await parSirenMemeMasque(siren);
+  return resultat && estDiffusible(resultat) ? resultat : null;
+}
+
+/**
+ * Même recherche, sans filtre de diffusion. Réservé à la synchronisation, qui
+ * doit distinguer « SIREN inconnu » de « opposition à la diffusion exercée » —
+ * dans le second cas il faut retirer la fiche déjà en base, pas l'ignorer.
+ */
+export async function parSirenMemeMasque(siren: string): Promise<ResultatRecherche | null> {
   const propre = siren.replace(/\D/g, "");
   if (propre.length !== 9) return null;
-  const { resultats } = await rechercher(propre, { parPage: 5 });
-  return resultats.find((r) => r.siren === propre) ?? null;
+  const params = new URLSearchParams({ q: propre, page: "1", per_page: "5", minimal: "false" });
+  const data = await appelJson<ReponseRecherche>(
+    `${BASE}/search?${params.toString()}`,
+    "recherche-entreprises",
+  );
+  return (data.results ?? []).find((r) => r.siren === propre) ?? null;
 }
 
 /** Normalise un résultat d'API en champs de la table Entreprise. */
@@ -150,7 +193,8 @@ export function versEntreprise(r: ResultatRecherche) {
 /** Établissements connus via l'API (siège + établissements correspondants). */
 export function versEtablissements(r: ResultatRecherche) {
   const liste = [r.siege, ...(r.matching_etablissements ?? [])].filter(
-    (e): e is Siege => Boolean(e && e.siret),
+    (e): e is Siege =>
+      Boolean(e && e.siret) && (e!.statut_diffusion_etablissement ?? "O").toUpperCase() === "O",
   );
   const vus = new Set<string>();
   return liste

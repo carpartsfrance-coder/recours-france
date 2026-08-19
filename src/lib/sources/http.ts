@@ -1,3 +1,16 @@
+/**
+ * Valeur d'environnement, avec repli sur le défaut quand la variable est vide.
+ *
+ * `process.env.X ?? defaut` ne se rabat que sur `undefined` : une variable
+ * déclarée à `""` — cas courant dans un fichier .env d'exemple — écrase
+ * silencieusement le défaut. L'annuaire des médiateurs est resté vide pour
+ * cette raison, et la synchronisation rapportait « ok » sans rien charger.
+ */
+export function variable(nom: string, defaut: string): string {
+  const valeur = process.env[nom];
+  return valeur && valeur.trim() ? valeur.trim() : defaut;
+}
+
 const UA = "RecoursFrance/1.0 (+https://recours-france.fr; contact@recours-france.fr)";
 
 export class ErreurSource extends Error {

@@ -14,13 +14,15 @@ import * as inpi from "./inpi";
 import * as sirene from "./sirene";
 import * as mediateurs from "./mediateurs";
 import * as siteOfficiel from "./site-officiel";
+import { detecterSite } from "./detection-site";
+import { ADHESION_DECLAREE } from "../mediation";
 import type { Prisma, Source } from "@prisma/client";
 
 export type ResultatSync = {
   siren: string;
   entrepriseId: string;
   cree: boolean;
-  sources: { source: string; statut: "ok" | "inactif" | "erreur"; message?: string }[];
+  sources: { source: string; statut: "ok" | "inactif" | "erreur" | "ignore"; message?: string }[];
   evenements: number;
   etablissements: number;
 };
@@ -67,12 +69,28 @@ export async function synchroniserEntreprise(
   // ── 1. Socle d'identité : API Recherche d'entreprises (Insee/DINUM) ───────
   let base: recherche.ResultatRecherche | null = null;
   try {
-    base = await recherche.parSiren(siren);
+    base = await recherche.parSirenMemeMasque(siren);
     journal.push({ source: "recherche-entreprises", statut: base ? "ok" : "erreur", message: base ? undefined : "SIREN introuvable" });
   } catch (e) {
     journal.push({ source: "recherche-entreprises", statut: "erreur", message: String(e) });
   }
   if (!base) return null;
+
+  // Opposition à la diffusion : la fiche ne doit pas exister. Si elle a été
+  // créée avant que l'entreprise n'exerce son droit, on la retire ici. Les
+  // signalements survivent (relation en SetNull) : c'est la fiche publique
+  // qu'on supprime, pas les dossiers des consommateurs.
+  if (!recherche.estDiffusible(base)) {
+    const retiree = await prisma.entreprise.deleteMany({ where: { siren } });
+    journal.push({
+      source: "recherche-entreprises",
+      statut: "ignore",
+      message: retiree.count
+        ? "Opposition à la diffusion : fiche retirée."
+        : "Opposition à la diffusion : aucune fiche créée.",
+    });
+    return null;
+  }
 
   const champs = recherche.versEntreprise(base);
   if (!champs.formeJuridique) champs.formeJuridique = familleJuridique(champs.categorieJuridique);
@@ -240,7 +258,50 @@ export async function synchroniserEntreprise(
   }
 
   // ── 6. Site officiel de l'entreprise ─────────────────────────────────────
-  const site = existante?.siteWeb;
+  // Aucun registre public ne publie l'adresse d'un site : sans détection, ce
+  // champ reste vide pour toujours, et avec lui les coordonnées du service
+  // consommateurs, les CGV et le médiateur déclaré.
+  let site = existante?.siteWeb;
+  const JOURS_AVANT_NOUVELLE_TENTATIVE = 30;
+  const tenteRecemment =
+    existante?.siteWebTenteLe != null &&
+    Date.now() - existante.siteWebTenteLe.getTime() < JOURS_AVANT_NOUVELLE_TENTATIVE * 86_400_000;
+
+  if (!site && !tenteRecemment && options.avecSite !== false) {
+    try {
+      const indique = await prisma.signalement.findFirst({
+        where: { entrepriseId: entreprise.id, entrepriseLibreSite: { not: null } },
+        select: { entrepriseLibreSite: true },
+        orderBy: { creeLe: "desc" },
+      });
+      const detecte = await detecterSite({
+        siren,
+        denomination: champs.denomination,
+        siteIndiqueParConsommateur: indique?.entrepriseLibreSite ?? null,
+      });
+      await prisma.entreprise.update({
+        where: { id: entreprise.id },
+        data: detecte
+          ? {
+              siteWeb: detecte.url,
+              siteWebSource: detecte.provenance,
+              siteWebPreuve: detecte.preuve,
+              siteWebVerifieLe: maintenant,
+              siteWebTenteLe: maintenant,
+            }
+          : { siteWebTenteLe: maintenant },
+      });
+      if (detecte) site = detecte.url;
+      journal.push({
+        source: "detection-site",
+        statut: detecte ? "ok" : "ignore",
+        message: detecte ? `${detecte.url} (${detecte.provenance})` : "aucun domaine ne porte le SIREN",
+      });
+    } catch (e) {
+      journal.push({ source: "detection-site", statut: "erreur", message: String(e).slice(0, 140) });
+    }
+  }
+
   if (options.avecSite !== false && site && siteOfficiel.enrichissementActif()) {
     try {
       const enrichi = await siteOfficiel.enrichir(site);
@@ -340,7 +401,7 @@ async function confirmerMediateurDeclare(entrepriseId: string, extrait: string) 
   const enregistre = await enregistrerMediateur(trouve);
   await prisma.entreprise.update({
     where: { id: entrepriseId },
-    data: { mediateurId: enregistre.id, mediateurAdhesionDepuis: "Déclarée par l’entreprise", syncMediateurs: new Date() },
+    data: { mediateurId: enregistre.id, mediateurAdhesionDepuis: ADHESION_DECLAREE, syncMediateurs: new Date() },
   });
 }
 

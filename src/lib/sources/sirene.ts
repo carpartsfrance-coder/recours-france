@@ -5,9 +5,9 @@
  * inactif et la fiche s'appuie sur les autres sources.
  * https://portail-api.insee.fr/
  */
-import { appelJson, dateOuNull } from "./http";
+import { appelJson, dateOuNull, variable} from "./http";
 
-const BASE = process.env.SIRENE_API_URL ?? "https://api.insee.fr/api-sirene/3.11";
+const BASE = variable("SIRENE_API_URL", "https://api.insee.fr/api-sirene/3.11");
 
 export function sireneConfigure(): boolean {
   return Boolean(process.env.SIRENE_API_KEY);

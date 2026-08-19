@@ -8,11 +8,13 @@
  * comme le médiateur de l'entreprise que lorsque celle-ci le déclare sur son
  * site et que la déclaration est retrouvée dans la liste publique.
  */
-import { appelJson } from "./http";
+import { appelJson, variable} from "./http";
 
 const BASE =
-  process.env.MEDIATEURS_DATASET_URL ??
-  "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/mediation-consommation-annuaire-des-mediateurs";
+  variable(
+    "MEDIATEURS_DATASET_URL",
+    "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/mediation-consommation-annuaire-des-mediateurs",
+  );
 
 export type MediateurPublic = {
   nom: string;

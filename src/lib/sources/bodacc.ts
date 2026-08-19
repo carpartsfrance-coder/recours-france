@@ -3,11 +3,10 @@
  * Données ouvertes, sans clé. Alimente les événements légaux d'une fiche :
  * dépôts de comptes, modifications, procédures collectives, ventes, radiations.
  */
-import { appelJson, dateOuNull } from "./http";
+import { appelJson, dateOuNull, variable} from "./http";
 
 const BASE =
-  process.env.BODACC_API_URL ??
-  "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales";
+  variable("BODACC_API_URL", "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales");
 
 type Annonce = {
   id: string;
