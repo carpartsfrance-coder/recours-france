@@ -10,14 +10,28 @@ import { prisma } from "@/lib/db";
 import { chargerEntreprise, detailEntreprise } from "@/lib/fiche";
 import { indicesEntreprise } from "@/lib/stats";
 import { versDossier } from "@/lib/dossiers";
+import { DonneesStructurees, organisationJsonLd } from "@/components/donnees-structurees";
+import { mediateurPublie, LISTE_OFFICIELLE } from "@/lib/mediation";
+import { Voisines } from "@/components/fiche/voisines";
+import {
+  cheminCommune,
+  cheminDepartement,
+  cheminSecteur,
+  libelleSecteur,
+  nomDepartement,
+  voisines,
+} from "@/lib/maillage";
 import {
   apprecier,
   couleurVerdict,
   couleurVigilance,
   formaterMontantCourt,
   SEUIL_PUBLICATION_EXPERIENCE,
+  SEUIL_PUBLICATION_LITIGES,
+  litigesPubliables,
 } from "@/lib/scoring";
 import { construireAlertes, couleurNiveau, estEnRetard, resumerAlertes } from "@/lib/alertes";
+import { AVIS_ACTIFS } from "@/lib/config";
 import { construireGuide } from "@/lib/demarches";
 import { METHODOLOGIE } from "@/lib/contenus";
 import {
@@ -39,7 +53,7 @@ export const dynamic = "force-dynamic";
 
 const JOUR = 86_400_000;
 
-const ONGLETS = [
+const TOUS_ONGLETS = [
   { cle: "synthese", libelle: "Fiche résumé" },
   { cle: "litiges", libelle: "Litiges et dossiers" },
   { cle: "donnees", libelle: "Données publiques" },
@@ -48,7 +62,11 @@ const ONGLETS = [
   { cle: "methodo", libelle: "Méthodologie" },
 ] as const;
 
-type CleOnglet = (typeof ONGLETS)[number]["cle"];
+// L'onglet « Avis » disparaît de la barre tant que la fonctionnalité est fermée
+// (voir src/lib/config.ts).
+const ONGLETS = TOUS_ONGLETS.filter((o) => o.cle !== "avis" || AVIS_ACTIFS);
+
+type CleOnglet = (typeof TOUS_ONGLETS)[number]["cle"];
 
 export async function generateMetadata({
   params,
@@ -58,9 +76,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const entreprise = await prisma.entreprise.findUnique({ where: { slug } });
   if (!entreprise) return { title: "Fiche entreprise" };
+  // Les mots du titre sont ceux que les gens tapent — avis, litige,
+  // remboursement, service client, médiateur — et non le vocabulaire interne de
+  // la plateforme, que personne ne cherche.
   return {
-    title: `${entreprise.denomination} — litiges, données publiques et points de vigilance`,
-    description: `Fiche de ${entreprise.denomination} (SIREN ${formatSiren(entreprise.siren)}) : dossiers de consommateurs, points de vigilance relevés sur les registres publics, comptes annuels et voies de recours.`,
+    title: `${entreprise.denomination} : litige, remboursement, médiateur`,
+    description: `Un problème avec ${entreprise.denomination} ? Coordonnées du service client, médiateur compétent, délais légaux et démarches à suivre. Déclarations de consommateurs et données publiques (SIREN ${formatSiren(entreprise.siren)}).`,
+    alternates: { canonical: `/entreprises/${slug}` },
   };
 }
 
@@ -175,18 +197,47 @@ export default async function FicheEntreprise({
   });
 
   const dossiers: Dossier[] = signalements.map(versDossier);
+
+  // Le médiateur n'est publié que s'il figure dans les CGV de l'entreprise. Un
+  // organisme déduit du secteur serait plausible et faux — la vente en ligne
+  // en compte vingt et un — et une saisine mal adressée consomme le délai de
+  // deux mois du consommateur.
+  const mediateurDeclare = mediateurPublie(entreprise);
+
+  // La fiche boutique et la fiche entreprise décrivent le même commerçant sous
+  // deux angles : sans lien entre elles, chacune serait un cul-de-sac.
+  const boutique = await prisma.boutique.findFirst({
+    where: { entrepriseId: entreprise.id },
+    select: { slug: true, domaine: true },
+  });
+
+  // Entreprises comparables : ce sont elles qui relient la fiche au reste de
+  // l'annuaire. Sans ce voisinage, chaque fiche resterait un cul-de-sac.
+  const proches = await voisines(entreprise);
+
   const guide = construireGuide({
     categorie: "AUTRE",
     contactPrealable: "AUCUN",
     dateSignalement: new Date(),
     reference: "—",
     verifie: false,
-    mediateur: entreprise.mediateur,
+    mediateur: mediateurDeclare,
   });
 
-  const lien = (cle: CleOnglet, extra?: string) =>
-    `/entreprises/${slug}${cle === "synthese" && !extra ? "" : `?onglet=${cle}${extra ?? ""}`}`;
-  const lienEtablissements = lien("donnees", "&rubrique=etablissements");
+  // Les six sections sont désormais rendues ensemble : les onglets deviennent
+  // des ancres dans la page. Auparavant chaque onglet portait sa propre URL,
+  // soit cinq adresses par entreprise — soixante-cinq millions à explorer pour
+  // treize millions de fiches — dont quatre étaient ensuite rabattues sur la
+  // canonique, qui n'en montrait qu'un cinquième du contenu.
+  const lien = (cle: CleOnglet) => `#${cle}`;
+  // La rubrique reste un vrai paramètre : elle décide du volet ouvert dans
+  // l'accordéon des données publiques.
+  const lienEtablissements = `?rubrique=etablissements#donnees`;
+
+  // Sous le seuil, la fiche n'affiche AUCUNE donnée de litige : ni compteur, ni
+  // taux, ni répartition, ni dossier. Un signalement isolé n'a aucune valeur
+  // statistique et publier l'accusation seule serait le pire des compromis.
+  const publierLitiges = litigesPubliables(stats.total12Mois);
 
   const dernierCompte = comptes.find((c) => c.chiffreAffaires !== null) ?? comptes[0];
   const etablissementsOuverts =
@@ -266,7 +317,29 @@ export default async function FicheEntreprise({
     <Page
       habillage="institutionnel"
       entete={{ baseline: "Signalement des litiges de consommation" }}
-      fil={[{ libelle: "Annuaire des entreprises", href: "/entreprises" }, { libelle: entreprise.denomination }]}
+      fil={[
+        { libelle: "Annuaire", href: "/annuaire" },
+        ...(entreprise.secteur
+          ? [{ libelle: libelleSecteur(entreprise.secteur), href: cheminSecteur(entreprise.secteur) }]
+          : []),
+        ...(entreprise.secteur && entreprise.departement && nomDepartement(entreprise.departement)
+          ? [
+              {
+                libelle: nomDepartement(entreprise.departement)!,
+                href: cheminDepartement(entreprise.secteur, entreprise.departement) ?? undefined,
+              },
+            ]
+          : []),
+        ...(entreprise.secteur && entreprise.departement && entreprise.commune
+          ? [
+              {
+                libelle: entreprise.commune,
+                href: cheminCommune(entreprise.secteur, entreprise.departement, entreprise.commune) ?? undefined,
+              },
+            ]
+          : []),
+        { libelle: entreprise.denomination },
+      ]}
     >
       {/* ── En-tête entreprise ────────────────────────────────────────────── */}
       <div className="rfi-conteneur" style={{ padding: "30px 32px 0" }}>
@@ -275,7 +348,23 @@ export default async function FicheEntreprise({
           style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 36, alignItems: "start" }}
         >
           <div style={{ minWidth: 0 }}>
-            <h1 className="rfi-titre">{entreprise.denomination}</h1>
+            <DonneesStructurees
+              donnees={organisationJsonLd({
+                nom: entreprise.denomination,
+                siren: entreprise.siren,
+                url: `/entreprises/${slug}`,
+                siteWeb: entreprise.siteWeb,
+                adresse: entreprise.adresseSiege,
+                codePostal: entreprise.codePostal,
+                commune: entreprise.commune,
+                telephone: entreprise.telephoneReclamation,
+                email: entreprise.emailReclamation,
+              })}
+            />
+            <h1 className="rfi-titre">
+              {entreprise.denomination}
+              <span className="rfi-titre__suite"> — litige, réclamation et recours</span>
+            </h1>
             <div className="rfi-identification">
               <span className="rfi-jeton">Unité légale</span>
               <span aria-hidden="true" style={{ color: "var(--rf-texte-desactive)" }}>
@@ -333,7 +422,7 @@ export default async function FicheEntreprise({
               <Link href={lienEtablissements}>{formatNombre(etablissementsOuverts)} établissements</Link>.
             </>
           ) : null}{" "}
-          {stats.total12Mois > 0 ? (
+          {publierLitiges ? (
             <>
               <strong>
                 {formatNombre(stats.total12Mois)} dossier{stats.total12Mois > 1 ? "s" : ""}
@@ -362,7 +451,7 @@ export default async function FicheEntreprise({
       />
 
       {/* ── Onglet : fiche résumé ─────────────────────────────────────────── */}
-      {onglet === "synthese" ? (
+      <section id="synthese">
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
@@ -371,50 +460,70 @@ export default async function FicheEntreprise({
             </div>
             <p className="rfi-chapo">
               Données issues des dossiers enregistrés sur Recours France et des justificatifs transmis par les
-              consommateurs, sur les douze derniers mois. Les dossiers non vérifiés sont comptés dans le volume
+              consommateurs, sur les douze derniers mois. Les dossiers sans justificatif sont comptés dans le volume
               mais exclus de tous les taux.
             </p>
 
-            {stats.total12Mois === 0 ? (
+            <p
+              className="rfi-chapo"
+              style={{
+                marginTop: 16,
+                paddingTop: 14,
+                borderTop: "1px solid var(--rfi-bordure-bloc)",
+                fontSize: 13.5,
+              }}
+            >
+              Les informations relatives aux litiges sont <strong>déclarées par les utilisateurs</strong>.
+              Recours France distingue les déclarations sans pièce, celles comportant une pièce justificative
+              et celles dont la nature de la pièce a été contrôlée. <strong>L’existence d’une déclaration ne
+              constitue pas une constatation de faute du professionnel.</strong> Toute entreprise peut
+              contester une déclaration.
+            </p>
+
+            {!publierLitiges ? (
               <div className="rfi-ouverture" style={{ marginTop: 20, paddingTop: 20 }}>
-                <p style={{ fontSize: 16, fontWeight: 600 }}>Aucun dossier enregistré sur cette entreprise.</p>
+                <p style={{ fontSize: 16, fontWeight: 600 }}>
+                  {stats.total12Mois === 0
+                    ? "Aucun dossier enregistré sur cette entreprise."
+                    : "Trop peu de dossiers pour publier des données de litige."}
+                </p>
                 <p className="rfi-chapo" style={{ marginTop: 8 }}>
-                  Aucun taux n’est publié : les statistiques de comportement ne sont calculées qu’à partir de
-                  dossiers vérifiés. Les points de vigilance ci-dessous reposent alors uniquement sur les
-                  registres publics.
+                  {stats.total12Mois === 0
+                    ? "Les points de vigilance ci-dessous reposent uniquement sur les registres publics."
+                    : `Aucune donnée de litige n’est publiée en dessous de ${SEUIL_PUBLICATION_LITIGES} dossiers sur douze mois : en dessous de ce volume, un chiffre ne dit rien de fiable sur une entreprise. Les points de vigilance ci-dessous reposent uniquement sur les registres publics.`}
                 </p>
               </div>
             ) : (
               <>
                 <div className="rfi-chiffres">
                   <Chiffre
+                    id="resolution"
+                    valeur={stats.tauxResolution === null ? "—" : formatPourcent(stats.tauxResolution)}
+                    libelle="de résolution confirmée"
+                    base={`base : ${stats.clotures} dossier${stats.clotures > 1 ? "s" : ""} clôturé${stats.clotures > 1 ? "s" : ""}`}
+                    aide="Part des dossiers accompagnés d’un justificatif et clôturés dont la résolution a été confirmée par le consommateur. Un abandon ou une absence de retour n’est jamais compté comme résolu."
+                  />
+                  <Chiffre
                     id="total"
                     valeur={formatNombre(stats.total12Mois)}
-                    libelle="dossiers enregistrés"
-                    base="12 derniers mois, vérifiés ou non"
+                    libelle="déclarations enregistrées"
+                    base="12 derniers mois, avec ou sans justificatif"
                     aide="Total des signalements déposés par des consommateurs sur les douze derniers mois. Un dossier par consommateur et par litige."
                   />
                   <Chiffre
                     id="verifies"
                     valeur={formatNombre(stats.verifies)}
-                    libelle="dossiers vérifiés"
-                    base="justificatif contrôlé par Recours France"
-                    aide="Dossiers pour lesquels une pièce a été contrôlée : facture, commande, contrat ou preuve de paiement. Seule base des taux publiés."
+                    libelle="comportant au moins une pièce"
+                    base="pièce fournie, horodatée et scellée"
+                    aide="Dossiers accompagnés d’une pièce déposée par le consommateur — facture, commande, contrat ou preuve de paiement — horodatée et scellée. Seule base des taux publiés. La pièce n’est examinée qu’en cas de contestation."
                   />
                   <Chiffre
                     id="encours"
                     valeur={formatNombre(stats.enCours)}
                     libelle="litiges en cours"
                     base={`dont ${stats.ouverts.filter((o) => o.jours > 30).length} ouverts depuis plus de 30 jours`}
-                    aide="Dossiers vérifiés non clôturés à ce jour, quel que soit leur statut déclaré."
+                    aide="Dossiers accompagnés d’un justificatif et non clôturés à ce jour, quel que soit leur statut déclaré."
                     couleur={stats.ouverts.filter((o) => o.jours > 30).length ? "var(--rfi-ambre)" : undefined}
-                  />
-                  <Chiffre
-                    id="resolution"
-                    valeur={stats.tauxResolution === null ? "—" : formatPourcent(stats.tauxResolution)}
-                    libelle="de résolution confirmée"
-                    base={`base : ${stats.clotures} dossier${stats.clotures > 1 ? "s" : ""} clôturé${stats.clotures > 1 ? "s" : ""}`}
-                    aide="Part des dossiers vérifiés et clôturés dont la résolution a été confirmée par le consommateur. Un abandon ou une absence de retour n’est jamais compté comme résolu."
                   />
                   <Chiffre
                     id="delai"
@@ -556,7 +665,7 @@ export default async function FicheEntreprise({
                         </div>
                       ))}
                       <p className="rfi-legende" style={{ marginTop: 12 }}>
-                        Trois critères reposent sur les registres publics, deux sur les dossiers vérifiés et les
+                        Trois critères reposent sur les registres publics, deux sur les dossiers avec justificatif et les
                         déclarations des consommateurs.
                       </p>
                     </div>
@@ -571,10 +680,10 @@ export default async function FicheEntreprise({
                   {appreciation.indice}/100 — {appreciation.bande}
                 </div>
                 <p className="rfi-legende" style={{ marginTop: 8 }}>
-                  Recalculé chaque jour. Un dossier non vérifié ne fait pas varier cet indice.
+                  Recalculé chaque jour. Un dossier sans justificatif ne fait pas varier cet indice.
                   {appreciation.comportementPublie
                     ? ""
-                    : ` Faute de ${SEUIL_PUBLICATION_EXPERIENCE} dossiers vérifiés sur douze mois, il repose ici sur les seuls registres publics.`}
+                    : ` Faute de ${SEUIL_PUBLICATION_EXPERIENCE} dossiers avec justificatif sur douze mois, il repose ici sur les seuls registres publics.`}
                 </p>
                 <div style={{ paddingTop: 10 }}>
                   <Link href={lien("methodo")} style={{ fontSize: 12.5 }}>
@@ -585,31 +694,58 @@ export default async function FicheEntreprise({
             </div>
           </section>
         </div>
-      ) : null}
+      </section>
 
       {/* ── Onglet : litiges et dossiers ──────────────────────────────────── */}
-      {onglet === "litiges" ? (
+      <section id="litiges">
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
-              <h2 className="rfi-pastille-titre">Dossiers enregistrés sur Recours France</h2>
+              <h2 className="rfi-pastille-titre">Déclarations enregistrées sur Recours France</h2>
               <span className="rfi-source">
-                {formatNombre(stats.total12Mois)} dossier{stats.total12Mois > 1 ? "s" : ""} ·{" "}
-                {formatNombre(stats.verifies)} vérifié{stats.verifies > 1 ? "s" : ""}
+                {publierLitiges
+                  ? `${formatNombre(stats.total12Mois)} déclaration${stats.total12Mois > 1 ? "s" : ""} · ${formatNombre(stats.verifies)} comportant au moins une pièce`
+                  : "Volume insuffisant pour publication"}
               </span>
             </div>
 
-            {totalDossiers === 0 ? (
+            <p
+              className="rfi-chapo"
+              style={{
+                marginTop: 16,
+                paddingTop: 14,
+                borderTop: "1px solid var(--rfi-bordure-bloc)",
+                fontSize: 13.5,
+              }}
+            >
+              Les informations relatives aux litiges sont <strong>déclarées par les utilisateurs</strong>.
+              Recours France distingue les déclarations sans pièce, celles comportant une pièce justificative
+              et celles dont la nature de la pièce a été contrôlée. <strong>L’existence d’une déclaration ne
+              constitue pas une constatation de faute du professionnel.</strong> Toute entreprise peut
+              contester une déclaration.
+            </p>
+
+            {!publierLitiges ? (
               <div className="rfi-ouverture" style={{ marginTop: 20, paddingTop: 20 }}>
-                <p style={{ fontSize: 16, fontWeight: 600 }}>Aucun dossier enregistré sur cette entreprise.</p>
+                <p style={{ fontSize: 16, fontWeight: 600 }}>
+                  {stats.total12Mois === 0
+                    ? "Aucun dossier enregistré sur cette entreprise."
+                    : "Trop peu de dossiers pour publier des données de litige."}
+                </p>
                 <p className="rfi-chapo" style={{ marginTop: 8 }}>
-                  Si vous rencontrez un litige avec {entreprise.denomination}, vous pouvez le signaler
-                  gratuitement : trois à cinq minutes, sans création de compte.
+                  {stats.total12Mois === 0
+                    ? `Si vous rencontrez un litige avec ${entreprise.denomination}, vous pouvez le signaler gratuitement : trois à cinq minutes, sans création de compte.`
+                    : `Aucun dossier n’est publié en dessous de ${SEUIL_PUBLICATION_LITIGES} sur douze mois. Les dossiers déjà déposés sont bien enregistrés et suivis par leurs auteurs ; ils seront publiés lorsque ce volume sera atteint.`}
                 </p>
               </div>
             ) : (
               <div className="rfi-deux-colonnes" style={{ marginTop: 22 }}>
-                <Dossiers dossiers={dossiers} total={totalDossiers} lienTous={`/entreprises/${slug}/dossiers`} />
+                <Dossiers
+                  slug={slug}
+                  dossiers={dossiers}
+                  total={totalDossiers}
+                  lienTous={`/entreprises/${slug}/dossiers`}
+                />
 
                 <div style={{ minWidth: 0 }}>
                   <div className="rfi-ouverture" style={{ paddingTop: 14 }}>
@@ -644,16 +780,17 @@ export default async function FicheEntreprise({
                   <div className="rfi-ouverture--legere" style={{ marginTop: 24, paddingTop: 16 }}>
                     <h3 className="rfi-h3 rfi-h3--petit">Deux niveaux de fiabilité</h3>
                     <div style={{ marginTop: 14 }}>
-                      <span className="rfi-badge rfi-badge--verifie">✓ Justificatif vérifié</span>
+                      <span className="rfi-badge rfi-badge--verifie">✓ Justificatif déposé</span>
                       <p style={{ fontSize: 12.5, color: "var(--rf-texte-2)", lineHeight: 1.6, marginTop: 8 }}>
-                        Facture, commande ou preuve de paiement contrôlée par Recours France. Seuls ces dossiers
+                        Facture, commande ou preuve de paiement déposée par le consommateur, horodatée et
+                        scellée. Seuls ces dossiers
                         entrent dans les taux publiés.
                       </p>
                     </div>
                     <div style={{ marginTop: 16 }}>
-                      <span className="rfi-badge rfi-badge--neutre">Non vérifié</span>
+                      <span className="rfi-badge rfi-badge--neutre">Sans justificatif</span>
                       <p style={{ fontSize: 12.5, color: "var(--rf-texte-2)", lineHeight: 1.6, marginTop: 8 }}>
-                        Déclaration sans pièce contrôlée. Comptée dans le volume, exclue de tous les taux.
+                        Déclaration sans pièce. Comptée dans le volume, exclue de tous les taux.
                       </p>
                     </div>
                   </div>
@@ -662,10 +799,10 @@ export default async function FicheEntreprise({
             )}
           </section>
         </div>
-      ) : null}
+      </section>
 
       {/* ── Onglet : données publiques ────────────────────────────────────── */}
-      {onglet === "donnees" ? (
+      <section id="donnees">
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
@@ -906,10 +1043,10 @@ export default async function FicheEntreprise({
             </div>
           </section>
         </div>
-      ) : null}
+      </section>
 
       {/* ── Onglet : médiation et recours ─────────────────────────────────── */}
-      {onglet === "recours" ? (
+      <section id="recours">
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
@@ -917,21 +1054,41 @@ export default async function FicheEntreprise({
               <span className="rfi-source">Dispositifs applicables à cette entreprise</span>
             </div>
 
+            {entreprise.siteWeb ? (
+              <div className="rfi-ouverture" style={{ marginTop: 18, paddingTop: 14 }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Site officiel</div>
+                <p style={{ marginTop: 8, fontSize: 14.5 }}>
+                  <a href={entreprise.siteWeb} target="_blank" rel="noreferrer noopener">
+                    {entreprise.siteWeb.replace(/^https?:\/\//, "")}
+                  </a>
+                  {boutique ? (
+                    <>
+                      {" · "}
+                      <Link href={`/boutiques/${boutique.slug}`}>
+                        déclarations concernant cette boutique
+                      </Link>
+                    </>
+                  ) : null}
+                </p>
+                <p className="rfi-legende" style={{ marginTop: 8 }}>
+                  Rattachement établi à partir de {entreprise.siteWebSource === "osm" ? "OpenStreetMap" : "Wikidata"},
+                  base contributive. Il n’a pas été reconfirmé auprès du site.
+                </p>
+              </div>
+            ) : null}
+
             <div
               className="rfi-ouverture rfi-grille--320"
               style={{ display: "grid", marginTop: 20, paddingTop: 16, alignItems: "start" }}
             >
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>
-                  {entreprise.mediateur?.nom ?? "Médiateur non identifié"}
+                  {mediateurDeclare?.nom ?? "Médiateur non établi"}
                 </div>
                 <div style={{ marginTop: 12 }}>
-                  {entreprise.mediateur ? (
+                  {mediateurDeclare && entreprise.mediateur ? (
                     <>
-                      <Paire
-                        cle="Rattachement"
-                        valeur={entreprise.mediateurAdhesionDepuis ?? "Présumé d’après le secteur d’activité"}
-                      />
+                      <Paire cle="Rattachement" valeur="Déclaré par l’entreprise dans ses conditions générales" />
                       <Paire
                         cle="Délai de traitement annoncé"
                         valeur={entreprise.mediateur.delaiInstruction ?? "90 jours"}
@@ -949,21 +1106,32 @@ export default async function FicheEntreprise({
                       />
                     </>
                   ) : (
-                    <p className="rfi-legende">
-                      Aucun médiateur n’a pu être rattaché à cette entreprise à partir de la liste publique des
-                      médiateurs de la consommation. Le médiateur compétent doit figurer dans les conditions
-                      générales du professionnel : la loi l’oblige à le communiquer.
-                    </p>
+                    <>
+                      <p className="rfi-legende">
+                        Le médiateur compétent n’a pas été relevé dans les conditions générales de cette
+                        entreprise. Nous ne le déduisons pas de son secteur d’activité :{" "}
+                        <strong>une saisine adressée au mauvais organisme est irrecevable</strong>, et le délai
+                        de deux mois serait consommé pour rien.
+                      </p>
+                      <p className="rfi-legende" style={{ marginTop: 10 }}>
+                        La loi oblige le professionnel à indiquer son médiateur dans ses conditions générales
+                        et sur son site. À défaut, la{" "}
+                        <a href={LISTE_OFFICIELLE} target="_blank" rel="noreferrer noopener">
+                          liste officielle des médiateurs référencés
+                        </a>{" "}
+                        permet d’identifier ceux de son secteur.
+                      </p>
+                    </>
                   )}
                 </div>
                 <p className="rfi-legende" style={{ marginTop: 14 }}>
                   Informations générales et parcours prédéfinis. Recours France ne délivre pas de consultation
                   juridique personnalisée et ne transmet pas les réclamations aux professionnels.
                 </p>
-                {entreprise.mediateur?.siteWeb ? (
+                {mediateurDeclare?.siteWeb ? (
                   <p style={{ marginTop: 10 }}>
                     <a
-                      href={entreprise.mediateur.siteWeb}
+                      href={mediateurDeclare.siteWeb}
                       target="_blank"
                       rel="noreferrer noopener"
                       style={{ fontSize: 13.5 }}
@@ -1019,10 +1187,10 @@ export default async function FicheEntreprise({
             </div>
           </section>
         </div>
-      ) : null}
+      </section>
 
       {/* ── Onglet : avis ─────────────────────────────────────────────────── */}
-      {onglet === "avis" ? (
+      <section id="avis">{AVIS_ACTIFS ? (
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
@@ -1046,14 +1214,14 @@ export default async function FicheEntreprise({
               </span>
               <span style={{ fontSize: 13.5, color: "var(--rf-texte-2)" }}>
                 {formatNombre(notesVerifiees.length)} avis rattaché{notesVerifiees.length > 1 ? "s" : ""} à un dossier
-                vérifié · {formatNombre(nbAvisNonVerifies)} avis non vérifié{nbAvisNonVerifies > 1 ? "s" : ""}, exclu
+                avec justificatif · {formatNombre(nbAvisNonVerifies)} avis sans justificatif, exclu
                 {nbAvisNonVerifies > 1 ? "s" : ""} de la moyenne
               </span>
             </div>
             <div style={{ marginTop: 8 }}>
               {avisPublies.length === 0 ? (
                 <p className="rfi-legende" style={{ padding: "16px 0" }}>
-                  Aucun avis rattaché à un dossier vérifié n’a encore été publié pour cette entreprise.
+                  Aucun avis rattaché à un dossier accompagné d’un justificatif n’a encore été publié pour cette entreprise.
                 </p>
               ) : (
                 avisPublies.map((a) => (
@@ -1073,7 +1241,7 @@ export default async function FicheEntreprise({
                           {"☆".repeat(5 - a.note)}
                         </span>
                         <span className="rf-vh">{a.note} sur 5</span>
-                        <span className="rfi-badge rfi-badge--verifie">✓ Rattaché à un dossier vérifié</span>
+                        <span className="rfi-badge rfi-badge--verifie">✓ Rattaché à un dossier avec justificatif</span>
                       </div>
                       <span className="rfi-source" style={{ fontSize: 11.5 }}>
                         {formatDate(a.publieLe ?? a.creeLe)}
@@ -1107,7 +1275,7 @@ export default async function FicheEntreprise({
               )}
               <div style={{ paddingTop: 14, display: "flex", gap: 20, flexWrap: "wrap" }}>
                 <Link href={`/entreprises/${slug}/tous-les-avis`} style={{ fontSize: 13.5 }}>
-                  Consulter les {formatNombre(notesVerifiees.length)} avis vérifié{notesVerifiees.length > 1 ? "s" : ""}
+                  Consulter les {formatNombre(notesVerifiees.length)} avis avec justificatif
                 </Link>
                 <Link href={`/entreprises/${slug}/avis`} style={{ fontSize: 13.5 }}>
                   Laisser un avis
@@ -1116,10 +1284,10 @@ export default async function FicheEntreprise({
             </div>
           </section>
         </div>
-      ) : null}
+      ) : null}</section>
 
       {/* ── Onglet : méthodologie ─────────────────────────────────────────── */}
-      {onglet === "methodo" ? (
+      <section id="methodo">
         <div className="rfi-conteneur" style={{ padding: "26px 32px 8px" }}>
           <section className="rfi-bloc">
             <div className="rfi-bloc__tete">
@@ -1143,7 +1311,17 @@ export default async function FicheEntreprise({
             </p>
           </section>
         </div>
-      ) : null}
+      </section>
+
+      {/* ── Entreprises comparables, sous tous les onglets ────────────────── */}
+      <Voisines
+        secteur={entreprise.secteur}
+        departement={entreprise.departement}
+        commune={entreprise.commune}
+        memeVille={proches.memeVille}
+        memeDepartement={proches.memeDepartement}
+        memeSecteur={proches.memeSecteur}
+      />
 
       {/* ── Bloc d'action, sous tous les onglets ──────────────────────────── */}
       <div className="rfi-conteneur" style={{ padding: "26px 32px 34px" }}>
@@ -1198,7 +1376,7 @@ export default async function FicheEntreprise({
               }}
             >
               Gratuit · 3 à 5 minutes · justificatifs facultatifs
-              {stats.total12Mois > 0 ? (
+              {publierLitiges ? (
                 <>
                   <br />
                   {formatNombre(stats.total12Mois)} consommateur{stats.total12Mois > 1 ? "s ont" : " a"} déjà signalé
@@ -1207,9 +1385,11 @@ export default async function FicheEntreprise({
               ) : null}
             </div>
             <div style={{ textAlign: "center", marginTop: 12 }}>
-              <Link href={lien("avis")} style={{ fontSize: 12.5 }}>
-                Laisser seulement un avis
-              </Link>
+              {AVIS_ACTIFS ? (
+                <Link href={lien("avis")} style={{ fontSize: 12.5 }}>
+                  Laisser seulement un avis
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
