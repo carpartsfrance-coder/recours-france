@@ -8,6 +8,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { recalculerIndices } from "../src/lib/stats";
+import { executerTache } from "../src/lib/taches";
 
 const prisma = new PrismaClient();
 
@@ -33,9 +34,10 @@ async function main() {
   const purges = await prisma.scoreSnapshot.deleteMany({ where: { calculeLe: { lt: limite } } });
 
   console.log(`\n${publies} score(s) d’expérience publié(s). ${purges.count} instantané(s) purgé(s).`);
+  return { traites: publies, detail: `${purges.count} instantané(s) purgé(s)` };
 }
 
-main()
+executerTache("scores", main)
   .catch((e) => {
     console.error(e);
     process.exit(1);

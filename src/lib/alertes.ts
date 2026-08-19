@@ -59,7 +59,7 @@ type EntreeAlertes = {
     procedureCollective: boolean;
   }[];
   stats: StatistiquesEntreprise;
-  /** Dossiers vérifiés encore ouverts, avec leur ancienneté en jours. */
+  /** Dossiers avec justificatif encore ouverts, avec leur ancienneté en jours. */
   ouverts: { jours: number }[];
 };
 
@@ -128,7 +128,7 @@ export function construireAlertes(e: EntreeAlertes): Alerte[] {
     alertes.push({
       niveau: anciens.length >= 3 ? "elevee" : "surveiller",
       libelle: anciens.length >= 3 ? LIBELLES_NIVEAU.elevee : LIBELLES_NIVEAU.surveiller,
-      titre: `${anciens.length} dossier${anciens.length > 1 ? "s" : ""} vérifié${anciens.length > 1 ? "s" : ""} ouvert${anciens.length > 1 ? "s" : ""} depuis plus de 30 jours`,
+      titre: `${anciens.length} dossier${anciens.length > 1 ? "s" : ""} avec justificatif ouvert${anciens.length > 1 ? "s" : ""} depuis plus de 30 jours`,
       description: `${
         tresAnciens.length
           ? `Dont ${tresAnciens.length} sans résolution déclarée après 60 jours. `
@@ -143,8 +143,8 @@ export function construireAlertes(e: EntreeAlertes): Alerte[] {
       niveau: "elevee",
       libelle: LIBELLES_NIVEAU.elevee,
       titre: "Part élevée de dossiers clôturés sans résolution",
-      description: `${Math.round(e.stats.tauxNonResolus)} % des dossiers vérifiés clôturés le sont sans résolution confirmée par le consommateur, sur ${e.stats.clotures} dossiers.`,
-      source: "Dossiers vérifiés",
+      description: `${Math.round(e.stats.tauxNonResolus)} % des dossiers avec justificatif clôturés le sont sans résolution confirmée par le consommateur, sur ${e.stats.clotures} dossiers.`,
+      source: "Dossiers avec justificatif",
     });
   }
 
@@ -153,7 +153,7 @@ export function construireAlertes(e: EntreeAlertes): Alerte[] {
       niveau: "surveiller",
       libelle: LIBELLES_NIVEAU.surveiller,
       titre: "Réponse du professionnel rarement déclarée",
-      description: `${Math.round(100 - e.stats.tauxReponse)} % des consommateurs ne déclarent aucune réponse du professionnel, sur ${e.stats.verifies} dossiers vérifiés.`,
+      description: `${Math.round(100 - e.stats.tauxReponse)} % des consommateurs ne déclarent aucune réponse du professionnel, sur ${e.stats.verifies} dossiers avec justificatif.`,
       source: "Déclarations des consommateurs",
     });
   }

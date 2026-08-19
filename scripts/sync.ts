@@ -9,6 +9,7 @@
 import { PrismaClient } from "@prisma/client";
 import { synchroniserEntreprise } from "../src/lib/sources";
 import { recalculerIndices } from "../src/lib/stats";
+import { executerTache } from "../src/lib/taches";
 
 const prisma = new PrismaClient();
 const PAUSE_MS = 400; // respecte les API publiques
@@ -51,9 +52,10 @@ async function main() {
   }
 
   console.log(`\n${ok} fiche(s) synchronisée(s), ${echecs} échec(s).`);
+  return { traites: ok, echecs, detail: `${entreprises.length} fiche(s) parcourue(s)` };
 }
 
-main()
+executerTache("sync", main)
   .catch((e) => {
     console.error(e);
     process.exit(1);
