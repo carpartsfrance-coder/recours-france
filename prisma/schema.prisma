@@ -55,9 +55,19 @@ enum ContactPrealable {
 
 /// Niveau de vérification d'un signalement. « verifie » suppose un justificatif
 /// contrôlé manuellement par Recours France.
+/// Niveau de preuve atteint par un signalement.
+///
+/// Il décrit ce que Recours France a RÉELLEMENT fait, pas ce qu'on aimerait
+/// promettre. Aucun contrôle humain systématique n'est effectué : un
+/// justificatif est enregistré et scellé au dépôt, et n'est examiné que si
+/// l'entreprise conteste le signalement.
 enum NiveauVerification {
+  /// Aucune pièce déposée.
   DECLARE
-  VERIFIE
+  /// Une pièce a été déposée, horodatée et scellée. Constat automatique.
+  PIECE_DEPOSEE
+  /// La pièce a été examinée à la suite d'une contestation, et retenue.
+  PIECE_EXAMINEE
 }
 
 /// Statuts déclarés par le consommateur. Recours France ne les vérifie pas
@@ -129,6 +139,11 @@ model Entreprise {
   adresseSiege String?
   codePostal   String?
   commune      String?
+  /// Forme normalisée de la commune, servant de segment d'URL aux pages de
+  /// regroupement. Stockée plutôt que recalculée : à treize millions de lignes,
+  /// retrouver « Fos-sur-Mer » depuis « fos-sur-mer » sans index revient à
+  /// balayer la table à chaque visite.
+  communeSlug  String?
   departement  String?
   region       String?
   latitude     Float?
@@ -140,6 +155,16 @@ model Entreprise {
 
   // Coordonnées issues de l'enrichissement du site officiel ou déclarées.
   siteWeb            String?
+  /// Comment l'adresse du site a été établie : déclarée par l'entreprise,
+  /// indiquée par un consommateur, ou dérivée de la dénomination. Dans les trois
+  /// cas elle n'est retenue qu'après avoir trouvé le SIREN sur le site.
+  siteWebSource      String?
+  /// Page où le SIREN a été retrouvé — la preuve du rattachement.
+  siteWebPreuve      String?
+  siteWebVerifieLe   DateTime?
+  /// Dernière tentative de détection, réussie ou non : évite de re-sonder des
+  /// domaines inexistants à chaque synchronisation.
+  siteWebTenteLe     DateTime?
   emailReclamation   String?
   telephoneReclamation String?
   urlCgv             String?
@@ -166,6 +191,7 @@ model Entreprise {
   etablissements Etablissement[]
   evenements     Evenement[]
   signalements   Signalement[]
+  boutiques      Boutique[]
   avis           Avis[]
   donnees        DonneeSource[]
   scores         ScoreSnapshot[]
@@ -181,6 +207,11 @@ model Entreprise {
   @@index([departement])
   @@index([naf])
   @@index([etatAdministratif])
+  // Index de couverture des trois étages de l'annuaire : secteur, puis
+  // secteur × département, puis secteur × département × commune.
+  @@index([secteur, etatAdministratif])
+  @@index([secteur, departement, etatAdministratif])
+  @@index([secteur, departement, communeSlug, etatAdministratif])
 }
 
 model Etablissement {
@@ -311,8 +342,16 @@ model Signalement {
 
   entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id], onDelete: SetNull)
   entrepriseId String?
-  /// Saisie libre lorsque l'entreprise n'a pas été trouvée dans l'annuaire.
-  /// Rapprochement avec les registres publics sous 48 heures ouvrées.
+  /// Boutique en ligne concernée, lorsque le litige porte sur un site marchand.
+  ///
+  /// C'est l'objet que le consommateur connaît : il a acheté sur bergamotte.com,
+  /// pas chez VERY BLOOM. Rattacher la déclaration au domaine évite de l'imputer
+  /// à une société homonyme, et la personne morale devient un enrichissement
+  /// affiché lorsqu'elle est établie.
+  boutique   Boutique? @relation(fields: [boutiqueId], references: [id], onDelete: SetNull)
+  boutiqueId String?
+
+  /// Saisie libre lorsque ni l'entreprise ni la boutique n'ont pu être établies.
   entrepriseLibreNom  String?
   entrepriseLibreSite String?
   rapprochementFait   Boolean @default(false)
@@ -321,8 +360,24 @@ model Signalement {
   montant     Decimal? @db.Decimal(12, 2)
   dateFaits   DateTime
   contactPrealable ContactPrealable
+
+  /// Expression structurée du litige.
+  ///
+  /// Ces trois champs remplacent la rédaction libre comme source du résumé
+  /// public. Ils sont plus rapides à renseigner qu'une phrase, et surtout
+  /// publiables sans modération : ce sont des choix fermés, pas du texte.
+  /// Sans eux, deux litiges de même catégorie produisaient exactement la même
+  /// phrase publique.
+  demande            DemandeConsommateur?
+  etatProfessionnel  EtatProfessionnel?
+  /// 1, 2, ou 3 pour « trois relances ou plus ».
+  relances           Int?
+
   /// Texte libre du consommateur : JAMAIS publié tel quel (règle métier n° 7).
-  resume      String   @db.Text
+  /// Facultatif : il ne nourrit que le récapitulatif PDF et le contexte
+  /// d'administration. Exiger une rédaction pour un contenu jamais publié
+  /// était le principal obstacle du formulaire.
+  resume      String?  @db.Text
 
   prenom String
   nom    String
@@ -346,6 +401,11 @@ model Signalement {
   moderation      EtatModeration @default(PUBLIE)
   motifModeration String?
 
+  /// Rappels déjà expédiés au consommateur, pour ne jamais renvoyer deux fois.
+  relancesEnvoyees String[]
+  /// Le consommateur peut couper les rappels depuis son espace.
+  relancesActives  Boolean @default(true)
+
   creeLe   DateTime  @default(now())
   majLe    DateTime  @updatedAt
   closLe   DateTime?
@@ -354,11 +414,13 @@ model Signalement {
   userAgent  String?
 
   justificatifs Justificatif[]
+  contestations Contestation[]
   evenements    EvenementSignalement[]
   avis          Avis[]
   jetons        JetonAcces[]
 
   @@index([entrepriseId, creeLe])
+  @@index([boutiqueId, creeLe])
   @@index([email])
   @@index([niveauVerification])
   @@index([statut])
@@ -378,6 +440,13 @@ model Justificatif {
   sommeControle  String?
 
   etat       EtatJustificatif @default(EN_ATTENTE)
+  /// Signaux techniques du contrôle automatique (étage 1).
+  anomalies  String[]
+  /// Constats de l'analyse de cohérence (étage 2) : nom de l'entreprise, date,
+  /// montant, nature du document. Jamais publiés, jamais bloquants.
+  observations String[]
+  /// Message affiché au déposant lorsqu'un doute mérite d'être signalé.
+  conseil      String?
   controleLe DateTime?
   controlePar String?
   motifRefus String?
@@ -550,4 +619,158 @@ model JournalAction {
   creeLe    DateTime @default(now())
 
   @@index([creeLe])
+}
+
+/// Trace d'exécution des tâches planifiées.
+///
+/// Sans elle, un ordonnanceur mort passe inaperçu : la plateforme continue
+/// d'afficher des dates de dernière vérification qui ne bougent plus, et la
+/// promesse « source + date » devient fausse en silence.
+model ExecutionTache {
+  id      String   @id @default(cuid())
+  nom     String
+  debutLe DateTime @default(now())
+  finLe   DateTime?
+  statut  StatutTache @default(EN_COURS)
+  traites Int      @default(0)
+  echecs  Int      @default(0)
+  detail  String?
+
+  @@index([nom, debutLe])
+}
+
+enum StatutTache {
+  EN_COURS
+  SUCCES
+  ECHEC
+}
+
+/// Contestation d'un signalement par l'entreprise concernée.
+///
+/// Exigée par l'article L111-7-2 du code de la consommation : une fonctionnalité
+/// gratuite doit permettre au professionnel de signaler un doute motivé sur
+/// l'authenticité d'un contenu.
+///
+/// Le dispositif inverse la charge de la preuve : le consommateur est sollicité,
+/// et son SILENCE tranche à sa place. Sans réponse dans le délai, le signalement
+/// est retiré automatiquement — sans appréciation humaine, sans arbitrage au cas
+/// par cas. C'est ce qui rend la publication tenable sans équipe de modération.
+model Contestation {
+  id            String      @id @default(cuid())
+  signalement   Signalement @relation(fields: [signalementId], references: [id], onDelete: Cascade)
+  signalementId String
+
+  /// Qui conteste, au nom de l'entreprise.
+  email   String
+  nom     String
+  qualite String
+  /// Motivation obligatoire : un signalement non motivé n'ouvre aucune procédure.
+  motif   String @db.Text
+
+  etat EtatContestation @default(OUVERTE)
+
+  /// Sollicitation du consommateur et délai qui court.
+  pieceDemandeeLe DateTime?
+  echeanceReponse DateTime?
+  repondueLe      DateTime?
+
+  /// Examen humain, uniquement lorsque le consommateur a répondu.
+  trancheeLe  DateTime?
+  trancheePar String?
+  decision    String?
+
+  creeLe DateTime @default(now())
+
+  @@index([etat, echeanceReponse])
+  @@index([signalementId])
+}
+
+enum EtatContestation {
+  /// Reçue, le consommateur n'a pas encore été sollicité.
+  OUVERTE
+  /// Le consommateur a été sollicité, le délai court.
+  PIECE_DEMANDEE
+  /// Silence du consommateur : signalement retiré automatiquement.
+  RETIREE_SANS_REPONSE
+  /// Le consommateur a répondu : la pièce attend un examen.
+  PIECE_FOURNIE
+  /// Après examen : la pièce étaye, le signalement est maintenu.
+  REJETEE
+  /// Après examen : la pièce n'étaye pas, le signalement est retiré.
+  ACCEPTEE
+}
+
+/// Ce que le consommateur demande au professionnel.
+enum DemandeConsommateur {
+  REMBOURSEMENT_INTEGRAL
+  REMBOURSEMENT_PARTIEL
+  LIVRAISON
+  REPARATION
+  REMPLACEMENT
+  RESILIATION
+  AUTRE
+}
+
+/// Où en est le professionnel, tel que le consommateur le déclare.
+enum EtatProfessionnel {
+  AUCUNE_REPONSE
+  REPONSE_SANS_SOLUTION
+  PROMESSE_NON_TENUE
+  REFUS_MOTIVE
+  SOLUTION_PARTIELLE
+}
+
+/// Table SIREN → site officiel importée de Wikidata.
+///
+/// Stockée localement pour que la synchronisation d'une fiche ne déclenche
+/// aucune requête réseau : la recherche se fait hors ligne, sans mur
+/// anti-robot ni robots.txt à respecter. Wikidata étant modifiable par tous,
+/// la provenance reste enregistrée pour rendre la donnée auditable.
+model SiteConnu {
+  siren     String   @id
+  site      String
+  libelle   String?
+  /// « wikidata » ou « osm » : les deux sources couvrent des segments
+  /// différents — Wikidata les marques notables, OpenStreetMap les commerces
+  /// de proximité. La provenance reste enregistrée, aucune n'est autoritaire.
+  origine   String   @default("wikidata")
+  importeLe DateTime @default(now())
+
+  @@index([site])
+}
+
+/// Boutique en ligne, identifiée par son domaine.
+///
+/// Sujet de fiche à part entière, indépendant de toute personne morale : un
+/// consommateur se plaint d'un site marchand, pas d'un numéro SIREN. Ce
+/// découplage supprime le risque d'attribuer un litige à une société homonyme —
+/// une recherche « Bergamotte » renvoie une entreprise de Montélimar créée en
+/// 1978, sans rapport avec bergamotte.com, exploité par VERY BLOOM.
+///
+/// L'entreprise, quand elle est établie, est rattachée et affichée comme un
+/// enrichissement sourcé. Elle n'est jamais une condition d'existence.
+model Boutique {
+  id      String @id @default(cuid())
+  /// Domaine normalisé, sans protocole ni « www » : bergamotte.com.
+  domaine String @unique
+  /// Nom d'affichage, dérivé du domaine ou fourni par une source.
+  nom     String
+  slug    String @unique
+
+  /// Personne morale exploitante, lorsqu'elle a été établie.
+  entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id], onDelete: SetNull)
+  entrepriseId String?
+  /// Comment le rattachement a été obtenu : « wikidata », « osm », « facture »,
+  /// « mentions-legales », « manuel ». Jamais présenté comme une vérification
+  /// quand il provient d'une base contributive.
+  rattachementSource String?
+  rattachementLe     DateTime?
+
+  vues   Int      @default(0)
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+
+  signalements Signalement[]
+
+  @@index([entrepriseId])
 }

@@ -16,7 +16,17 @@
     "db:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "sync": "tsx scripts/sync.ts",
-    "scores": "tsx scripts/recalcul-indices.ts"
+    "scores": "tsx scripts/recalcul-indices.ts",
+    "purge": "tsx scripts/purge.ts",
+    "relances": "tsx scripts/relances.ts",
+    "contestations": "tsx scripts/contestations.ts",
+    "import:sites": "tsx scripts/import-sites.ts",
+    "import:entreprises": "tsx scripts/import-entreprises.ts",
+    "import:boutiques": "tsx scripts/import-boutiques.ts",
+    "nettoyer:boutiques": "tsx scripts/nettoyer-boutiques.ts",
+    "adresses:extraire": "tsx scripts/enrichir-adresses.ts",
+    "adresses:charger": "bash scripts/charger-adresses.sh",
+    "db:index-annuaire": "bash -c 'psql \"$(grep -m1 ^DATABASE_URL .env | cut -d= -f2- | tr -d \\\" | sed s/?.*//)\" -f scripts/index-annuaire.sql'"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
