@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
 import { BarreOnglets } from "@/components/fiche/onglets";
+import { CompteurVue } from "@/components/fiche/compteur-vue";
 import { Dossiers, type Dossier } from "@/components/fiche/dossiers";
 import { Repli, Rubriques } from "@/components/fiche/rubriques";
 import { InfoBulle } from "@/components/ui";
@@ -49,7 +50,16 @@ import {
   qualiteDirigeant,
 } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+/**
+ * La fiche est mise en cache une journée.
+ *
+ * Elle était marquée « force-dynamic » : rendue à chaque visite, pour deux
+ * raisons devenues caduques — un paramètre d'URL choisissait l'onglet, et le
+ * compteur de vues écrivait en base pendant le rendu. Les sections sont
+ * désormais toutes affichées et le comptage part du navigateur ; treize
+ * millions de fiches n'ont plus à être fabriquées à chaque passage de robot.
+ */
+export const revalidate = 86400;
 
 const JOUR = 86_400_000;
 
@@ -86,19 +96,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function FicheEntreprise({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function FicheEntreprise({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const query = await searchParams;
-  const onglet: CleOnglet = ONGLETS.some((o) => o.cle === query.onglet)
-    ? (query.onglet as CleOnglet)
-    : "synthese";
-  const rubriqueInitiale = typeof query.rubrique === "string" ? query.rubrique : null;
 
   const base = await chargerEntreprise(slug);
   if (!base) notFound();
@@ -110,8 +109,6 @@ export default async function FicheEntreprise({
   ]);
   if (!entreprise || !calcul) notFound();
   const { transparence, experience, stats } = calcul;
-
-  await prisma.entreprise.update({ where: { id: entreprise.id }, data: { vues: { increment: 1 } } });
 
   const [signalements, avisPublies, nbAvisNonVerifies, totalDossiers, notesVerifiees] = await Promise.all([
     prisma.signalement.findMany({
@@ -230,9 +227,9 @@ export default async function FicheEntreprise({
   // treize millions de fiches — dont quatre étaient ensuite rabattues sur la
   // canonique, qui n'en montrait qu'un cinquième du contenu.
   const lien = (cle: CleOnglet) => `#${cle}`;
-  // La rubrique reste un vrai paramètre : elle décide du volet ouvert dans
-  // l'accordéon des données publiques.
-  const lienEtablissements = `?rubrique=etablissements#donnees`;
+  // La rubrique voyage dans l'ancre : lire un paramètre de requête suffirait
+  // à rendre la page dynamique, donc impossible à mettre en cache.
+  const lienEtablissements = `#rubrique-etablissements`;
 
   // Sous le seuil, la fiche n'affiche AUCUNE donnée de litige : ni compteur, ni
   // taux, ni répartition, ni dossier. Un signalement isolé n'a aucune valeur
@@ -341,6 +338,10 @@ export default async function FicheEntreprise({
         { libelle: entreprise.denomination },
       ]}
     >
+      {/* La consultation est signalée depuis le navigateur : compter pendant
+          le rendu empêchait toute mise en cache de la fiche. */}
+      <CompteurVue siren={entreprise.siren} />
+
       {/* ── En-tête entreprise ────────────────────────────────────────────── */}
       <div className="rfi-conteneur" style={{ padding: "30px 32px 0" }}>
         <div
@@ -447,7 +448,6 @@ export default async function FicheEntreprise({
       {/* ── Barre d'onglets ───────────────────────────────────────────────── */}
       <BarreOnglets
         onglets={ONGLETS.map((o) => ({ cle: o.cle, libelle: o.libelle, href: lien(o.cle) }))}
-        actif={onglet}
       />
 
       {/* ── Onglet : fiche résumé ─────────────────────────────────────────── */}
@@ -823,7 +823,6 @@ export default async function FicheEntreprise({
             </div>
 
             <Rubriques
-              initiale={rubriqueInitiale}
               rubriques={[
                 {
                   cle: "comptes",

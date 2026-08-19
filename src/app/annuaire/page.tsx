@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
-import { prisma } from "@/lib/db";
 import { formatNombre } from "@/lib/format";
-import { SECTEURS, cheminSecteur } from "@/lib/maillage";
+import { SECTEURS, cheminSecteur, decomptes } from "@/lib/maillage";
 
 /**
  * Le décompte par secteur balaie toute la table : on ne le refait pas à chaque
@@ -20,13 +19,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AnnuaireRacine() {
-  const groupes = await prisma.entreprise.groupBy({
-    by: ["secteur"],
-    _count: { _all: true },
-    where: { etatAdministratif: "ACTIVE" },
-  });
-  const parSecteur = new Map(groupes.map((g) => [g.secteur ?? "autre", g._count._all]));
-  const total = groupes.reduce((s, g) => s + g._count._all, 0);
+  const parSecteur = await decomptes();
+  const total = [...parSecteur.values()].reduce((s, n) => s + n, 0);
 
   return (
     <Page fil={[{ libelle: "Annuaire" }]} entete={{ navActive: "annuaire" }}>

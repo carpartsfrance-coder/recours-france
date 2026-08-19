@@ -26,7 +26,8 @@
     "nettoyer:boutiques": "tsx scripts/nettoyer-boutiques.ts",
     "adresses:extraire": "tsx scripts/enrichir-adresses.ts",
     "adresses:charger": "bash scripts/charger-adresses.sh",
-    "db:index-annuaire": "bash -c 'psql \"$(grep -m1 ^DATABASE_URL .env | cut -d= -f2- | tr -d \\\" | sed s/?.*//)\" -f scripts/index-annuaire.sql'"
+    "db:index-annuaire": "bash -c 'psql \"$(grep -m1 ^DATABASE_URL .env | cut -d= -f2- | tr -d \\\" | sed s/?.*//)\" -f scripts/index-annuaire.sql'",
+    "compteurs": "tsx scripts/compteurs-annuaire.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

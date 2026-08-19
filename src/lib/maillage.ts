@@ -123,6 +123,39 @@ export async function listerAvecSignalDAbord(
   return lignes;
 }
 
+/**
+ * Décomptes de l'annuaire, lus dans la table recalculée chaque nuit.
+ *
+ * Compter en direct coûtait près de deux secondes sur la page d'accueil de
+ * l'annuaire — treize millions de lignes parcourues pour afficher seize
+ * nombres. Un repli sur le comptage direct reste prévu : sans lui, la page
+ * serait vide tant que la tâche nocturne n'a pas tourné une première fois.
+ */
+export async function decomptes(secteur?: string): Promise<Map<string, number>> {
+  const lignes = await prisma.compteurAnnuaire.findMany({
+    where: secteur ? { secteur, departement: { not: "" } } : { departement: "" },
+    select: { secteur: true, departement: true, nombre: true },
+  });
+  if (lignes.length > 0) {
+    return new Map(lignes.map((l) => [secteur ? l.departement : l.secteur, l.nombre]));
+  }
+
+  const groupes = await prisma.entreprise.groupBy({
+    by: secteur ? ["departement"] : ["secteur"],
+    _count: { _all: true },
+    where: {
+      etatAdministratif: "ACTIVE",
+      ...(secteur ? { secteur, departement: { not: null } } : {}),
+    },
+  });
+  return new Map(
+    groupes.map((g) => [
+      (secteur ? (g as { departement: string | null }).departement : (g as { secteur: string | null }).secteur) ?? "autre",
+      g._count._all,
+    ]),
+  );
+}
+
 export type Voisine = {
   id: string;
   slug: string;

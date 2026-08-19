@@ -18,6 +18,7 @@ import { envoyer, gabarit, versTexte } from "./mailer";
 export const TACHES = {
   sync: { libelle: "Synchronisation des sources publiques", toleranceHeures: 36 },
   scores: { libelle: "Recalcul des indices", toleranceHeures: 36 },
+  compteurs: { libelle: "Recalcul des décomptes de l'annuaire", toleranceHeures: 36 },
   purge: { libelle: "Purge des données arrivées à terme", toleranceHeures: 36 },
   relances: { libelle: "Rappels d'échéance aux consommateurs", toleranceHeures: 36 },
   contestations: { libelle: "Traitement des contestations échues", toleranceHeures: 36 },

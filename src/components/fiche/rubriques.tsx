@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 
 export type Rubrique = {
   cle: string;
@@ -13,16 +13,27 @@ export type Rubrique = {
  * Rubriques de données publiques : accordéon exclusif — une seule ouverte à la
  * fois, libellé « Consulter le détail » / « Masquer », signe + / −.
  */
-export function Rubriques({
-  rubriques,
-  initiale = null,
-}: {
-  rubriques: Rubrique[];
-  /** Rubrique dépliée à l'arrivée, quand un lien de la page y renvoie. */
-  initiale?: string | null;
-}) {
-  const [ouverte, setOuverte] = useState<string | null>(initiale);
+export function Rubriques({ rubriques }: { rubriques: Rubrique[] }) {
+  const [ouverte, setOuverte] = useState<string | null>(null);
   const base = useId();
+
+  /**
+   * La rubrique à déplier vient de l'ancre, non plus d'un paramètre d'URL.
+   *
+   * Lire un paramètre de requête oblige Next à rendre la page à chaque
+   * visite : la fiche ne pouvait donc jamais être mise en cache, pour un
+   * confort d'affichage. L'ancre obtient le même résultat sans rien coûter au
+   * serveur, et le navigateur y fait défiler de lui-même.
+   */
+  useEffect(() => {
+    const appliquer = () => {
+      const cle = decodeURIComponent(window.location.hash.replace(/^#rubrique-/, ""));
+      if (cle && rubriques.some((r) => r.cle === cle)) setOuverte(cle);
+    };
+    appliquer();
+    window.addEventListener("hashchange", appliquer);
+    return () => window.removeEventListener("hashchange", appliquer);
+  }, [rubriques]);
 
   return (
     <div style={{ marginTop: 8 }}>
@@ -30,7 +41,7 @@ export function Rubriques({
         const estOuverte = ouverte === r.cle;
         const id = `${base}-${r.cle}`;
         return (
-          <div key={r.cle} className="rfi-rubrique">
+          <div key={r.cle} id={`rubrique-${r.cle}`} className="rfi-rubrique">
             <button
               type="button"
               className="rfi-rubrique__bouton"

@@ -111,6 +111,25 @@ enum TypeJetonAcces {
 // Entreprises et données publiques
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Décomptes de l'annuaire, recalculés chaque nuit.
+///
+/// Compter treize millions de lignes par secteur pour afficher seize nombres
+/// coûtait près de deux secondes à chaque régénération de la page d'accueil de
+/// l'annuaire. Aucun annuaire de cette taille ne compte en direct.
+///
+/// La chaîne vide vaut « tous » : elle tient lieu de valeur neutre là où NULL
+/// empêcherait la clé primaire de jouer son rôle, deux NULL étant toujours
+/// considérés comme distincts.
+model CompteurAnnuaire {
+  secteur     String
+  departement String   @default("")
+  nombre      Int
+  calculeLe   DateTime @default(now())
+
+  @@id([secteur, departement])
+  @@index([secteur])
+}
+
 model Entreprise {
   id   String @id @default(cuid())
   slug String @unique

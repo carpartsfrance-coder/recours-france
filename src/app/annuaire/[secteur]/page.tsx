@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { formatNombre } from "@/lib/format";
 import {
   DEPARTEMENTS,
+  decomptes,
   listerAvecSignalDAbord,
   SECTEURS,
   cheminDepartement,
@@ -41,16 +42,12 @@ export default async function Secteur({ params }: { params: Promise<{ secteur: s
   const libelle = libelleSecteur(secteur);
 
   const [parDepartement, notables, total] = await Promise.all([
-    prisma.entreprise.groupBy({
-      by: ["departement"],
-      _count: { _all: true },
-      where: { secteur, etatAdministratif: "ACTIVE", departement: { not: null } },
-    }),
+    decomptes(secteur),
     listerAvecSignalDAbord({ secteur, etatAdministratif: "ACTIVE" }, 60),
     prisma.entreprise.count({ where: { secteur, etatAdministratif: "ACTIVE" } }),
   ]);
 
-  const compte = new Map(parDepartement.map((d) => [d.departement ?? "", d._count._all]));
+  const compte = parDepartement;
   const departements = DEPARTEMENTS.filter((d) => (compte.get(d.code) ?? 0) > 0);
 
   return (
