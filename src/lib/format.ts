@@ -117,7 +117,13 @@ export function formatMontant(valeur: number | string | null | undefined, devise
   const n = typeof valeur === "string" ? Number(valeur) : valeur;
   if (Number.isNaN(n)) return "—";
   const arrondi = Number.isInteger(n) ? n : Math.round(n * 100) / 100;
-  return `${arrondi.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} ${devise}`;
+  // Un montant s'écrit soit sans décimale, soit avec deux : « 129,9 € » n'est
+  // pas une somme d'argent.
+  const decimales = Number.isInteger(arrondi) ? 0 : 2;
+  return `${arrondi.toLocaleString("fr-FR", {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  })} ${devise}`;
 }
 
 export function formatPourcent(n: number | null | undefined): string {
@@ -198,14 +204,23 @@ export const LIBELLES_CATEGORIE: Record<string, string> = {
   AUTRE: "Autre motif",
 };
 
+/**
+ * Statuts d'une déclaration.
+ *
+ * Chaque libellé décrit l'état de NOTRE CONNAISSANCE, jamais une conclusion sur
+ * le professionnel. « Non résolu » affirmerait que le litige ne l'est pas ;
+ * « Résolution non confirmée » dit seulement que personne ne nous l'a confirmée.
+ * L'écart paraît mince, il est déterminant : le premier est une constatation,
+ * le second un constat d'absence.
+ */
 export const LIBELLES_STATUT: Record<string, string> = {
   EN_COURS: "En cours",
   REPONSE_DECLAREE: "Réponse déclarée",
-  SOLUTION_PROPOSEE: "Solution proposée",
-  RESOLUTION_PARTIELLE: "Résolution partielle",
-  RESOLU_CONFIRME: "Résolu",
-  NON_RESOLU: "Non résolu",
-  ABANDONNE: "Abandonné",
+  SOLUTION_PROPOSEE: "Solution déclarée proposée",
+  RESOLUTION_PARTIELLE: "Résolution partielle déclarée",
+  RESOLU_CONFIRME: "Résolution confirmée",
+  NON_RESOLU: "Résolution non confirmée",
+  ABANDONNE: "Déclaration clôturée sans suite",
 };
 
 export function couleurStatut(statut: string): string {
@@ -239,6 +254,65 @@ export function classeBadgeStatut(statut: string): string {
       return "rf-badge rf-badge--sm rf-badge--verifie-doux";
   }
 }
+
+/**
+ * Niveaux de preuve — source unique de vérité pour tout ce qui s'affiche.
+ *
+ * Le vocabulaire décrit ce que la plateforme fait réellement. « Justificatif déposé » a été
+ * abandonné : il promettait un contrôle humain systématique de chaque pièce,
+ * intenable sans équipe et donc trompeur. Un justificatif est enregistré et
+ * scellé au dépôt ; il n'est examiné que si l'entreprise conteste.
+ */
+export const LIBELLES_VERIFICATION: Record<string, string> = {
+  DECLARE: "Déclaration sans pièce",
+  PIECE_DEPOSEE: "Pièce fournie — nature non contrôlée",
+  PIECE_EXAMINEE: "Pièce fournie — nature contrôlée",
+};
+
+export const LIBELLES_VERIFICATION_COURTS: Record<string, string> = {
+  DECLARE: "Sans pièce",
+  PIECE_DEPOSEE: "Pièce fournie",
+  PIECE_EXAMINEE: "Pièce contrôlée",
+};
+
+/** Ce que le niveau signifie exactement, pour les infobulles et les aides. */
+export const EXPLICATIONS_VERIFICATION: Record<string, string> = {
+  DECLARE: "Aucune pièce n’accompagne ce signalement.",
+  PIECE_DEPOSEE:
+    "Une pièce a été fournie par le consommateur, horodatée et scellée. Sa nature n’a pas été contrôlée : elle le sera si l’entreprise conteste la déclaration.",
+  PIECE_EXAMINEE:
+    "La nature de la pièce a été contrôlée à la suite d’une contestation. Le contrôle porte sur la réalité de la relation commerciale, jamais sur le bien-fondé de la réclamation.",
+};
+
+/** Un justificatif accompagne-t-il le dossier ? Base des taux publiés. */
+export function avecJustificatif(niveau: string): boolean {
+  return niveau === "PIECE_DEPOSEE" || niveau === "PIECE_EXAMINEE";
+}
+
+export function classeBadgeVerification(niveau: string): string {
+  if (niveau === "PIECE_EXAMINEE") return "rf-badge rf-badge--sm rf-badge--verifie";
+  if (niveau === "PIECE_DEPOSEE") return "rf-badge rf-badge--sm rf-badge--verifie-doux";
+  return "rf-badge rf-badge--sm rf-badge--non-verifie";
+}
+
+/** Ce que le consommateur demande. Publié tel quel : ce sont des choix fermés. */
+export const LIBELLES_DEMANDE: Record<string, string> = {
+  REMBOURSEMENT_INTEGRAL: "Remboursement intégral",
+  REMBOURSEMENT_PARTIEL: "Remboursement partiel",
+  LIVRAISON: "Livraison de la commande",
+  REPARATION: "Réparation",
+  REMPLACEMENT: "Remplacement",
+  RESILIATION: "Résiliation et arrêt des prélèvements",
+  AUTRE: "Autre demande",
+};
+
+export const LIBELLES_ETAT_PRO: Record<string, string> = {
+  AUCUNE_REPONSE: "Aucune réponse",
+  REPONSE_SANS_SOLUTION: "Réponse sans solution",
+  PROMESSE_NON_TENUE: "Promesse non tenue",
+  REFUS_MOTIVE: "Refus motivé",
+  SOLUTION_PARTIELLE: "Solution partielle",
+};
 
 export const LIBELLES_CONTACT: Record<string, string> = {
   ECRIT: "Oui, par écrit",

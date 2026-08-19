@@ -11,6 +11,26 @@
 export const SEUIL_PUBLICATION_EXPERIENCE = 30;
 export const FENETRE_MOIS = 12;
 
+/**
+ * Volume en dessous duquel AUCUNE donnée de litige n'est publiée sur une fiche.
+ *
+ * Un signalement isolé ne dit rien de statistique sur une entreprise : le
+ * publier, c'est afficher une accusation anonyme sans rien qui la mette en
+ * perspective. C'est la configuration la plus exposée — nommage maximal,
+ * substantiation minimale — et celle qui se produit forcément au lancement,
+ * quand chaque fiche n'a qu'un ou deux dossiers.
+ *
+ * Le seuil se règle par variable d'environnement pour pouvoir être relevé ou
+ * abaissé sans redéploiement, et ramené à 0 si la publication doit être ouverte
+ * entièrement.
+ */
+export const SEUIL_PUBLICATION_LITIGES = Number(process.env.SEUIL_PUBLICATION_LITIGES ?? 5);
+
+/** Les données de litige de cette fiche peuvent-elles être publiées ? */
+export function litigesPubliables(total12Mois: number): boolean {
+  return total12Mois >= SEUIL_PUBLICATION_LITIGES;
+}
+
 export type CritereIndice = {
   cle: string;
   libelle: string;
@@ -312,7 +332,7 @@ export function couleurTon(ton: CritereIndice["ton"]): string {
 // Appréciation générale (fiche entreprise)
 //
 // Cinq critères examinés séparément : trois reposent sur les registres publics,
-// deux sur les dossiers vérifiés. Les deux familles ne sont jamais fondues dans
+// deux sur les dossiers avec justificatif. Les deux familles ne sont jamais fondues dans
 // un même critère. En dessous du seuil de publication, les deux critères
 // déclaratifs ne sont pas évalués et l'indice repose sur les seuls registres.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -368,7 +388,7 @@ const POINTS_VERDICT: Record<Verdict, number> = {
 export function apprecier(e: EntreesAppreciation): Appreciation {
   const publie = e.experience.publie;
 
-  // ── Critères déclaratifs (dossiers vérifiés) ──────────────────────────────
+  // ── Critères déclaratifs (dossiers avec justificatif) ──────────────────────────────
   const reclamations: CritereAppreciation = publie
     ? {
         cle: "reclamations",
@@ -385,7 +405,7 @@ export function apprecier(e: EntreesAppreciation): Appreciation {
     ? {
         cle: "resolution",
         libelle: "Taux de résolution",
-        constat: `${Math.round(e.stats.tauxResolution ?? 0)} % des dossiers vérifiés clôturés sont déclarés résolus par le consommateur, sur ${e.stats.clotures} dossiers.`,
+        constat: `${Math.round(e.stats.tauxResolution ?? 0)} % des dossiers avec justificatif clôturés sont déclarés résolus par le consommateur, sur ${e.stats.clotures} dossiers.`,
         verdict: seuils(e.stats.tauxResolution, 75, 55),
         famille: "declarative",
       }
@@ -536,7 +556,7 @@ function construireCommentaire(
   }
   return publie
     ? "Aucun point de vigilance majeur : les registres publics sont à jour et le traitement déclaré des réclamations se situe dans la moyenne observée."
-    : "Aucun point de vigilance majeur dans les registres publics. Le comportement face aux réclamations n’est pas encore évaluable, faute d’un volume suffisant de dossiers vérifiés.";
+    : "Aucun point de vigilance majeur dans les registres publics. Le comportement face aux réclamations n’est pas encore évaluable, faute d’un volume suffisant de dossiers avec justificatif.";
 }
 
 export function bandeIndice(indice: number): string {

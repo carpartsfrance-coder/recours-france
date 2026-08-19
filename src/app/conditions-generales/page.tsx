@@ -70,7 +70,7 @@ export default function ConditionsGenerales() {
           contenu: (
             <>
               <p>
-                Un signalement accompagné d’un justificatif contrôlé est publié comme « signalement vérifié ». La
+                Un signalement accompagné d’un justificatif est publié comme tel, la pièce étant horodatée et scellée sans examen systématique. La
                 vérification porte sur la <strong>réalité du signalement</strong>, jamais sur le bien-fondé de la
                 réclamation : Recours France ne se prononce pas sur le fond du litige.
               </p>
@@ -89,7 +89,7 @@ export default function ConditionsGenerales() {
             <>
               <p>
                 Les avis sont modérés avant publication selon la{" "}
-                <Link href="/charte-de-moderation">charte de modération</Link>. Un signalement vérifié n’est pas
+                <Link href="/charte-de-moderation">charte de modération</Link>. Un signalement accompagné d’un justificatif n’est pas
                 retiré à la demande d’une entreprise, ni contre paiement : seule une erreur établie, pièces à
                 l’appui, justifie un déclassement ou un retrait.
               </p>

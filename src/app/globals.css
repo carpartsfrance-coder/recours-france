@@ -797,6 +797,10 @@ button {
   align-items: center;
   justify-content: center;
 }
+.rf-pastille--faite {
+  background: var(--rf-succes, #1b7a4b);
+  color: #fff;
+}
 .rf-pastille--claire {
   background: var(--rf-badge-bleu);
   color: var(--rf-cobalt);
@@ -1045,6 +1049,17 @@ button {
   height: 11px;
   background: var(--rf-cobalt);
 }
+/* Groupes de puces à plusieurs valeurs : ils passent à la ligne au lieu de
+   comprimer les libellés jusqu'à l'illisible. */
+.rf-segments--enroule {
+  flex-wrap: wrap;
+}
+.rf-segments--enroule .rf-segment {
+  flex: 0 1 auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 .rf-segments-etapes {
   display: flex;
   gap: 7px;
@@ -1811,6 +1826,14 @@ button {
   .rf-segments {
     flex-direction: column;
   }
+  /* Empiler convient à trois options ; à sept, la section devient plus haute
+     que le champ de texte qu'elle remplace. On repasse sur deux colonnes. */
+  .rf-segments--enroule {
+    flex-direction: row;
+  }
+  .rf-segments--enroule .rf-segment {
+    flex: 1 1 calc(50% - 4px);
+  }
   .rf-info__bulle {
     left: 0;
     transform: none;
@@ -1935,6 +1958,15 @@ button {
   border-bottom: 3px solid var(--rfi-bleu);
   padding-bottom: 5px;
 }
+/* Complément d'intitulé dans le H1 : il porte l'intention de recherche sans
+   écraser le nom de l'entreprise, qui reste l'élément dominant. */
+.rfi-titre__suite {
+  font-weight: 400;
+  color: var(--rfi-texte-2, #4a515f);
+  font-size: 0.62em;
+  white-space: nowrap;
+}
+
 .rfi-identification {
   display: flex;
   align-items: center;

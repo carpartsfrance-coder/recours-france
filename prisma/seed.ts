@@ -186,7 +186,7 @@ async function creerSignalements(entrepriseIds: string[]) {
           email: `${prenom.toLowerCase()}.${nom.toLowerCase().replace(/[^a-z]/g, "")}${compteur}@example.com`,
           certifie: true,
           consentement: true,
-          niveauVerification: verifie ? "VERIFIE" : "DECLARE",
+          niveauVerification: verifie ? "PIECE_EXAMINEE" : "DECLARE",
           verifieLe: verifie ? new Date(creeLe.getTime() + 86_400_000) : null,
           verifiePar: verifie ? "Équipe modération" : null,
           statut,
@@ -233,7 +233,7 @@ async function creerSignalements(entrepriseIds: string[]) {
 async function creerAvis(entrepriseIds: string[]) {
   if (!entrepriseIds.length) return;
   const signalements = await prisma.signalement.findMany({
-    where: { entrepriseId: entrepriseIds[0], niveauVerification: "VERIFIE" },
+    where: { entrepriseId: entrepriseIds[0], niveauVerification: "PIECE_EXAMINEE" },
     take: 4,
   });
 

@@ -58,8 +58,9 @@ export default function DonneesPersonnelles() {
                 ]}
               />
               <p className="rf-mt-14">
-                Une empreinte technique irréversible de l’adresse IP est conservée pour prévenir les dépôts
-                massifs automatisés. L’adresse IP elle-même n’est jamais stockée en clair.
+                Une empreinte technique irréversible de l’adresse IP est conservée douze mois pour prévenir
+                les dépôts massifs automatisés, puis effacée automatiquement. L’adresse IP elle-même n’est
+                jamais stockée en clair.
               </p>
             </>
           ),
@@ -89,9 +90,10 @@ export default function DonneesPersonnelles() {
             <ListePuces
               items={[
                 "Signalement et données structurées : 5 ans à compter du dépôt, durée alignée sur la prescription de l’action en matière de consommation.",
-                "Justificatifs : 24 mois après le contrôle, puis suppression automatique. Ils ne sont conservés que le temps utile à la vérification et à une éventuelle contestation.",
+                "Justificatifs : 24 mois après le dépôt, puis suppression automatique du fichier. Ils ne sont conservés que le temps utile à une éventuelle contestation.",
                 "Lien de suivi : 90 jours, prolongé à chaque consultation.",
                 "Journal de modération : 5 ans, pour permettre la traçabilité des décisions.",
+                "Empreinte technique de connexion : 12 mois, puis effacement automatique. Le signalement, lui, est conservé sans elle.",
               ]}
             />
           ),

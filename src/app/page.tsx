@@ -16,7 +16,7 @@ const ETAPES = [
   {
     n: "2",
     titre: "Documentez",
-    desc: "Ajoutez vos justificatifs si vous le souhaitez : facture, commande, échanges. Ils restent privés et servent à vérifier le signalement.",
+    desc: "Ajoutez vos justificatifs si vous le souhaitez : facture, commande, échanges. Ils restent privés, horodatés et scellés, et appuient votre signalement.",
     note: "Justificatifs facultatifs",
   },
   {
@@ -28,12 +28,12 @@ const ETAPES = [
 ];
 
 export const BENEFICES = [
-  "Un signalement Recours France avec numéro de référence",
+  "Les démarches à effectuer dans le bon ordre, avec les dates calculées pour votre dossier",
+  "Un rappel le jour où vous pouvez saisir le médiateur — vous n’avez rien à noter",
+  "Une alerte si l’entreprise entre en procédure collective : deux mois pour déclarer votre créance",
+  "Un courrier de réclamation prérempli, prêt à envoyer",
   "Une checklist des justificatifs et preuves à conserver",
-  "Les coordonnées utiles du professionnel",
-  "Les démarches à effectuer dans le bon ordre",
-  "Le médiateur compétent lorsqu’il est identifié",
-  "Les démarches officielles disponibles, notamment SignalConso lorsqu’elles sont pertinentes",
+  "Le médiateur compétent lorsqu’il est identifié, et les démarches officielles utiles",
 ];
 
 const SOURCES = [
@@ -154,7 +154,7 @@ export default async function Accueil() {
             <p className="rf-texte rf-mt-12" style={{ fontSize: 14.5, lineHeight: 1.65 }}>
               Chaque fiche d’entreprise est constituée à partir des registres officiels, avec la date de
               synchronisation. Les signalements de consommateurs sont publiés à part, avec leur niveau de
-              vérification : un litige déclaré n’a jamais le même poids qu’un litige vérifié.
+              preuve : un litige déclaré sans pièce n’a jamais le même poids qu’un litige accompagné d’un justificatif.
             </p>
             <p className="rf-mt-14">
               <Link href="/entreprises" style={{ fontSize: 14, fontWeight: 600 }}>
@@ -165,7 +165,7 @@ export default async function Accueil() {
               {formatNombre(stats.entreprises)} fiche{stats.entreprises > 1 ? "s" : ""} constituée
               {stats.entreprises > 1 ? "s" : ""} · {formatNombre(stats.signalements)} signalement
               {stats.signalements > 1 ? "s" : ""} publié{stats.signalements > 1 ? "s" : ""}, dont{" "}
-              {formatNombre(stats.verifies)} vérifié{stats.verifies > 1 ? "s" : ""}.
+              {formatNombre(stats.verifies)} accompagné{stats.verifies > 1 ? "s" : ""} d’un justificatif.
             </p>
           </div>
           <div className="rf-carte">

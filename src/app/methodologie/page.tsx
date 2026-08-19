@@ -17,7 +17,7 @@ import { SEUIL_PUBLICATION_EXPERIENCE } from "@/lib/scoring";
 export const metadata: Metadata = {
   title: "Méthodologie",
   description:
-    "D’où viennent les chiffres publiés sur une fiche Recours France, ce qu’est un signalement vérifié, comment une résolution est confirmée et à partir de quel volume un score est publié.",
+    "D’où viennent les chiffres publiés sur une fiche Recours France, ce qu’est un signalement accompagné d’un justificatif, comment une résolution est confirmée et à partir de quel volume un score est publié.",
 };
 
 const SOMMAIRE = [
@@ -39,7 +39,7 @@ export default function Methodologie() {
             Méthodologie
           </h1>
           <p className="rf-chapo rf-mt-16" style={{ fontSize: 17, lineHeight: 1.65 }}>
-            D’où viennent les chiffres publiés sur une fiche, ce qu’est un signalement vérifié, comment une
+            D’où viennent les chiffres publiés sur une fiche, ce qu’est un signalement accompagné d’un justificatif, comment une
             résolution est confirmée et à partir de quel volume un score d’expérience est publié. Cette page est
             opposable : toute donnée affichée sur la plateforme suit les règles décrites ici.
           </p>
@@ -116,9 +116,9 @@ export default function Methodologie() {
                 </p>
               </div>
               <div className="rf-carte rf-carte--selection" style={{ padding: "17px 19px" }}>
-                <span className="rf-badge rf-badge--verifie">✓ Signalement vérifié</span>
+                <span className="rf-badge rf-badge--verifie">✓ Justificatif déposé</span>
                 <p className="rf-mt-12" style={{ fontSize: 14, lineHeight: 1.6 }}>
-                  Recours France a contrôlé un élément établissant la relation commerciale ou la réalité du
+                  Le consommateur a déposé un élément censé établir la relation commerciale ou la réalité du
                   signalement : facture, commande, contrat, échange professionnel, preuve de paiement.
                 </p>
                 <p className="rf-texte rf-mt-8" style={{ fontSize: 13 }}>
@@ -191,8 +191,8 @@ export default function Methodologie() {
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>Expérience des consommateurs</div>
                 <p className="rf-texte rf-mt-6" style={{ fontSize: 13.5 }}>
-                  Calculé sur les seuls signalements vérifiés des douze derniers mois. Publié à partir de{" "}
-                  {SEUIL_PUBLICATION_EXPERIENCE} signalements vérifiés ; en dessous, affiché comme « données
+                  Calculé sur les seuls signalements accompagnés d’un justificatif, sur douze mois. Publié à partir de{" "}
+                  {SEUIL_PUBLICATION_EXPERIENCE} dossiers accompagnés d’un justificatif ; en dessous, affiché comme « données
                   insuffisantes ».
                 </p>
                 <div className="rf-mt-14" style={{ borderTop: "1px solid var(--rf-ligne-carte)" }}>
@@ -207,7 +207,7 @@ export default function Methodologie() {
             </div>
             <div style={{ padding: "0 24px 22px", display: "flex", flexDirection: "column", gap: 12 }}>
               <p className="rf-encart rf-encart--doux">
-                Les signalements non vérifiés ne modifient jamais un indice. Aucune note n’est ajustée
+                Les signalements sans justificatif ne modifient jamais un indice. Aucune note n’est ajustée
                 manuellement, dans un sens ou dans l’autre, et aucune ne peut être achetée.
               </p>
               <p className="rf-encart rf-encart--doux rf-encart--gris">

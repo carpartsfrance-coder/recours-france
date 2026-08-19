@@ -12,6 +12,7 @@ const LIENS: { href: string; libelle: string; compteur?: string }[] = [
   { href: "/admin/justificatifs", libelle: "Justificatifs", compteur: "justificatifs" },
   { href: "/admin/signalements", libelle: "Signalements" },
   { href: "/admin/avis", libelle: "Avis", compteur: "avis" },
+  { href: "/admin/contestations", libelle: "Contestations", compteur: "contestations" },
   { href: "/admin/entreprises", libelle: "Fiches entreprises" },
   { href: "/admin/corrections", libelle: "Erreurs signalées", compteur: "corrections" },
   { href: "/admin/revendications", libelle: "Revendications", compteur: "revendications" },
@@ -22,13 +23,14 @@ export default async function LayoutInterne({ children }: { children: React.Reac
   const admin = await adminCourant();
   if (!admin) redirect("/admin/connexion");
 
-  const [justificatifs, avis, corrections, revendications] = await Promise.all([
+  const [justificatifs, avis, corrections, revendications, contestations] = await Promise.all([
     prisma.justificatif.count({ where: { etat: "EN_ATTENTE" } }),
     prisma.avis.count({ where: { moderation: "EN_ATTENTE" } }),
     prisma.correction.count({ where: { etat: "EN_ATTENTE" } }),
     prisma.revendication.count({ where: { etat: "EN_ATTENTE" } }),
+    prisma.contestation.count({ where: { etat: "PIECE_FOURNIE" } }),
   ]);
-  const compteurs: Record<string, number> = { justificatifs, avis, corrections, revendications };
+  const compteurs: Record<string, number> = { justificatifs, avis, corrections, revendications, contestations };
 
   return (
     <div className="rf-admin">

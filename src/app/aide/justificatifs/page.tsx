@@ -5,7 +5,7 @@ import { ListePuces, PageEditoriale } from "@/components/page-editoriale";
 export const metadata: Metadata = {
   title: "Quels justificatifs fournir",
   description:
-    "Les pièces qui font passer un signalement en signalement vérifié, ce qu’elles démontrent, et ce qu’il ne faut jamais transmettre.",
+    "Les pièces qui appuient un signalement, ce qu’elles démontrent, et ce qu’il ne faut jamais transmettre.",
 };
 
 export default function Justificatifs() {
@@ -15,7 +15,7 @@ export default function Justificatifs() {
       fil="Quels justificatifs fournir"
       chapo={
         <>
-          Une seule pièce contrôlée suffit à faire passer votre signalement en <strong>signalement vérifié</strong>.
+          Une seule pièce suffit à faire passer votre signalement en <strong>signalement accompagné d’un justificatif</strong>.
           Vos pièces ne sont jamais publiées : elles servent uniquement à établir la réalité du signalement.
         </>
       }
@@ -31,7 +31,7 @@ export default function Justificatifs() {
                 quasi-totalité des cas.
               </p>
               <p className="rf-mt-12">
-                Nous contrôlons la cohérence entre le nom de l’entreprise, la date et le montant que vous avez
+                Un contrôle automatique compare le nom de l’entreprise, la date et le montant que vous avez
                 déclarés. Nous ne portons aucune appréciation sur le bien-fondé de votre réclamation.
               </p>
             </>
@@ -76,7 +76,7 @@ export default function Justificatifs() {
           contenu: (
             <p>
               PDF, JPG ou PNG, 10 Mo maximum par pièce et 5 pièces par signalement. Une photo lisible d’un
-              document papier convient parfaitement. Le contrôle est réalisé sous 48 heures ouvrées et vous êtes
+              document papier convient parfaitement. La pièce est enregistrée, horodatée et scellée immédiatement, et vous êtes
               informé par email du résultat, accepté ou refusé, avec son motif.
             </p>
           ),

@@ -8,6 +8,7 @@
  *  — la base est glissante sur douze mois et affichée sous chaque indicateur.
  */
 import { prisma } from "./db";
+import { avecJustificatif } from "./format";
 import {
   calculerExperience,
   calculerTransparence,
@@ -42,7 +43,7 @@ export type StatistiquesEntreprise = {
   clotures: number;
   /** Dossiers vérifiés non clôturés à ce jour, quel que soit leur statut déclaré. */
   enCours: number;
-  /** Ancienneté, en jours, de chaque dossier vérifié encore ouvert. */
+  /** Ancienneté, en jours, de chaque dossier avec justificatif encore ouvert. */
   ouverts: { jours: number }[];
   resolus: number;
   tauxResolution: number | null;
@@ -75,7 +76,7 @@ export async function statistiquesEntreprise(entrepriseId: string): Promise<Stat
     },
   });
 
-  const verifies = signalements.filter((s) => s.niveauVerification === "VERIFIE");
+  const verifies = signalements.filter((s) => avecJustificatif(s.niveauVerification));
   const nonVerifies = signalements.length - verifies.length;
 
   const avecReponse = verifies.filter((s) => s.reponseDeclaree).length;
@@ -265,7 +266,7 @@ export async function compteursAnnuaire(entrepriseIds: string[]) {
     const entree = resultat.get(l.entrepriseId);
     if (!entree) continue;
     entree.total++;
-    if (l.niveauVerification === "VERIFIE") {
+    if (avecJustificatif(l.niveauVerification)) {
       entree.verifies++;
       if (l.reponseDeclaree) reponses.set(l.entrepriseId, (reponses.get(l.entrepriseId) ?? 0) + 1);
     }
@@ -281,7 +282,9 @@ export async function statistiquesPlateforme() {
   const [entreprises, signalements, verifies, avis] = await Promise.all([
     prisma.entreprise.count(),
     prisma.signalement.count({ where: { moderation: "PUBLIE" } }),
-    prisma.signalement.count({ where: { moderation: "PUBLIE", niveauVerification: "VERIFIE" } }),
+    prisma.signalement.count({
+      where: { moderation: "PUBLIE", niveauVerification: { in: ["PIECE_DEPOSEE", "PIECE_EXAMINEE"] } },
+    }),
     prisma.avis.count({ where: { moderation: "PUBLIE" } }),
   ]);
   return { entreprises, signalements, verifies, avis };

@@ -18,6 +18,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Conditions de recherche sur une saisie libre.
+ *
+ * Le rapprochement par SIREN ne s'applique qu'à une saisie qui EST un numéro.
+ * Retirer les non-chiffres d'un nom quelconque produit un fragment absurde :
+ * « 7night » devenait « 7 », et la recherche renvoyait toutes les entreprises
+ * dont le SIREN contient un 7 — la moitié du catalogue, dans laquelle le
+ * résultat cherché se noyait.
+ */
+function clausesRecherche(requete: string) {
+  const chiffres = requete.replace(/\D/g, "");
+  const clauses: Record<string, unknown>[] = [
+    { denomination: { contains: requete, mode: "insensitive" } },
+    { enseigne: { contains: requete, mode: "insensitive" } },
+  ];
+  // Un SIREN compte neuf chiffres, un SIRET quatorze. En deçà, la saisie est
+  // un nom qui contient des chiffres, pas un identifiant.
+  if (chiffres.length >= 9) clauses.push({ siren: chiffres.slice(0, 9) });
+  return clauses;
+}
+
 export const metadata: Metadata = {
   title: "Annuaire des entreprises",
   description:
@@ -58,7 +79,7 @@ export default async function Annuaire({
   const verifiesSeulement = params.verifies === "1";
   const page = Math.max(1, Number(params.page ?? 1) || 1);
 
-  const { lignes, total, erreurSource, pagesApi } = await collecter({
+  const { lignes, total, totalRegistres, erreurSource, pagesApi } = await collecter({
     requete,
     secteur,
     departement,
@@ -212,11 +233,27 @@ export default async function Annuaire({
           >
             <div style={{ fontSize: 13.5 }}>
               <strong>
-                {formatNombre(resultats.length)} entreprise{resultats.length > 1 ? "s" : ""}
+                {formatNombre(total)} fiche{total > 1 ? "s" : ""}
               </strong>{" "}
-              {requete ? "correspondent à cette recherche" : "dans l’annuaire"}
+              {requete
+                ? total > 1
+                  ? "correspondent à cette recherche"
+                  : "correspond à cette recherche"
+                : "dans l’annuaire"}
               {total > resultats.length ? (
-                <span className="rf-legende"> · {formatNombre(total)} au total dans les registres</span>
+                <span className="rf-legende">
+                  {" "}
+                  · {formatNombre(resultats.length)} affichée{resultats.length > 1 ? "s" : ""} ici
+                </span>
+              ) : null}
+              {/* L'API plafonne à 10 000 : au-delà, le nombre exact est inconnu
+                  et l'annoncer serait faux. */}
+              {requete && totalRegistres > 0 ? (
+                <span className="rf-legende">
+                  {" "}
+                  · {totalRegistres >= 10_000 ? "plus de 10 000" : formatNombre(totalRegistres)} dans les
+                  registres publics
+                </span>
               ) : null}
             </div>
             <div className="rf-ligne" style={{ gap: 8 }}>
@@ -414,9 +451,10 @@ async function collecter({
   secteur: string;
   departement: string;
   page: number;
-}): Promise<{ lignes: Ligne[]; total: number; erreurSource: boolean; pagesApi: number }> {
+}): Promise<{ lignes: Ligne[]; total: number; totalRegistres: number; erreurSource: boolean; pagesApi: number }> {
   const parSiren = new Map<string, Ligne>();
   let total = 0;
+  let totalRegistres = 0;
   let erreurSource = false;
   let pagesApi = 1;
 
@@ -425,13 +463,7 @@ async function collecter({
     where: {
       AND: [
         requete
-          ? {
-              OR: [
-                { denomination: { contains: requete, mode: "insensitive" } },
-                { enseigne: { contains: requete, mode: "insensitive" } },
-                { siren: { contains: requete.replace(/\D/g, "") || "@@" } },
-              ],
-            }
+          ? { OR: clausesRecherche(requete) }
           : {},
         secteur ? { secteur } : {},
         departement ? { departement } : {},
@@ -439,6 +471,20 @@ async function collecter({
     },
     orderBy: [{ indiceTransparence: "desc" }, { denomination: "asc" }],
     take: 25,
+  });
+
+  // Nombre réel de fiches correspondant au filtre, indépendant de la page
+  // affichée : sans lui, l'annuaire ne dit jamais ce qu'il contient.
+  const totalLocal = await prisma.entreprise.count({
+    where: {
+      AND: [
+        requete
+          ? { OR: clausesRecherche(requete) }
+          : {},
+        secteur ? { secteur } : {},
+        departement ? { departement } : {},
+      ],
+    },
   });
 
   const compteurs = await compteursAnnuaire(locales.map((e) => e.id));
@@ -462,7 +508,7 @@ async function collecter({
       connue: true,
     });
   }
-  total = parSiren.size;
+  total = totalLocal;
 
   // 2. Registre public, lorsqu'une requête est saisie.
   if (requete.length >= 2) {
@@ -474,7 +520,7 @@ async function collecter({
         departement: departement || undefined,
         sectionActivite: sections[0],
       });
-      total = Math.max(total, api.total);
+      totalRegistres = api.total;
       pagesApi = Math.min(api.pages, 50);
 
       for (const r of api.resultats) {
@@ -507,5 +553,5 @@ async function collecter({
     }
   }
 
-  return { lignes: [...parSiren.values()], total, erreurSource, pagesApi };
+  return { lignes: [...parSiren.values()], total, totalRegistres, erreurSource, pagesApi };
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { statistiquesEntreprise, indicesEntreprise } from "@/lib/stats";
+import { qualiteDirigeant } from "@/lib/format";
+import { mediateurPublie } from "@/lib/mediation";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +49,9 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ sir
         dateImmatriculation: entreprise.dateImmatriculation,
         capital: entreprise.capital,
         trancheEffectif: entreprise.trancheEffectif,
-        representantLegal: entreprise.representantLegal,
+        // Jamais le nom d'une personne physique : seule la fonction est publiée,
+        // comme sur la fiche HTML.
+        qualiteDirigeant: qualiteDirigeant(entreprise.representantLegal),
         greffe: entreprise.greffe,
         adresseSiege: entreprise.adresseSiege,
         codePostal: entreprise.codePostal,
@@ -74,7 +78,7 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ sir
         delaiMedianJours: stats.delaiMedian,
         motifs: stats.motifs,
         avertissement:
-          "Statistiques calculées sur les seuls signalements vérifiés, à partir de déclarations de consommateurs. Recours France ne transmet pas les réclamations aux professionnels et ne recueille pas leurs réponses.",
+          "Statistiques calculées sur les seuls signalements avec justificatif, à partir de déclarations de consommateurs. Recours France ne transmet pas les réclamations aux professionnels et ne recueille pas leurs réponses.",
       },
       etablissements: entreprise.etablissements.map((e) => ({
         siret: e.siret,
@@ -101,14 +105,19 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ sir
         chiffreAffaires: c.chiffreAffaires,
         source: c.source,
       })),
-      mediateur: entreprise.mediateur
-        ? {
-            nom: entreprise.mediateur.nom,
-            siteWeb: entreprise.mediateur.siteWeb,
-            rattachement: entreprise.mediateurAdhesionDepuis ?? "Présumé d’après le secteur d’activité",
-            verifieLe: entreprise.mediateur.verifieLe,
-          }
-        : null,
+      // Même règle que sur la fiche : un médiateur déduit du secteur n'est
+      // jamais communiqué, y compris par l'API.
+      mediateur: (() => {
+        const publie = mediateurPublie(entreprise);
+        return publie
+          ? {
+              nom: publie.nom,
+              siteWeb: publie.siteWeb,
+              rattachement: "Déclaré par l’entreprise dans ses conditions générales",
+              verifieLe: entreprise.mediateur?.verifieLe ?? null,
+            }
+          : null;
+      })(),
       provenance: entreprise.donnees.map((d) => ({
         champ: d.champ,
         source: d.source,

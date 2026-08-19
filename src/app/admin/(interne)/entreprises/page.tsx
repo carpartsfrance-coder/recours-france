@@ -97,7 +97,7 @@ export default async function Entreprises({
                     {e.syncSiteOfficiel ? formatDate(e.syncSiteOfficiel) : "non enrichi"}
                   </div>
                   <div className="rf-micro rf-mt-4">
-                    {formatNombre(c.total)} signalement(s), dont {c.verifies} vérifié(s) · {formatNombre(e.vues)}{" "}
+                    {formatNombre(c.total)} signalement(s), dont {c.verifies} avec justificatif · {formatNombre(e.vues)}{" "}
                     consultation(s)
                   </div>
                 </div>

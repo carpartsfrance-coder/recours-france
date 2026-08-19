@@ -57,9 +57,47 @@ Retirer les données de démonstration : `npx tsx prisma/seed.ts --purge-demo`.
 | `npm run seed` | amorçage |
 | `npm run sync` | synchronisation quotidienne des sources publiques |
 | `npm run scores` | recalcul quotidien des indices + purge de l'historique à 5 ans |
+| `npm run purge` | purge des données arrivées au terme de leur conservation (simulation ; `-- --appliquer` pour agir) |
+| `npm run relances` | rappels d'échéance aux consommateurs (simulation ; `-- --appliquer` pour envoyer) |
+| `npm run contestations` | applique la règle du silence sur les contestations échues (simulation ; `-- --appliquer` pour agir) |
 
 `npm run sync -- --siren=424059822` cible une entreprise ; `--limite=200` traite
 les fiches les plus anciennes en priorité.
+
+## Tâches planifiées
+
+Cinq tâches doivent tourner une fois par jour. Elles ne sont pas optionnelles :
+la plateforme affiche pour chaque donnée sa date de dernière vérification, et
+cette date ne veut plus rien dire si la synchronisation s'arrête.
+
+```cron
+15 3 * * *  cd /chemin/vers/recours-france && npm run sync
+30 4 * * *  cd /chemin/vers/recours-france && npm run scores
+45 4 * * *  cd /chemin/vers/recours-france && npm run purge -- --appliquer
+00 9 * * *  cd /chemin/vers/recours-france && npm run relances -- --appliquer
+15 5 * * *  cd /chemin/vers/recours-france && npm run contestations -- --appliquer
+```
+
+Les rappels partent en milieu de matinée : ils appellent une action du
+consommateur le jour même.
+
+Sur un hébergeur sans cron système (Vercel et assimilés), déclarer trois tâches
+planifiées équivalentes dans la configuration de la plateforme.
+
+### Savoir qu'elles se sont arrêtées
+
+Un ordonnanceur mort ne fait pas de bruit — c'est le mode de défaillance qui
+compte ici. Trois filets, du plus proche au plus lointain :
+
+1. **Surveillance croisée.** Chaque tâche qui s'exécute vérifie l'état des
+   autres et envoie une alerte à `ALERTE_EMAIL` si l'une n'a pas abouti depuis
+   plus de 36 heures. Une alerte par tâche et par jour au maximum. Tant qu'une
+   seule tâche survit, les autres ne peuvent pas mourir en silence.
+2. **Bandeau d'administration.** Le tableau de bord affiche les tâches en retard.
+3. **`GET /api/sante`.** Renvoie `503` dès qu'une tâche est en retard, `200`
+   sinon. C'est le seul filet qui couvre l'arrêt de l'ordonnanceur *entier* :
+   n'importe quel service de supervision gratuit peut l'interroger. Sans lui,
+   plus rien ne tournerait pour donner l'alerte.
 
 ## Architecture
 
@@ -149,12 +187,15 @@ développement avec des adresses réelles.
 ## Avant la mise en production
 
 - [ ] `DEMO_BANNER=false` — retire « Démonstration — données fictives ».
+- [ ] Choisir `SEUIL_PUBLICATION_LITIGES` (5 par défaut) : en dessous, aucune donnée de litige n'est publiée sur une fiche.
+- [ ] Les avis sont fermés (`AVIS_ACTIFS=false`) tant qu'aucune modération n'existe.
 - [ ] `npx tsx prisma/seed.ts --purge-demo` — retire les signalements de démonstration.
 - [ ] Changer le mot de passe du compte d'administration.
 - [ ] Compléter les mentions légales (éditeur, SIREN, directeur de publication, hébergeur).
 - [ ] Générer un `APP_SECRET` propre (`openssl rand -hex 32`).
 - [ ] Configurer SMTP et passer `MAIL_ENABLED=true`.
-- [ ] Planifier `npm run sync` et `npm run scores` une fois par jour.
+- [ ] Planifier `npm run sync`, `npm run scores`, `npm run purge -- --appliquer`, `npm run relances -- --appliquer` et `npm run contestations -- --appliquer` une fois par jour (voir « Tâches planifiées »).
+- [ ] Renseigner `ALERTE_EMAIL` et brancher une supervision externe sur `/api/sante`.
 - [ ] Faire réaliser l'audit d'accessibilité RGAA et mettre à jour `/accessibilite`.
 
 ## Contraintes de marque

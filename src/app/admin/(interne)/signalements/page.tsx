@@ -9,6 +9,9 @@ import {
   LIBELLES_CATEGORIE,
   LIBELLES_STATUT,
   masquerEmail,
+  avecJustificatif,
+  classeBadgeVerification,
+  LIBELLES_VERIFICATION_COURTS,
 } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -120,9 +123,9 @@ export default async function Signalements({
                 <td className="rf-nombres">{s.montant ? formatMontant(Number(s.montant)) : "—"}</td>
                 <td>
                   <span
-                    className={`rf-badge rf-badge--xs ${s.niveauVerification === "VERIFIE" ? "rf-badge--verifie-doux" : "rf-badge--non-verifie"}`}
+                    className={`rf-badge rf-badge--xs ${classeBadgeVerification(s.niveauVerification).split(" ").pop()}`}
                   >
-                    {s.niveauVerification === "VERIFIE" ? "Vérifié" : "Déclaré"}
+                    {LIBELLES_VERIFICATION_COURTS[s.niveauVerification]}
                   </span>
                 </td>
                 <td>
@@ -159,7 +162,7 @@ export default async function Signalements({
                       style={{ fontSize: 12, minHeight: 32, padding: "6px 8px" }}
                     />
                   </FormulaireAdmin>
-                  {s.niveauVerification === "VERIFIE" ? (
+                  {avecJustificatif(s.niveauVerification) ? (
                     <div className="rf-mt-8">
                       <FormulaireAdmin
                         action={declasserSignalement}

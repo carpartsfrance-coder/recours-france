@@ -3,7 +3,12 @@ import { prisma } from "@/lib/db";
 import { FormulaireAdmin } from "@/components/admin/formulaire-admin";
 import { modererAvis } from "../../actions";
 import { Etoiles } from "@/components/ui";
-import { formatDate, masquerEmail } from "@/lib/format";
+import {
+  formatDate,
+  masquerEmail,
+  avecJustificatif,
+  LIBELLES_VERIFICATION_COURTS,
+} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +73,7 @@ export default async function Avis({
                     {formatDate(a.creeLe)} · {masquerEmail(a.email)}
                   </span>
                   <span className={`rf-badge rf-badge--xs ${a.verifie ? "rf-badge--verifie-doux" : "rf-badge--non-verifie"}`}>
-                    {a.verifie ? "Rattaché à un signalement vérifié" : "Non vérifié"}
+                    {a.verifie ? "Rattaché à un dossier avec justificatif" : "Sans justificatif"}
                   </span>
                 </div>
                 <p className="rf-mt-10" style={{ fontSize: 14, lineHeight: 1.65 }}>
@@ -80,7 +85,7 @@ export default async function Avis({
                   </Link>
                   {a.signalement ? (
                     <span className="rf-mono rf-micro">
-                      {a.signalement.reference} · {a.signalement.niveauVerification === "VERIFIE" ? "vérifié" : "déclaré"}
+                      {a.signalement.reference} · {LIBELLES_VERIFICATION_COURTS[a.signalement.niveauVerification].toLowerCase()}
                     </span>
                   ) : (
                     <span className="rf-micro">Aucun signalement rattaché</span>

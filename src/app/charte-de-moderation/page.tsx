@@ -31,11 +31,79 @@ export default function CharteModeration() {
                   </>,
                   <>
                     <strong>Les avis</strong> : appréciations subjectives, publiées avec le prénom et l’initiale
-                    du nom. Un avis rattaché à un signalement vérifié est distingué et entre dans la moyenne ; les
+                    du nom. Un avis rattaché à un dossier accompagné d’un justificatif est distingué et entre dans la moyenne ; les
                     autres sont publiés hors moyenne et hors statistiques.
                   </>,
                 ]}
               />
+            </>
+          ),
+        },
+        {
+          id: "mentions-legales-avis",
+          titre: "Mentions obligatoires sur le traitement des avis",
+          contenu: (
+            <>
+              <p>
+                Les mentions qui suivent sont exigées par l’article L111-7-2 du code de la consommation et ses
+                textes d’application. Elles décrivent le fonctionnement réel de la plateforme, et non une
+                intention.
+              </p>
+              <ListePuces
+                items={[
+                  <>
+                    <strong>Contrôle préalable</strong> : les signalements sont publiés sans contrôle humain
+                    préalable. Un justificatif peut être déposé par le consommateur ; il n’est pas examiné
+                    systématiquement, mais il l’est dès qu’un signalement fait l’objet d’une contestation
+                    motivée. Le niveau de vérification atteint est affiché sur chaque dossier.
+                  </>,
+                  <>
+                    <strong>Dates affichées</strong> : la date de l’expérience de consommation déclarée par le
+                    consommateur et la date de publication du contenu figurent sur chaque dossier et chaque
+                    avis, ainsi que la date de leur dernière mise à jour.
+                  </>,
+                  <>
+                    <strong>Délai de publication</strong> : la publication est immédiate après le dépôt. Aucun
+                    délai n’est appliqué, et aucun contenu n’est retenu en attente d’une intervention.
+                  </>,
+                  <>
+                    <strong>Durée de conservation</strong> : cinq ans à compter du dépôt, puis suppression
+                    automatique. Les justificatifs sont supprimés au bout de vingt-quatre mois. Le détail
+                    figure dans la page <Link href="/donnees-personnelles">Données personnelles</Link>.
+                  </>,
+                  <>
+                    <strong>Critères de classement</strong> : les dossiers et les avis sont présentés par ordre
+                    antichronologique, du plus récent au plus ancien. Aucun autre critère n’intervient, et
+                    aucun classement ne peut être modifié à la demande.
+                  </>,
+                  <>
+                    <strong>Contrepartie</strong> : aucune contrepartie, financière ou en nature, n’est versée
+                    ni reçue en échange du dépôt, de la publication, du retrait ou du classement d’un contenu.
+                    Aucune entreprise ne paie pour figurer, disparaître ou être mieux placée.
+                  </>,
+                  <>
+                    <strong>Motifs de refus</strong> : ils sont énumérés à la section « Ce qui est refusé ».
+                    Tout refus est notifié à l’auteur avec son motif.
+                  </>,
+                  <>
+                    <strong>Contact de l’auteur</strong> : la plateforme ne permet pas de contacter directement
+                    l’auteur d’un signalement ou d’un avis, et ne communique jamais ses coordonnées.
+                  </>,
+                ]}
+              />
+              <p className="rf-mt-14">
+                <strong>Signaler un doute sur l’authenticité d’un contenu.</strong> Toute entreprise concernée
+                par un signalement ou un avis dispose d’une fonctionnalité gratuite pour en contester
+                l’authenticité, à condition que le signalement soit motivé. La demande se dépose depuis la
+                fiche concernée, sur le lien « Contester ce dossier » présent sur chaque dossier publié.
+              </p>
+              <p className="rf-mt-14">
+                Le consommateur est alors sollicité et dispose de <strong>sept jours</strong> pour produire sa
+                pièce justificative. <strong>Sans réponse de sa part dans ce délai, le signalement est retiré
+                automatiquement</strong> : cette règle s’applique sans exception et sans appréciation au cas
+                par cas. S’il répond, sa pièce est examinée et le signalement retiré si elle ne l’étaye pas.
+                Les deux parties sont informées de l’issue.
+              </p>
             </>
           ),
         },
@@ -61,7 +129,7 @@ export default function CharteModeration() {
           contenu: (
             <>
               <p>
-                Un avis est modéré sous 3 jours ouvrés. Un justificatif est contrôlé sous 48 heures ouvrées. Une
+                Un avis est modéré sous 3 jours ouvrés. Un justificatif n’est examiné qu’en cas de contestation motivée. Une
                 demande de rectification est traitée sous 15 jours.
               </p>
               <p className="rf-mt-12">
@@ -84,7 +152,7 @@ export default function CharteModeration() {
               <p className="rf-mt-12">
                 <strong>L’entreprise</strong> peut signaler une erreur ou contester la réalité d’un signalement en
                 produisant des éléments contraires. Le signalement est alors réexaminé et, le cas échéant,
-                déclassé ou retiré. Un signalement vérifié n’est jamais retiré sur simple demande, ni contre
+                déclassé ou retiré. Un signalement accompagné d’un justificatif n’est jamais retiré sur simple demande, ni contre
                 paiement, ni en échange d’une prestation.
               </p>
             </>

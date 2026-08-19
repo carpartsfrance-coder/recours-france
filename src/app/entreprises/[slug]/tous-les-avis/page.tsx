@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
 import { prisma } from "@/lib/db";
+import { AVIS_ACTIFS } from "@/lib/config";
 import { formatDate, formatNombre, formatSiren } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: entreprise ? `Avis des consommateurs — ${entreprise.denomination}` : "Avis des consommateurs",
     description: entreprise
-      ? `Avis publiés sur ${entreprise.denomination}. Seuls les avis rattachés à un dossier vérifié entrent dans la moyenne.`
+      ? `Avis publiés sur ${entreprise.denomination}. Seuls les avis rattachés à un dossier avec justificatif entrent dans la moyenne.`
       : undefined,
   };
 }
@@ -27,6 +28,8 @@ export default async function TousLesAvis({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Les avis sont fermés au MVP : voir src/lib/config.ts.
+  if (!AVIS_ACTIFS) notFound();
   const { slug } = await params;
   const query = await searchParams;
   const page = Math.max(1, Number(query.page ?? 1) || 1);
@@ -77,7 +80,7 @@ export default async function TousLesAvis({
         <h1 className="rfi-h1">Avis des consommateurs</h1>
         <p className="rfi-chapo" style={{ maxWidth: 780 }}>
           {entreprise.denomination} — SIREN {formatSiren(entreprise.siren)}. Appréciations subjectives,
-          distinctes des dossiers documentés. Seuls les avis rattachés à un dossier vérifié entrent dans la
+          distinctes des dossiers documentés. Seuls les avis rattachés à un dossier avec justificatif entrent dans la
           moyenne publiée.
         </p>
       </div>
@@ -98,7 +101,7 @@ export default async function TousLesAvis({
                 }}
               >
                 <h2 className="rfi-h3">
-                  Avis rattachés à un dossier vérifié
+                  Avis rattachés à un dossier avec justificatif
                   {pages > 1 ? ` — page ${page} sur ${pages}` : ""}
                 </h2>
                 <span className="rfi-source">{formatNombre(totalVerifies)} avis</span>
@@ -106,7 +109,7 @@ export default async function TousLesAvis({
 
               {verifies.length === 0 ? (
                 <p className="rfi-legende" style={{ padding: "20px 0" }}>
-                  Aucun avis rattaché à un dossier vérifié n’a encore été publié pour cette entreprise.
+                  Aucun avis rattaché à un dossier avec justificatif n’a encore été publié pour cette entreprise.
                 </p>
               ) : (
                 verifies.map((a) => (
@@ -122,7 +125,7 @@ export default async function TousLesAvis({
                         <span className="rf-vh">{a.note} sur 5</span>
                         <span style={{ fontSize: 13.5, fontWeight: 600 }}>{a.auteur}</span>
                         {a.ville ? <span className="rfi-source">{a.ville}</span> : null}
-                        <span className="rfi-badge rfi-badge--verifie">✓ Rattaché à un dossier vérifié</span>
+                        <span className="rfi-badge rfi-badge--verifie">✓ Rattaché à un dossier avec justificatif</span>
                       </div>
                       <span className="rfi-source" style={{ fontSize: 11.5 }}>
                         {formatDate(a.publieLe ?? a.creeLe)}
@@ -198,7 +201,7 @@ export default async function TousLesAvis({
                       paddingBottom: 11,
                     }}
                   >
-                    <h2 className="rfi-h3">Avis non vérifiés</h2>
+                    <h2 className="rfi-h3">Avis sans justificatif</h2>
                     <span className="rfi-source">Exclus de la moyenne et de toutes les statistiques</span>
                   </div>
                   {nonVerifies.map((a) => (
@@ -210,7 +213,7 @@ export default async function TousLesAvis({
                         </span>
                         <span className="rf-vh">{a.note} sur 5</span>
                         <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--rf-texte-2)" }}>{a.auteur}</span>
-                        <span className="rfi-badge rfi-badge--neutre">Non vérifié</span>
+                        <span className="rfi-badge rfi-badge--neutre">Sans justificatif</span>
                         <span className="rfi-source" style={{ fontSize: 11.5 }}>
                           {formatDate(a.publieLe ?? a.creeLe)}
                         </span>
@@ -232,7 +235,7 @@ export default async function TousLesAvis({
                   <span style={{ fontSize: 16, color: "var(--rf-texte-3)", fontWeight: 400 }}>/5</span>
                 </div>
                 <div className="rfi-source" style={{ marginTop: 6 }}>
-                  Sur {formatNombre(totalVerifies)} avis rattachés à un dossier vérifié
+                  Sur {formatNombre(totalVerifies)} avis rattachés à un dossier avec justificatif
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
                   {distribution.map((d) => (
@@ -256,7 +259,7 @@ export default async function TousLesAvis({
               <div className="rfi-ouverture--legere" style={{ marginTop: 26, paddingTop: 16 }}>
                 <h2 className="rfi-h3 rfi-h3--petit">Publier un avis</h2>
                 <p style={{ fontSize: 12.5, color: "var(--rf-texte-2)", lineHeight: 1.6, marginTop: 8 }}>
-                  Un avis rattaché à un dossier vérifié, déposé avec la même adresse email, est distingué et
+                  Un avis rattaché à un dossier avec justificatif, déposé avec la même adresse email, est distingué et
                   entre dans la moyenne. Les avis sont modérés avant publication.
                 </p>
                 <p style={{ marginTop: 12 }}>

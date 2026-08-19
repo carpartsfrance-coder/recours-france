@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
 import { FormulaireAction } from "@/components/formulaire-action";
 import { prisma } from "@/lib/db";
+import { AVIS_ACTIFS } from "@/lib/config";
 import { deposerAvis } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,8 @@ export default async function LaisserUnAvis({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Les avis sont fermés au MVP : voir src/lib/config.ts.
+  if (!AVIS_ACTIFS) notFound();
   const { slug } = await params;
   const query = await searchParams;
   const reference = typeof query.ref === "string" ? query.ref : "";
@@ -42,7 +45,7 @@ export default async function LaisserUnAvis({
             <h1 className="rf-h1 rf-h1--moyen">Laisser un avis sur {entreprise.denomination}</h1>
             <p className="rf-texte rf-texte--fort rf-mt-12" style={{ maxWidth: 680 }}>
               Un avis est une appréciation subjective. Il est publié séparément des expériences documentées et
-              n’entre dans la moyenne que s’il est rattaché à un signalement vérifié.
+              n’entre dans la moyenne que s’il est rattaché à un signalement avec justificatif.
             </p>
 
             <div className="rf-carte rf-mt-24" style={{ padding: 24 }}>
@@ -125,7 +128,7 @@ export default async function LaisserUnAvis({
                   <p className="rf-champ__aide">
                     Un avis rattaché à un signalement <strong>vérifié</strong> déposé avec la même adresse email
                     est distingué visuellement et entre dans la moyenne publiée. Sans référence, l’avis reste
-                    publié comme non vérifié, hors moyenne et hors statistiques.
+                    publié comme sans justificatif, hors moyenne et hors statistiques.
                   </p>
                 </div>
 

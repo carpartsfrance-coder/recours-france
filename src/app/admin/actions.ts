@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { avecJustificatif } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/auth";
 import { recalculerIndices } from "@/lib/stats";
 import { synchroniserEntreprise } from "@/lib/sources";
-import { envoyerResultatVerification, envoyerAccuseDemande } from "@/lib/emails";
+import { envoyerResultatVerification, envoyerAccuseDemande, envoyerIssueContestation } from "@/lib/emails";
 import { supprimerPiece } from "@/lib/upload";
 
 export type EtatAdmin = { message?: string; erreur?: string; succes?: boolean };
@@ -50,7 +51,7 @@ export async function deconnexionAdmin() {
 
 /**
  * Contrôle d'une pièce. Accepter la pièce fait passer le signalement en
- * « vérifié » : il entre alors dans les statistiques de comportement.
+ * « justificatif examiné » : la pièce a été regardée et elle étaye le signalement.
  */
 export async function controlerJustificatif(_precedent: EtatAdmin, donnees: FormData): Promise<EtatAdmin> {
   const admin = await exigerAdmin();
@@ -75,18 +76,19 @@ export async function controlerJustificatif(_precedent: EtatAdmin, donnees: Form
     },
   });
 
-  if (accepte && piece.signalement.niveauVerification !== "VERIFIE") {
+  if (accepte && piece.signalement.niveauVerification !== "PIECE_EXAMINEE") {
     await prisma.signalement.update({
       where: { id: piece.signalementId },
-      data: { niveauVerification: "VERIFIE", verifieLe: new Date(), verifiePar: admin.nom },
+      data: { niveauVerification: "PIECE_EXAMINEE", verifieLe: new Date(), verifiePar: admin.nom },
     });
     await prisma.evenementSignalement.create({
       data: {
         signalementId: piece.signalementId,
-        titre: "Signalement vérifié",
-        detail: `Pièce contrôlée : relation commerciale établie. La vérification porte sur la réalité du signalement, pas sur le bien-fondé de la réclamation.`,
+        titre: "Justificatif examiné",
+        detail:
+          "La pièce a été examinée et elle étaye le signalement. L'examen porte sur la réalité de la relation commerciale, jamais sur le bien-fondé de la réclamation.",
         auteur: "RECOURS_FRANCE",
-        etiquette: "VÉRIFICATION",
+        etiquette: "EXAMEN",
       },
     });
     if (piece.signalement.entrepriseId) await recalculerIndices(piece.signalement.entrepriseId).catch(() => undefined);
@@ -126,7 +128,7 @@ export async function controlerJustificatif(_precedent: EtatAdmin, donnees: Form
   );
   revalidatePath("/admin/justificatifs");
   revalidatePath("/admin/signalements");
-  return { succes: true, message: accepte ? "Pièce validée, signalement vérifié." : "Pièce refusée." };
+  return { succes: true, message: accepte ? "Pièce retenue après examen." : "Pièce écartée." };
 }
 
 // ── Modération des signalements ─────────────────────────────────────────────
@@ -162,7 +164,7 @@ export async function modererSignalement(_precedent: EtatAdmin, donnees: FormDat
   return { succes: true, message: "Décision enregistrée." };
 }
 
-/** Déclassement d'un signalement vérifié, après contestation établie. */
+/** Déclassement d'un signalement, après contestation établie. */
 export async function declasserSignalement(_precedent: EtatAdmin, donnees: FormData): Promise<EtatAdmin> {
   const admin = await exigerAdmin();
   const id = String(donnees.get("id") ?? "");
@@ -336,4 +338,87 @@ export async function purgerJustificatif(_precedent: EtatAdmin, donnees: FormDat
   await journaliser(admin.id, "justificatif.purge", "justificatif", id);
   revalidatePath("/admin/justificatifs");
   return { succes: true, message: "Pièce supprimée du stockage." };
+}
+
+
+// ── Contestations ──────────────────────────────────────────────────────────
+
+/**
+ * Examen d'une contestation à laquelle le consommateur a répondu.
+ *
+ * C'est le SEUL cas de contestation qui demande une décision humaine. Ceux où
+ * le consommateur se tait sont tranchés par la tâche planifiée, sans personne.
+ */
+export async function trancherContestation(_precedent: EtatAdmin, donnees: FormData): Promise<EtatAdmin> {
+  const admin = await exigerAdmin();
+  const id = String(donnees.get("id") ?? "");
+  const retenue = String(donnees.get("_action") ?? "") === "retenir";
+  const motif = String(donnees.get("motif") ?? "").trim();
+
+  const contestation = await prisma.contestation.findUnique({
+    where: { id },
+    include: { signalement: { include: { entreprise: { select: { denomination: true } } } } },
+  });
+  if (!contestation) return { erreur: "Contestation introuvable." };
+  if (contestation.etat !== "PIECE_FOURNIE") {
+    return { erreur: "Cette contestation n’attend pas d’examen." };
+  }
+
+  const entreprise =
+    contestation.signalement.entreprise?.denomination ??
+    contestation.signalement.entrepriseLibreNom ??
+    "l’entreprise";
+
+  await prisma.contestation.update({
+    where: { id },
+    data: {
+      etat: retenue ? "ACCEPTEE" : "REJETEE",
+      trancheeLe: new Date(),
+      trancheePar: admin.nom,
+      decision: motif || (retenue ? "La pièce n’étaye pas le signalement." : "La pièce étaye le signalement."),
+    },
+  });
+
+  if (retenue) {
+    await prisma.signalement.update({
+      where: { id: contestation.signalementId },
+      data: { moderation: "RETIRE", motifModeration: motif || "Contestation retenue après examen de la pièce." },
+    });
+    if (contestation.signalement.entrepriseId) {
+      await recalculerIndices(contestation.signalement.entrepriseId).catch(() => undefined);
+    }
+  }
+
+  await prisma.evenementSignalement.create({
+    data: {
+      signalementId: contestation.signalementId,
+      titre: retenue ? "Signalement retiré après examen" : "Contestation écartée",
+      detail: retenue
+        ? "La pièce produite n’établit pas la réalité du signalement. Votre dossier personnel reste accessible."
+        : "La pièce produite établit la réalité du signalement : il reste publié.",
+      auteur: "RECOURS_FRANCE",
+      etiquette: "CONTESTATION",
+    },
+  });
+
+  await envoyerIssueContestation({
+    email: contestation.signalement.email,
+    prenom: contestation.signalement.prenom,
+    reference: contestation.signalement.reference,
+    entreprise,
+    maintenu: !retenue,
+    motif: retenue ? motif || null : null,
+  }).catch(() => undefined);
+
+  await envoyerAccuseDemande(
+    contestation.email,
+    retenue ? "Contestation retenue" : "Contestation écartée",
+    retenue
+      ? `Après examen de la pièce produite par le consommateur, votre contestation du dossier ${contestation.signalement.reference} est retenue : le signalement a été retiré de la publication.`
+      : `Après examen, la pièce produite par le consommateur établit la réalité du dossier ${contestation.signalement.reference}. Votre contestation est écartée et le signalement reste publié.`,
+  ).catch(() => undefined);
+
+  await journaliser(admin.id, retenue ? "contestation.retenue" : "contestation.ecartee", "contestation", id, motif || undefined);
+  revalidatePath("/admin/contestations");
+  return { succes: true, message: retenue ? "Contestation retenue, signalement retiré." : "Contestation écartée, signalement maintenu." };
 }

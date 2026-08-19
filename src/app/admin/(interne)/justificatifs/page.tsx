@@ -3,7 +3,16 @@ import { prisma } from "@/lib/db";
 import { FormulaireAdmin } from "@/components/admin/formulaire-admin";
 import { controlerJustificatif, purgerJustificatif } from "../../actions";
 import { formatTaille } from "@/lib/upload-constantes";
-import { formatDate, formatDateLongue, formatMontant, LIBELLES_CATEGORIE, masquerEmail } from "@/lib/format";
+import {
+  formatDate,
+  formatDateLongue,
+  formatMontant,
+  LIBELLES_CATEGORIE,
+  masquerEmail,
+  avecJustificatif,
+  classeBadgeVerification,
+  LIBELLES_VERIFICATION,
+} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +41,7 @@ export default async function Justificatifs({
       <p className="rf-texte rf-mt-8" style={{ maxWidth: 820 }}>
         Le contrôle porte sur la <strong>réalité du signalement</strong>, jamais sur le bien-fondé de la
         réclamation. Vérifiez la cohérence entre le nom de l’entreprise, la date et le montant déclarés, et la
-        pièce fournie. Accepter la pièce fait passer le signalement en signalement vérifié : il entre alors dans
+        pièce fournie. Retenir la pièce fait passer le signalement en justificatif examiné : il entre alors dans
         les statistiques publiques.
       </p>
 
@@ -76,9 +85,9 @@ export default async function Justificatifs({
                       {p.etat === "CONTROLE" ? "Contrôlée" : p.etat === "REFUSE" ? "Refusée" : "En attente"}
                     </span>
                     <span
-                      className={`rf-badge rf-badge--xs ${s.niveauVerification === "VERIFIE" ? "rf-badge--verifie-doux" : "rf-badge--non-verifie"}`}
+                      className={`rf-badge rf-badge--xs ${classeBadgeVerification(s.niveauVerification).split(" ").pop()}`}
                     >
-                      Signalement {s.niveauVerification === "VERIFIE" ? "vérifié" : "déclaré"}
+                      {LIBELLES_VERIFICATION[s.niveauVerification]}
                     </span>
                   </div>
 
@@ -149,13 +158,33 @@ export default async function Justificatifs({
                     </p>
                   </div>
 
+                  {p.anomalies.length || p.observations.length ? (
+                    <div
+                      className="rf-carte rf-carte--legere rf-mt-12"
+                      style={{ padding: "12px 14px", borderLeft: "3px solid var(--rf-ambre, #8a5200)" }}
+                    >
+                      <div className="rf-etiquette">Signalé par le contrôle automatique</div>
+                      <ul className="rf-mt-8" style={{ margin: 0, paddingLeft: 16 }}>
+                        {[...p.anomalies, ...p.observations].map((a) => (
+                          <li key={a} className="rf-micro">
+                            {a}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="rf-micro rf-mt-8">
+                        Indications automatiques, jamais publiées. Elles ne préjugent pas du contenu : à
+                        examiner en priorité si l’entreprise conteste.
+                      </p>
+                    </div>
+                  ) : null}
+
                   {p.etat === "EN_ATTENTE" ? (
                     <div className="rf-mt-12">
                       <FormulaireAdmin
                         action={controlerJustificatif}
                         champsCaches={{ id: p.id }}
                         boutons={[
-                          { valeur: "accepter", libelle: "Valider — signalement vérifié", variante: "primaire" },
+                          { valeur: "accepter", libelle: "Retenir — justificatif examiné", variante: "primaire" },
                           { valeur: "refuser", libelle: "Refuser", variante: "danger" },
                         ]}
                       >

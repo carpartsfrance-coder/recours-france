@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { debutFenetre } from "@/lib/stats";
-import { formatDate, formatNombre, LIBELLES_CATEGORIE } from "@/lib/format";
+import {
+  formatDate,
+  formatNombre,
+  LIBELLES_CATEGORIE,
+  avecJustificatif,
+  classeBadgeVerification,
+  LIBELLES_VERIFICATION_COURTS,
+} from "@/lib/format";
+import { etatDesTaches } from "@/lib/taches";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +29,9 @@ export default async function TableauDeBord() {
   ] = await Promise.all([
     prisma.entreprise.count(),
     prisma.signalement.count({ where: { moderation: "PUBLIE" } }),
-    prisma.signalement.count({ where: { moderation: "PUBLIE", niveauVerification: "VERIFIE" } }),
+    prisma.signalement.count({
+      where: { moderation: "PUBLIE", niveauVerification: { in: ["PIECE_DEPOSEE", "PIECE_EXAMINEE"] } },
+    }),
     prisma.justificatif.count({ where: { etat: "EN_ATTENTE" } }),
     prisma.avis.count({ where: { moderation: "EN_ATTENTE" } }),
     prisma.correction.count({ where: { etat: "EN_ATTENTE" } }),
@@ -39,8 +49,13 @@ export default async function TableauDeBord() {
     }),
   ]);
 
+  // Un ordonnanceur arrêté ne se voit nulle part ailleurs : le site continue
+  // d'afficher des dates de vérification qui ne bougent plus.
+  const taches = await etatDesTaches();
+  const tachesEnRetard = taches.filter((t) => t.enRetard);
+
   const files = [
-    { libelle: "Justificatifs à contrôler", valeur: enAttentePieces, href: "/admin/justificatifs", delai: "48 h ouvrées" },
+    { libelle: "Justificatifs à examiner", valeur: enAttentePieces, href: "/admin/justificatifs", delai: "sur contestation" },
     { libelle: "Avis à modérer", valeur: avisEnAttente, href: "/admin/avis", delai: "3 jours ouvrés" },
     { libelle: "Erreurs signalées", valeur: corrections, href: "/admin/corrections", delai: "15 jours" },
     { libelle: "Revendications", valeur: revendications, href: "/admin/revendications", delai: "15 jours ouvrés" },
@@ -53,6 +68,33 @@ export default async function TableauDeBord() {
         Files d’attente de modération et volumétrie de la plateforme. Les délais affichés sont ceux annoncés
         publiquement dans la charte de modération : ils sont opposables.
       </p>
+
+      {tachesEnRetard.length ? (
+        <div
+          className="rf-carte rf-mt-24"
+          style={{ padding: "18px 22px", borderLeft: "4px solid var(--rf-rouge, #a32a22)" }}
+        >
+          <strong style={{ display: "block", marginBottom: 6 }}>
+            {tachesEnRetard.length === 1
+              ? "Une tâche planifiée ne tourne plus"
+              : `${tachesEnRetard.length} tâches planifiées ne tournent plus`}
+          </strong>
+          <p className="rf-texte" style={{ margin: 0 }}>
+            Tant qu’elles sont arrêtées, les dates de dernière vérification affichées sur les fiches se figent
+            sans que rien ne l’indique aux visiteurs.
+          </p>
+          <ul className="rf-mt-12" style={{ margin: 0, paddingLeft: 18 }}>
+            {tachesEnRetard.map((t) => (
+              <li key={t.nom} className="rf-texte">
+                {t.libelle} —{" "}
+                {t.jamaisExecutee
+                  ? "jamais exécutée"
+                  : `dernière réussite il y a ${t.heuresDepuis} h (${formatDate(t.derniereReussite)})`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="rf-grille rf-grille--260 rf-mt-24">
         {files.map((f) => (
@@ -85,7 +127,7 @@ export default async function TableauDeBord() {
         </div>
         <div className="rf-tuile">
           <div className="rf-tuile__valeur">{formatNombre(verifies)}</div>
-          <div className="rf-tuile__libelle">signalements vérifiés</div>
+          <div className="rf-tuile__libelle">avec justificatif</div>
           <div className="rf-tuile__base">
             {signalements ? Math.round((verifies / signalements) * 100) : 0} % du total
           </div>
@@ -127,9 +169,9 @@ export default async function TableauDeBord() {
                     <td>{LIBELLES_CATEGORIE[s.categorie]}</td>
                     <td>
                       <span
-                        className={`rf-badge rf-badge--xs ${s.niveauVerification === "VERIFIE" ? "rf-badge--verifie-doux" : "rf-badge--non-verifie"}`}
+                        className={`rf-badge rf-badge--xs ${classeBadgeVerification(s.niveauVerification).split(" ").pop()}`}
                       >
-                        {s.niveauVerification === "VERIFIE" ? "Vérifié" : "Déclaré"}
+                        {LIBELLES_VERIFICATION_COURTS[s.niveauVerification]}
                       </span>
                     </td>
                     <td>{s.justificatifs.length}</td>

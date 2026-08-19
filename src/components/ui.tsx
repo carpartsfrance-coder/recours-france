@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import { libelleSource, formatDate, type SourceCode } from "@/lib/format";
+import {
+  libelleSource,
+  formatDate,
+  classeBadgeVerification,
+  LIBELLES_VERIFICATION,
+  EXPLICATIONS_VERIFICATION,
+  type SourceCode,
+} from "@/lib/format";
 
 export function Puce({ variante = "cobalt" }: { variante?: "cobalt" | "succes" | "alerte" | "doux" | "vide" }) {
   if (variante === "succes") return <span className="rf-puce rf-puce--succes" aria-hidden="true">✓</span>;
@@ -90,13 +97,11 @@ export function Provenance({
   );
 }
 
-export function BadgeVerification({ verifie, fort = false }: { verifie: boolean; fort?: boolean }) {
-  if (!verifie) {
-    return <span className="rf-badge rf-badge--sm rf-badge--non-verifie">Signalement non vérifié</span>;
-  }
+export function BadgeVerification({ niveau }: { niveau: string }) {
   return (
-    <span className={`rf-badge rf-badge--sm ${fort ? "rf-badge--verifie" : "rf-badge--verifie-doux"}`}>
-      ✓ Signalement vérifié
+    <span className={classeBadgeVerification(niveau)} title={EXPLICATIONS_VERIFICATION[niveau]}>
+      {niveau === "PIECE_EXAMINEE" ? "✓ " : ""}
+      {LIBELLES_VERIFICATION[niveau] ?? LIBELLES_VERIFICATION.DECLARE}
     </span>
   );
 }

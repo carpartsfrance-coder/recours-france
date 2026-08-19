@@ -40,12 +40,12 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "Quelle différence entre un signalement déclaré et un signalement vérifié ?",
+    q: "Quelle différence entre un signalement déclaré et un signalement accompagné d’un justificatif ?",
     a: (
       <>
         Un signalement <strong>déclaré</strong> repose sur votre seule déclaration : il compte dans le volume
-        agrégé, mais dans aucune statistique de comportement. Un signalement <strong>vérifié</strong> s’appuie
-        sur une pièce que nous avons contrôlée (facture, commande, contrat, preuve de paiement, échange). La
+        agrégé, mais dans aucune statistique de comportement. Un signalement <strong>accompagné d’un justificatif</strong> s’appuie
+        sur une pièce déposée par le consommateur, horodatée et scellée (facture, commande, contrat, preuve de paiement, échange). La
         vérification porte sur la réalité du signalement, pas sur le bien-fondé de votre réclamation.
       </>
     ),
@@ -55,7 +55,7 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     a: (
       <>
         Jamais. Ils sont stockés hors du site public, consultables uniquement par les personnes habilitées à la
-        vérification, et supprimés 24 mois après le contrôle. Seules la catégorie, le montant, la date, le
+        examen éventuel, et supprimés 24 mois après leur dépôt. Seules la catégorie, le montant, la date, le
         statut et le niveau de vérification sont publiés.
       </>
     ),
@@ -82,7 +82,7 @@ const QUESTIONS: { q: string; a: React.ReactNode }[] = [
     q: "Pourquoi certaines fiches n’affichent pas de score d’expérience ?",
     a: (
       <>
-        Parce que le score n’est publié qu’à partir de {SEUIL_PUBLICATION_EXPERIENCE} signalements vérifiés sur
+        Parce que le score n’est publié qu’à partir de {SEUIL_PUBLICATION_EXPERIENCE} signalements accompagnés d’un justificatif sur
         douze mois. En dessous de ce seuil, publier un score donnerait une fausse impression de fiabilité :
         seule la mention « données insuffisantes » s’affiche, à côté de l’indice de transparence, lui toujours
         publié car fondé sur les registres publics.

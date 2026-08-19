@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/db";
 import { indicesEntreprise } from "@/lib/stats";
 import { genererPdf } from "@/lib/pdf";
-import { formatDate, formatMontant, formatSiren, formatSiret, libelleEffectif } from "@/lib/format";
+import {
+  formatDate,
+  formatMontant,
+  formatSiren,
+  formatSiret,
+  libelleEffectif,
+  qualiteDirigeant,
+} from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +52,12 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ slu
         valeur: entreprise.capital ? formatMontant(Number(entreprise.capital)) : "non publie",
       },
       { type: "cle-valeur", cle: "Effectif declare", valeur: libelleEffectif(entreprise.trancheEffectif) },
-      { type: "cle-valeur", cle: "Representant legal", valeur: entreprise.representantLegal ?? "non publie" },
+      {
+        type: "cle-valeur",
+        cle: "Representant legal",
+        // Fonction seulement, jamais le nom de la personne physique.
+        valeur: qualiteDirigeant(entreprise.representantLegal) ?? "non publie",
+      },
       { type: "cle-valeur", cle: "Adresse du siege", valeur: entreprise.adresseSiege ?? "non renseignee" },
       {
         type: "cle-valeur",

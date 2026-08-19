@@ -86,7 +86,7 @@ type EnteteProps = {
   valeurRecherche?: string;
   /** Masque le bouton d'appel à l'action (page de signalement). */
   sansCta?: boolean;
-  navActive?: "annuaire" | "espace" | "methodologie" | "aide";
+  navActive?: "annuaire" | "boutiques" | "espace" | "methodologie" | "aide";
   habillage?: Habillage;
 };
 
@@ -125,6 +125,11 @@ export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActiv
             <span className="rf-nav__actif">Annuaire des entreprises</span>
           ) : (
             <Link href="/entreprises">Annuaire des entreprises</Link>
+          )}
+          {recherche || institutionnel ? null : navActive === "boutiques" ? (
+            <span className="rf-nav__actif">Boutiques en ligne</span>
+          ) : (
+            <Link href="/boutiques">Boutiques en ligne</Link>
           )}
           {institutionnel ? null : navActive === "espace" ? (
             <span className="rf-nav__actif">Mon espace</span>
@@ -222,6 +227,7 @@ export function PiedDePage({
               <div className="rf-pied__liens">
                 <Link href="/signaler">Signaler un litige</Link>
                 <Link href="/entreprises">Annuaire des entreprises</Link>
+                <Link href="/boutiques">Boutiques en ligne</Link>
                 <Link href="/aide/justificatifs">Quels justificatifs fournir</Link>
                 <Link href="/mon-espace">Retrouver mon signalement</Link>
               </div>
