@@ -123,3 +123,28 @@ export const LEVIERS = [
     desc: "La médiation de la consommation ne vous coûte rien et s’ouvre dès qu’une réclamation écrite est restée sans réponse satisfaisante.",
   },
 ] as const;
+
+/**
+ * Délai opposable, à partir d'un motif de la fiche.
+ *
+ * La fiche compte six motifs, le tunnel dix situations, et le droit s'attache
+ * aux secondes. Ce raccourci évite d'avoir à traverser les deux tables pour
+ * afficher « 14 jours » en regard de « Remboursement ».
+ *
+ * Une chaîne courte, faite pour tenir dans une liste : le fondement et la
+ * précision restent pour l'étape où l'on agit.
+ */
+const DELAI_PAR_MOTIF: Record<string, string> = {
+  REMBOURSEMENT: "14 jours",
+  LIVRAISON: "30 jours",
+  SAV: "2 ans",
+  GARANTIE: "2 ans",
+  // Rien pour « Résiliation et prélèvements » : les treize mois de l'article
+  // L133-24 valent pour contester un prélèvement, pas pour obtenir une
+  // résiliation. Le motif recouvre les deux, et afficher un délai qui ne
+  // s'applique qu'à la moitié des cas ferait manquer le vrai à l'autre moitié.
+};
+
+export function delaiCourtPourMotif(motif: string): string | null {
+  return DELAI_PAR_MOTIF[motif] ?? null;
+}

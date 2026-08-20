@@ -26,6 +26,7 @@ import {
   titreSignalement,
 } from "@/lib/observatoire";
 import { situationPourMotif } from "@/lib/tunnel";
+import { delaiCourtPourMotif } from "@/lib/droits";
 import {
   cheminCommune,
   cheminDepartement,
@@ -401,16 +402,20 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                 <li key={m.cle}>
                   <Link href={`/signaler/${entreprise.slug}/situation?s=${situationPourMotif(m.cle)}`}>
                     <span>{m.libelle}</span>
-                    {aDesSignalements && parMotif.get(m.cle) ? (
-                      <span className="rfx-liste__compteur">
-                        {formatNombre(parMotif.get(m.cle)!)} signalement
-                        {parMotif.get(m.cle)! > 1 ? "s" : ""}
-                      </span>
-                    ) : (
-                      <span className="rfx-liste__compteur" aria-hidden="true">
-                        ›
-                      </span>
-                    )}
+                    {/* Le délai plutôt qu'un chevron : le visiteur voit sa
+                        situation et son levier d'un seul coup d'œil, avant même
+                        de cliquer. Le nombre de signalements le complète quand
+                        il y en a. */}
+                    <span className="rfx-liste__compteur">
+                      {delaiCourtPourMotif(m.cle) ? (
+                        <span style={{ color: "var(--x-bleu)", fontWeight: 700 }}>
+                          {delaiCourtPourMotif(m.cle)}
+                        </span>
+                      ) : null}
+                      {aDesSignalements && parMotif.get(m.cle)
+                        ? `${delaiCourtPourMotif(m.cle) ? " · " : ""}${formatNombre(parMotif.get(m.cle)!)} signalement${parMotif.get(m.cle)! > 1 ? "s" : ""}`
+                        : ""}
+                    </span>
                   </Link>
                 </li>
               ))}
