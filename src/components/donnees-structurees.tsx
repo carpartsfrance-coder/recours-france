@@ -71,3 +71,42 @@ export function organisationJsonLd(params: {
   }
   return donnees;
 }
+
+/**
+ * Questions fréquentes, en `FAQPage`.
+ *
+ * Le balisage ne porte que sur des questions réellement affichées et dépliées :
+ * décrire à un moteur un contenu que le visiteur ne verrait pas est trompeur,
+ * et c'est exactement ce que sanctionnent les consignes sur les données
+ * structurées.
+ *
+ * Ni `Review` ni `AggregateRating` sur cette page : les signalements ne sont
+ * pas des avis notés, et les baliser comme tels donnerait des étoiles dans les
+ * résultats de recherche pour un contenu qui n'en comporte pas.
+ */
+export function faqJsonLd(questions: { q: string; a: string }[]): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: questions.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+}
+
+/** Fil d'Ariane, en `BreadcrumbList`. */
+export function filAlianeJsonLd(items: { libelle: string; href?: string }[]): Record<string, unknown> {
+  const base = process.env.APP_URL ?? "http://localhost:3200";
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.libelle,
+      ...(it.href ? { item: `${base}${it.href}` } : {}),
+    })),
+  };
+}

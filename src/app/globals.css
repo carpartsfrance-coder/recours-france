@@ -2545,3 +2545,178 @@ button {
     gap: 4px 12px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Fiche entreprise — charte « observatoire »
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Troisième couche de la feuille, après .rf- (cobalt) et .rfi- (institutionnel).
+   Elle applique le handoff « fiche entreprise SEO-first » : angles vifs, aucune
+   ombre, aucun dégradé, aucune illustration. Le vert ne sert qu'à une
+   résolution déclarée par son auteur, l'ambre qu'à un problème en cours — un
+   code couleur qui n'a pas le droit de suggérer un jugement sur l'entreprise.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rfx {
+  --x-bleu: #1b3fa0;
+  --x-bleu-profond: #12256b;
+  --x-bleu-clair: #e7eeff;
+  --x-bleu-survol: #2e5fe0;
+  --x-fond: #ffffff;
+  --x-fond-alt: #f8fafd;
+  --x-bord: #d7dce5;
+  --x-filet: #e4e9f2;
+  --x-filet-ligne: #eef1f7;
+  --x-encre: #14161c;
+  --x-encre-2: #4a515f;
+  --x-encre-3: #5f6673;
+  --x-vert: #1b7a4b;
+  --x-vert-fond: #edf6f0;
+  --x-vert-bord: #bfe0cd;
+  --x-ambre: #8a5200;
+  --x-ambre-fond: #fbf3e8;
+  --x-rouge: #a32a22;
+  --x-rouge-fond: #fbeeec;
+  --x-neutre-fond: #f2f4f8;
+  --x-sur-bleu: #dde7ff;
+  --x-sur-bleu-attenue: #b9ccff;
+  --x-citation: #c6d2ea;
+
+  color: var(--x-encre);
+  background: var(--x-fond);
+}
+
+.rfx *,
+.rfx *::before,
+.rfx *::after { border-radius: 0; box-shadow: none; }
+
+.rfx a { color: var(--x-bleu); text-decoration: underline; text-underline-offset: 3px; }
+.rfx a:hover { color: var(--x-bleu-survol); }
+
+.rfx-conteneur { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+/* ── Titres ───────────────────────────────────────────────────────────────── */
+.rfx-h1 { font-size: 38px; font-weight: 700; letter-spacing: -0.032em; line-height: 1.14; text-wrap: pretty; margin: 0; }
+.rfx-h2 { font-size: 27px; font-weight: 700; letter-spacing: -0.022em; line-height: 1.2; margin: 0; }
+.rfx-h2--secondaire { font-size: 22px; letter-spacing: -0.018em; }
+.rfx-h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.32; margin: 0; }
+.rfx-h4 { font-size: 15px; font-weight: 700; margin: 0; }
+
+/* ── Corps ────────────────────────────────────────────────────────────────── */
+.rfx-prose { font-size: 15.5px; line-height: 1.75; color: var(--x-encre-2); max-width: 820px; }
+.rfx-prose p { margin: 0 0 14px; }
+.rfx-texte { font-size: 15px; line-height: 1.7; color: var(--x-encre-2); }
+.rfx-petit { font-size: 14.5px; line-height: 1.65; color: var(--x-encre-2); }
+.rfx-mention { font-size: 12.5px; line-height: 1.55; color: var(--x-encre-3); }
+.rfx-source { font-size: 11.5px; line-height: 1.5; color: var(--x-encre-3); }
+.rfx-chiffre { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.rfx-section { border-top: 1px solid var(--x-bleu); padding: 44px 0; }
+.rfx-section--alt { background: var(--x-fond-alt); }
+.rfx-section__tete { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+
+/* ── Grilles ──────────────────────────────────────────────────────────────── */
+.rfx-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); gap: 48px; align-items: start; }
+.rfx-editorial { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 330px); gap: 48px; align-items: start; }
+.rfx-deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 0 40px; }
+.rfx-hero > *, .rfx-editorial > *, .rfx-deux > * { min-width: 0; }
+
+@media (max-width: 900px) {
+  .rfx-hero, .rfx-editorial { grid-template-columns: 1fr; gap: 32px; }
+  .rfx-h1 { font-size: 30px; }
+  .rfx-h2 { font-size: 23px; }
+  .rfx-conteneur { padding: 0 20px; }
+}
+
+/* ── Bandeaux ─────────────────────────────────────────────────────────────── */
+.rfx-bandeau { background: var(--x-bleu-profond); color: var(--x-sur-bleu); font-size: 12px; line-height: 1.5; padding: 9px 0; }
+.rfx-fil { background: var(--x-fond-alt); border-bottom: 1px solid var(--x-filet); font-size: 13px; padding: 10px 0; color: var(--x-encre-3); }
+.rfx-fil a { color: var(--x-encre-3); }
+.rfx-fil__sep { margin: 0 8px; color: var(--x-encre-3); }
+
+/* ── Boutons ──────────────────────────────────────────────────────────────── */
+.rfx-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 11px 22px;
+  font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer;
+  border: 1px solid var(--x-bleu); background: var(--x-bleu); color: #fff;
+}
+.rfx-btn:hover { background: var(--x-bleu-profond); border-color: var(--x-bleu-profond); color: #fff; }
+.rfx-btn--secondaire { background: transparent; color: var(--x-bleu); }
+.rfx-btn--secondaire:hover { background: var(--x-bleu-clair); color: var(--x-bleu); }
+.rfx-btn--blanc { background: #fff; border-color: #fff; color: var(--x-bleu-profond); }
+.rfx-btn--blanc:hover { background: var(--x-bleu-clair); border-color: var(--x-bleu-clair); color: var(--x-bleu-profond); }
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+.rfx-badge { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border: 1px solid transparent; }
+.rfx-badge--categorie { background: var(--x-bleu-clair); color: var(--x-bleu); }
+.rfx-badge--encours { background: var(--x-ambre-fond); color: var(--x-ambre); }
+.rfx-badge--resolu { background: var(--x-vert-fond); color: var(--x-vert); border-color: var(--x-vert-bord); }
+.rfx-badge--neutre { background: var(--x-neutre-fond); color: var(--x-encre-2); }
+.rfx-badge--plein { background: var(--x-bleu); color: #fff; }
+
+/* ── Blocs ────────────────────────────────────────────────────────────────── */
+.rfx-bloc { border: 1px solid var(--x-bord); background: var(--x-fond); padding: 22px 24px; }
+.rfx-bloc--accent { background: var(--x-bleu-clair); border-color: var(--x-bleu); }
+.rfx-bloc--alt { background: var(--x-fond-alt); }
+.rfx-bloc--avertissement { background: var(--x-fond-alt); border: 1px solid var(--x-filet); border-left: 4px solid var(--x-bleu-profond); }
+
+/* ── Sommaire ancré ───────────────────────────────────────────────────────── */
+.rfx-sommaire {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--x-fond); border-top: 1px solid var(--x-filet); border-bottom: 1px solid var(--x-filet);
+}
+.rfx-sommaire__liste { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 12px 0; font-size: 13.5px; }
+.rfx-sommaire a { color: var(--x-encre-2); text-decoration: none; }
+.rfx-sommaire a:hover { color: var(--x-bleu); text-decoration: underline; }
+
+/* ── Listes de liens à compteur ───────────────────────────────────────────── */
+.rfx-liste { list-style: none; margin: 0; padding: 0; }
+.rfx-liste li { border-bottom: 1px solid var(--x-filet-ligne); }
+.rfx-liste a {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-height: 44px; padding: 10px 0; font-size: 14.5px; text-decoration: none; color: var(--x-encre);
+}
+.rfx-liste a:hover { color: var(--x-bleu); text-decoration: underline; }
+.rfx-liste__compteur { color: var(--x-encre-3); font-size: 13.5px; font-variant-numeric: tabular-nums; flex: none; }
+
+/* ── Barres horizontales ──────────────────────────────────────────────────── */
+.rfx-barre { margin-bottom: 16px; }
+.rfx-barre__piste { height: 10px; background: var(--x-filet-ligne); margin-top: 7px; }
+.rfx-barre__part { height: 10px; background: var(--x-bleu); }
+
+/* ── Histogramme ──────────────────────────────────────────────────────────── */
+.rfx-histo { display: flex; align-items: flex-end; gap: 10px; height: 190px; border-bottom: 1px solid var(--x-bleu); }
+.rfx-histo__col { flex: 1; background: #94aae6; min-height: 2px; }
+.rfx-histo__col--recent { background: var(--x-bleu); }
+
+/* ── Signalement ──────────────────────────────────────────────────────────── */
+.rfx-signalement { padding: 24px 0; border-bottom: 1px solid var(--x-filet-ligne); }
+.rfx-signalement:last-child { border-bottom: 0; }
+.rfx-declaration { border-left: 3px solid var(--x-citation); padding-left: 16px; font-size: 15px; line-height: 1.7; color: var(--x-encre-2); }
+.rfx-resolution { background: var(--x-vert-fond); border: 1px solid var(--x-vert-bord); padding: 12px 16px; font-size: 13.5px; color: var(--x-vert); }
+.rfx-reponse { background: var(--x-fond-alt); border: 1px solid var(--x-bord); border-left: 3px solid var(--x-bleu); padding: 16px 18px; }
+
+/* ── Panneau de statistiques ──────────────────────────────────────────────── */
+.rfx-compteur { background: var(--x-bleu); color: #fff; padding: 22px 24px; }
+.rfx-compteur__nombre { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.rfx-motifs { border: 1px solid var(--x-bord); border-top: 0; }
+.rfx-motifs a {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 24px; border-bottom: 1px solid var(--x-filet-ligne);
+  font-size: 14.5px; text-decoration: none; color: var(--x-encre);
+}
+.rfx-motifs a:hover { background: var(--x-bleu-clair); }
+.rfx-motifs a:last-of-type { border-bottom: 0; }
+
+/* ── Lignes d'information ─────────────────────────────────────────────────── */
+.rfx-lignes { border-top: 1px solid var(--x-filet); }
+.rfx-ligne { display: flex; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--x-filet-ligne); font-size: 14px; }
+.rfx-ligne__cle { flex: none; width: 44%; color: var(--x-encre-3); }
+.rfx-ligne__valeur { min-width: 0; color: var(--x-encre); }
+
+/* ── Pied de page bleu ────────────────────────────────────────────────────── */
+.rfx-final { background: var(--x-bleu-profond); color: #fff; padding: 48px 0; }
+.rfx-final .rfx-h2 { color: #fff; }
+.rfx-final p { color: var(--x-sur-bleu); }

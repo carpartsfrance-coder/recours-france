@@ -4,8 +4,23 @@
     {
       "name": "recours-france",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3200
+    },
+    {
+      "name": "maquette-fiche",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "-l",
+        "4173",
+        "design/handoff_fiche_entreprise"
+      ],
+      "port": 4173
     }
   ]
 }
