@@ -30,7 +30,7 @@ export async function deposerDepuisBrouillon(
 ): Promise<string | null> {
   const brouillon = await lireBrouillon();
   const situation = situationParCle(brouillon.situation);
-  if (!situation || !brouillon.recit) return null;
+  if (!situation || (!brouillon.demande && !brouillon.etatPro)) return null;
 
   const cible = await resoudreCible(slug);
   if (!cible) return null;
@@ -68,7 +68,9 @@ export async function deposerDepuisBrouillon(
         demande: (brouillon.demande as DemandeConsommateur | undefined) ?? null,
         etatProfessionnel: (brouillon.etatPro as EtatProfessionnel | undefined) ?? null,
         relances: brouillon.relances ?? null,
-        resume: brouillon.recit,
+        // Une chaîne vide n'est pas un récit : la distinguer de l'absence
+        // évite d'avoir à tester les deux partout où on l'affiche.
+        resume: brouillon.recit?.trim() || null,
         email,
         certifie: true,
         consentement: true,

@@ -41,7 +41,12 @@ export default async function EtapePublication({
 
   const brouillon = await lireBrouillon();
   const situation = situationParCle(brouillon.situation);
-  if (!situation || !brouillon.recit) redirect(`/signaler/${slug}/situation`);
+  // Le récit est facultatif depuis qu'il n'est plus publié : ce qui conditionne
+  // le passage, c'est d'avoir quelque chose à publier. Exiger le récit ici
+  // renvoyait au début quiconque l'avait sauté.
+  if (!situation || (!brouillon.demande && !brouillon.etatPro)) {
+    redirect(`/signaler/${slug}`);
+  }
 
   const nom = cible.nom;
   const erreur = typeof query.erreur === "string" ? query.erreur : null;

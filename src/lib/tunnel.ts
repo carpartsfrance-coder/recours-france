@@ -99,7 +99,18 @@ export function situationParCle(cle: string | null | undefined): Situation | nul
   return SITUATIONS.find((s) => s.cle === cle) ?? null;
 }
 
-/** Longueur en deçà de laquelle le récit ne dit rien d'exploitable. */
+/**
+ * Longueur en deçà de laquelle un récit **fourni** ne dit rien d'exploitable.
+ *
+ * Le récit n'est plus exigé. Il n'est pas publié — il ne sert qu'au courrier
+ * et au récapitulatif — et l'imposer plaçait le plus grand obstacle du
+ * parcours devant la personne la moins disposée à écrire : celle qui vient de
+ * se faire avoir. Ce qui paraît sur la fiche vient des choix fermés, et ceux-là
+ * coûtent un clic.
+ *
+ * Le seuil reste appliqué à qui commence à écrire : trois mots valent moins que
+ * rien du tout, parce qu'ils donneront un courrier bancal.
+ */
 export const SEUIL_RECIT = 60;
 
 /**

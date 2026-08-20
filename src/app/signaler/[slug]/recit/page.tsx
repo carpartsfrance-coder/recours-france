@@ -46,6 +46,7 @@ export default async function EtapeRecit({
 
   const droit = droitPour(situation.cle);
   const trop_court = query.court === "1";
+  const rien_de_publiable = query.vide === "1";
   const alerte = typeof query.perso === "string" ? query.perso.split("|").filter(Boolean) : [];
 
   async function continuer(donnees: FormData) {
@@ -63,7 +64,15 @@ export default async function EtapeRecit({
       montantPublic: donnees.get("montantPublic") === "on",
     });
 
-    if (recit.length < SEUIL_RECIT) redirect(`/signaler/${slug}/recit?court=1`);
+    // Un récit vide est accepté ; un récit entamé doit être exploitable.
+    if (recit.length > 0 && recit.length < SEUIL_RECIT) {
+      redirect(`/signaler/${slug}/recit?court=1`);
+    }
+    // Mais il faut au moins un élément publiable : sans demande ni état du
+    // professionnel, la fiche n'afficherait qu'une accusation sans contenu.
+    if (!donnees.get("demande") && !donnees.get("etatPro")) {
+      redirect(`/signaler/${slug}/recit?vide=1`);
+    }
 
     // L'alerte prévient, elle n'interdit pas : une adresse électronique dans un
     // récit est presque toujours une maladresse, et bloquer la publication
@@ -133,6 +142,13 @@ export default async function EtapeRecit({
             Que s’est-il passé ?
           </h1>
 
+          {rien_de_publiable ? (
+            <div className="rfx-erreur" style={{ marginTop: 16 }} role="alert">
+              Indiquez au moins ce que vous demandez, ou où en est le professionnel. C’est ce qui
+              apparaîtra sur la fiche : sans cela, votre signalement n’y dirait rien.
+            </div>
+          ) : null}
+
           {trop_court ? (
             <div className="rfx-erreur" style={{ marginTop: 16 }} role="alert">
               Votre description est trop courte pour être exploitable. Indiquez au moins les dates, ce
@@ -152,36 +168,6 @@ export default async function EtapeRecit({
           ) : null}
 
           <form action={continuer}>
-            <div style={{ marginTop: 22 }}>
-              <label className="rfx-champ__label" htmlFor="recit">
-                Décrivez votre situation
-              </label>
-              <span className="rfx-champ__aide">
-                Les dates importantes, ce que vous avez déjà demandé, et où en est la situation
-                aujourd’hui.
-              </span>
-              <textarea
-                id="recit"
-                name="recit"
-                className="rfx-textarea"
-                maxLength={LIMITE_RECIT}
-                defaultValue={brouillon.recit ?? ""}
-                placeholder="J’ai commandé le 12 juillet. Le colis a été annoncé livré le 18 mais je ne l’ai jamais reçu. J’ai écrit au service client le 20 juillet, sans réponse à ce jour."
-                required
-              />
-              <div className="rfx-compteur-car">{SEUIL_RECIT} caractères minimum</div>
-
-              {/* Le sort du récit est annoncé là où il est écrit, pas dans des
-                  conditions générales que personne n'ouvre. */}
-              <div className="rfx-bloc rfx-bloc--alt" style={{ padding: "12px 14px", marginTop: 4 }}>
-                <p className="rfx-petit" style={{ margin: 0 }}>
-                  <strong>Ce texte ne sera pas publié.</strong> Il nous sert à rédiger votre courrier de
-                  réclamation et à établir votre récapitulatif. Ce qui apparaîtra sur la fiche est
-                  composé à partir de vos réponses ci-dessous.
-                </p>
-              </div>
-            </div>
-
             {/* ── Ce qui composera la phrase publique ──────────────────── */}
             <div className="rfx-bloc" style={{ marginTop: 22 }}>
               <div className="rfx-source" style={{ textTransform: "uppercase", letterSpacing: ".06em" }}>
@@ -277,6 +263,37 @@ export default async function EtapeRecit({
                 statistiques sans être visible.
               </span>
             </label>
+
+            <div style={{ marginTop: 22 }}>
+              <label className="rfx-champ__label" htmlFor="recit">
+                Décrivez votre situation <span style={{ fontWeight: 400, color: "var(--x-encre-3)" }}>— facultatif</span>
+              </label>
+              <span className="rfx-champ__aide">
+                Les dates importantes, ce que vous avez déjà demandé, et où en est la situation
+                aujourd’hui.
+              </span>
+              <textarea
+                id="recit"
+                name="recit"
+                className="rfx-textarea"
+                maxLength={LIMITE_RECIT}
+                defaultValue={brouillon.recit ?? ""}
+                placeholder="J’ai commandé le 12 juillet. Le colis a été annoncé livré le 18 mais je ne l’ai jamais reçu. J’ai écrit au service client le 20 juillet, sans réponse à ce jour."
+              />
+              <div className="rfx-compteur-car">
+                Facultatif · {SEUIL_RECIT} caractères minimum si vous en écrivez un
+              </div>
+
+              {/* Le sort du récit est annoncé là où il est écrit, pas dans des
+                  conditions générales que personne n'ouvre. */}
+              <div className="rfx-bloc rfx-bloc--alt" style={{ padding: "12px 14px", marginTop: 4 }}>
+                <p className="rfx-petit" style={{ margin: 0 }}>
+                  <strong>Ce texte ne sera pas publié.</strong> Il nous sert à rédiger votre courrier de
+                  réclamation et à établir votre récapitulatif. Ce qui apparaîtra sur la fiche est
+                  composé à partir de vos réponses ci-dessous.
+                </p>
+              </div>
+            </div>
 
             <div style={{ marginTop: 22 }}>
               {alerte.length > 0 ? (
