@@ -171,7 +171,10 @@ export const CE_QUI_EST_PUBLIC = [
   "Ce que vous demandez, et où en est le professionnel",
   "Le nombre de relances que vous déclarez",
   "La catégorie, le statut et la date",
-  "Le montant, si vous l’acceptez",
+  // Le montant n'y figure plus : sa publication dépend d'une case cochée à
+  // l'étape précédente, et l'aperçu ci-contre l'affiche ou non selon ce choix.
+  // Une liste qui dit « si vous l'acceptez » demande au lecteur de se souvenir
+  // de ce qu'il a coché ; l'aperçu, lui, le lui montre.
 ] as const;
 
 export const CE_QUI_RESTE_PRIVE = [
