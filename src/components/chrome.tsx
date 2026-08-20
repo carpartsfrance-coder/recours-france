@@ -18,7 +18,14 @@ const LOGO = {
   ratioPicto: 352 / 309,
 };
 
-const DEMO = process.env.DEMO_BANNER !== "false";
+// Comparaison insensible a la casse et aux espaces. Le reglage se saisit a la
+// main dans le tableau de bord de l'hebergeur, ou « False » se tape aussi
+// naturellement que « false » — et ne correspondait a rien, laissant le
+// bandeau « donnees fictives » sur un site de production.
+//
+// Le sens du test ne change pas : le bandeau s'affiche par defaut. Se tromper
+// doit donner un site trop prudent, jamais un site qui se pretend reel a tort.
+const DEMO = (process.env.DEMO_BANNER ?? "").trim().toLowerCase() !== "false";
 
 /**
  * Deux habillages coexistent :

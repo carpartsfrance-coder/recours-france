@@ -37,10 +37,11 @@ async function main() {
   );
 
   // ── Bandeau de démonstration ───────────────────────────────────────────
+  const banniereEteinte = (process.env.DEMO_BANNER ?? "").trim().toLowerCase() === "false";
   verifier(
     "Bandeau de démonstration",
-    process.env.DEMO_BANNER === "false",
-    process.env.DEMO_BANNER === "false"
+    banniereEteinte,
+    banniereEteinte
       ? "éteint"
       : `DEMO_BANNER=${process.env.DEMO_BANNER ?? "(absent)"} — le site annoncerait des données fictives`,
   );
