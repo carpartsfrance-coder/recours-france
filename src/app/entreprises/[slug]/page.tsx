@@ -121,6 +121,18 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   const parMotif = new Map(parMotifBrut.map((g) => [g.categorie as string, g._count._all]));
   /** État A du handoff : la fiche porte des signalements publiés. */
   const aDesSignalements = total > 0;
+  /**
+   * Seuil en deçà duquel l'appareil statistique ne dit rien — et nuit.
+   *
+   * À un signalement, la répartition affiche une barre unique à 100 %,
+   * l'histogramme onze colonnes plates et une douzième à pleine hauteur, et la
+   * page donne à lire un effondrement brutal là où il n'y a qu'une personne
+   * mécontente. C'est faux pour le lecteur, et injuste pour l'entreprise.
+   *
+   * Le signalement lui-même reste affiché : c'est le commentaire chiffré qui
+   * attend d'avoir de quoi commenter.
+   */
+  const statistiquesUtiles = total >= 5;
 
   const mediateurDeclare = mediateurPublie(entreprise);
   const [boutique, proches] = await Promise.all([
@@ -200,7 +212,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     { href: "#signalements", libelle: "Signalements" },
     { href: "#demarches", libelle: "Que faire ?" },
     { href: "#contact", libelle: `Contacter ${nom}` },
-    ...(aDesSignalements ? [{ href: "#evolution", libelle: "Évolution" }] : []),
+    ...(statistiquesUtiles ? [{ href: "#evolution", libelle: "Évolution" }] : []),
     { href: "#informations", libelle: "Informations légales" },
     { href: "#faq", libelle: "Questions fréquentes" },
   ];
@@ -264,9 +276,10 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               </div>
               <h1 className="rfx-h1">{nom} : problèmes et signalements de consommateurs</h1>
               <p className="rfx-prose" style={{ marginTop: 18 }}>
-                Consultez les problèmes signalés concernant {nom}, les expériences de consommateurs et
-                les démarches disponibles en cas de difficulté avec un remboursement, une livraison, un
-                retour ou le SAV.
+                Un remboursement qui n’arrive pas, une commande jamais livrée, un service
+                après-vente qui se dérobe : le professionnel est tenu par des délais précis. Consultez
+                les problèmes signalés concernant {nom}, et préparez gratuitement la réclamation écrite
+                qui fait courir ces délais.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
                 <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn">
@@ -290,21 +303,50 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                       signalement{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
                     </div>
                     <div style={{ fontSize: 12.5, color: "var(--x-sur-bleu-attenue)", marginTop: 8 }}>
-                      12 derniers mois · dont {formatNombre(resolus)} signalé{resolus > 1 ? "s" : ""} résolu
-                      {resolus > 1 ? "s" : ""}
+                      12 derniers mois
+                      {resolus > 0
+                        ? ` · dont ${formatNombre(resolus)} signalé${resolus > 1 ? "s" : ""} résolu${resolus > 1 ? "s" : ""}`
+                        : ""}
                     </div>
                   </div>
-                  <div className="rfx-motifs">
-                    {motifsClasses.slice(0, 4).map((m) => (
-                      <a key={m.cle} href="#signalements">
-                        <span>{m.libelle}</span>
-                        <span className="rfx-chiffre">{formatNombre(m.n)}</span>
-                      </a>
-                    ))}
-                  </div>
-                  <p className="rfx-source" style={{ marginTop: 12 }}>
-                    {PORTEE_STATISTIQUES}
-                  </p>
+                  {statistiquesUtiles ? (
+                    <>
+                      <div className="rfx-motifs">
+                        {motifsClasses.slice(0, 4).map((m) => (
+                          <a key={m.cle} href="#signalements">
+                            <span>{m.libelle}</span>
+                            <span className="rfx-chiffre">{formatNombre(m.n)}</span>
+                          </a>
+                        ))}
+                      </div>
+                      <p className="rfx-source" style={{ marginTop: 12 }}>
+                        {PORTEE_STATISTIQUES}
+                      </p>
+                    </>
+                  ) : (
+                    /* Une répartition à un seul motif n'apprend rien. Les délais
+                       opposables, eux, valent pour toutes les fiches. */
+                    <div className="rfx-bloc" style={{ borderTop: 0 }}>
+                      <div className="rfx-h4">Ce qu’un professionnel doit tenir</div>
+                      <div className="rfx-lignes" style={{ marginTop: 10 }}>
+                        {[
+                          { k: "14 jours", v: "pour rembourser après rétractation" },
+                          { k: "30 jours", v: "pour livrer, à défaut de date convenue" },
+                          { k: "2 ans", v: "de garantie légale, due par le vendeur" },
+                        ].map((d) => (
+                          <div key={d.k} className="rfx-ligne">
+                            <span className="rfx-ligne__cle rfx-chiffre" style={{ color: "var(--x-bleu)", fontWeight: 700 }}>
+                              {d.k}
+                            </span>
+                            <span className="rfx-ligne__valeur">{d.v}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="rfx-source" style={{ marginTop: 10 }}>
+                        Le délai applicable à votre cas vous sera indiqué avec le texte qui le fonde.
+                      </p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="rfx-bloc">
@@ -376,8 +418,8 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           </div>
         </section>
 
-        {/* ── Problèmes les plus signalés (état A) ──────────────────────── */}
-        {aDesSignalements ? (
+        {/* ── Problèmes les plus signalés (au-delà du seuil) ────────────── */}
+        {statistiquesUtiles ? (
           <section className="rfx-conteneur" style={{ padding: "0 32px" }}>
             <div className="rfx-section rfx-editorial">
               <div>
@@ -415,11 +457,15 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     </div>
                   ))}
                 </div>
-                <p className="rfx-petit" style={{ borderTop: "1px solid var(--x-filet)", paddingTop: 12 }}>
-                  <strong className="rfx-chiffre">{formatNombre(resolus)} signalement{resolus > 1 ? "s" : ""}</strong>{" "}
-                  {resolus > 1 ? "ont" : "a"} été mis à jour par leur auteur comme résolu
-                  {resolus > 1 ? "s" : ""}.
-                </p>
+                {resolus > 0 ? (
+                  <p className="rfx-petit" style={{ borderTop: "1px solid var(--x-filet)", paddingTop: 12 }}>
+                    <strong className="rfx-chiffre">
+                      {formatNombre(resolus)} signalement{resolus > 1 ? "s" : ""}
+                    </strong>{" "}
+                    {resolus > 1 ? "ont été mis à jour par leurs auteurs" : "a été mis à jour par son auteur"}{" "}
+                    comme résolu{resolus > 1 ? "s" : ""}.
+                  </p>
+                ) : null}
                 <p className="rfx-source">Basé uniquement sur les signalements publiés sur Recours France.</p>
               </aside>
             </div>
@@ -699,8 +745,8 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           </div>
         </section>
 
-        {/* ── Évolution (état A) ────────────────────────────────────────── */}
-        {aDesSignalements ? (
+        {/* ── Évolution (au-delà du seuil) ──────────────────────────────── */}
+        {statistiquesUtiles ? (
           <section id="evolution" className="rfx-conteneur" style={{ padding: "0 32px" }}>
             <div className="rfx-section">
               <h2 className="rfx-h2">Évolution des signalements concernant {nom}</h2>
