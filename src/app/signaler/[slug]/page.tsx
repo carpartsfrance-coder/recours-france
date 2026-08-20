@@ -79,7 +79,7 @@ export default async function EntreeTunnel({
       ]}
     >
       <div className="rfx">
-        <div className="rfx-tunnel rfx-avec-barre" style={{ padding: "0 20px 56px" }}>
+        <div className="rfx-large rfx-avec-barre" style={{ padding: "0 24px 56px" }}>
           <div className="rfx-progression">
             <div className="rfx-progression__texte">Étape 1 sur 3</div>
             <div className="rfx-progression__piste">
@@ -87,13 +87,30 @@ export default async function EntreeTunnel({
             </div>
           </div>
 
-          <h1 className="rfx-h2" style={{ marginTop: 26 }}>
-            Quel problème rencontrez-vous avec {cible.nom} ?
+          <h1 className="rfx-h1" style={{ marginTop: 26, fontSize: 30, maxWidth: 780 }}>
+            Un problème avec {cible.nom} ? Faites valoir ce que la loi vous permet d’exiger.
           </h1>
-          <p className="rfx-texte" style={{ marginTop: 10 }}>
-            Choisissez la situation la plus proche de la vôtre. Le délai que le professionnel doit
-            tenir et le texte qui le fonde vous seront indiqués à l’étape suivante.
-          </p>
+
+          {/* Les scènes d'abord, à leur taille : c'est l'ordre de SignalConso,
+              dont la page d'accueil place quatre illustrations de 226 pixels
+              immédiatement sous le titre. Elles disent le parcours en un coup
+              d'œil, là où trois paragraphes ne seraient pas lus. */}
+          <div className="rfx-parcours">
+            {PARCOURS.map(({ Scene, titre, desc }) => (
+              <div key={titre} className="rfx-parcours__etape">
+                <Scene taille={200} />
+                <span className="rfx-parcours__titre">{titre}</span>
+                <span className="rfx-parcours__desc">{desc}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="rfx-question">
+            <h2 className="rfx-h2">Quel problème rencontrez-vous avec {cible.nom} ?</h2>
+            <p className="rfx-texte" style={{ marginTop: 10 }}>
+              Choisissez la situation la plus proche de la vôtre. Le délai que le professionnel doit
+              tenir et le texte qui le fonde vous seront indiqués à l’étape suivante.
+            </p>
 
           <form action={continuer} id="tunnel-situation">
             <div className="rfx-situations" style={{ marginTop: 22 }}>
@@ -158,26 +175,6 @@ export default async function EntreeTunnel({
             </div>
           </form>
 
-          {/* Le parcours en quatre temps, sous la question et non au-dessus :
-              la personne choisit d'abord, se rassure ensuite. Un écart assumé à
-              la charte, qui proscrit l'illustration — l'austérité sert la fiche
-              et dessert le tunnel, où quelqu'un arrive en colère. */}
-          <div className="rfx-parcours">
-            {PARCOURS.map(({ Vignette, titre, desc }) => (
-              <div key={titre} className="rfx-parcours__etape">
-                <span className="rfx-parcours__vignette">
-                  <Vignette taille={56} />
-                </span>
-                <span style={{ fontSize: 14.5, fontWeight: 700, display: "block", marginTop: 10 }}>
-                  {titre}
-                </span>
-                <span className="rfx-mention" style={{ display: "block", marginTop: 4 }}>
-                  {desc}
-                </span>
-              </div>
-            ))}
-          </div>
-
           {/* Réassurance compacte : nous ne sommes pas un service de l'État, et
               la question « qui êtes-vous » se pose donc ici. Trois lignes, en
               pied de page — pas un argumentaire. */}
@@ -188,6 +185,7 @@ export default async function EntreeTunnel({
               n’intervient pas dans le règlement du litige : c’est vous qui envoyez le courrier.
               {cible.entrepriseId ? " Votre problème apparaît aussi sur la fiche de l’entreprise." : ""}
             </p>
+          </div>
           </div>
         </div>
 

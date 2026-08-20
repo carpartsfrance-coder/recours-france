@@ -2845,20 +2845,62 @@ button {
 .rfx-levier .rfx-ligne__cle { width: 30%; color: var(--x-bleu); font-weight: 600; }
 
 /* ── Parcours illustré du tunnel ──────────────────────────────────────────
-   Quatre vignettes au trait, dans la couleur institutionnelle. Elles sont la
-   seule entorse à la règle « aucune illustration » : la fiche garde son
-   austérité, qui lui sert ; le tunnel accueille quelqu'un en colère, à qui
-   des filets gris parlent comme un formulaire d'administration. */
+   Quatre scènes de deux cents pixels, de front, immédiatement sous le titre —
+   l'échelle et la place que SignalConso donne aux siennes, mesurées à
+   226 × 224 pixels sur sa page d'accueil.
+
+   Seule entorse à la règle « aucune illustration » : la fiche garde son
+   austérité, qui lui sert de caution ; le tunnel reçoit quelqu'un en colère, à
+   qui des filets gris parlent comme un guichet. */
 .rfx-parcours {
   display: grid;
-  /* Quatre colonnes tiennent dans les 640 px du tunnel : 4 × 130 + 3 × 18.
-     Au-dessus, la grille se rangeait en 3 + 1, ce qui casse la lecture d'un
-     parcours en quatre temps. */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
-  gap: 26px 18px;
-  margin-top: 34px;
-  padding-top: 28px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px 24px;
+  margin: 34px 0 10px;
+}
+.rfx-parcours__etape { min-width: 0; text-align: center; }
+.rfx-parcours__etape svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.rfx-parcours__titre {
+  display: block;
+  margin-top: 12px;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--x-encre);
+}
+.rfx-parcours__desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--x-encre-3);
+}
+
+/* La question revient à une colonne de lecture étroite : une liste de dix
+   situations se parcourt mal sur toute la largeur. */
+.rfx-question {
+  max-width: 640px;
+  margin: 44px 0 0;
+  padding-top: 34px;
   border-top: 1px solid var(--x-filet);
 }
-.rfx-parcours__etape { min-width: 0; }
-.rfx-parcours__vignette { display: block; color: var(--x-bleu); }
+
+@media (max-width: 900px) {
+  .rfx-parcours { grid-template-columns: repeat(2, 1fr); gap: 24px 18px; }
+}
+@media (max-width: 520px) {
+  .rfx-parcours { grid-template-columns: 1fr; }
+  /* La scène à gauche, le texte à droite. Sans le placement explicite, la
+     description retombait dans la colonne de 96 px et s'y comprimait sur cinq
+     lignes — l'étape compte trois enfants, pas deux. */
+  .rfx-parcours__etape {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 4px 16px;
+    text-align: left;
+    align-items: center;
+  }
+  .rfx-parcours__etape svg { grid-row: 1 / 3; grid-column: 1; }
+  .rfx-parcours__titre { grid-column: 2; align-self: end; margin-top: 0; }
+  .rfx-parcours__desc { grid-column: 2; align-self: start; }
+}
