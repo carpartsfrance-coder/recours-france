@@ -207,3 +207,17 @@ export const SITUATIONS_SUIVI = [
 export function situationPourMotif(categorie: string): string {
   return SITUATIONS.find((s) => s.categorie === categorie)?.cle ?? "autre";
 }
+
+/**
+ * Cible du signalement : entreprise répertoriée, ou saisie libre.
+ *
+ * Treize millions de fiches ne couvrent pas tout : une boutique en ligne sans
+ * personne morale identifiée, une société étrangère, une enseigne qu'aucun
+ * registre français ne connaît. Refuser ces signalements reviendrait à
+ * renvoyer chez elle la personne dont le problème est précisément qu'elle ne
+ * sait pas à qui elle a affaire.
+ *
+ * Le fragment réservé ne peut entrer en collision avec aucun slug réel : ceux
+ * d'entreprises se terminent tous par les neuf chiffres du SIREN.
+ */
+export const CIBLE_LIBRE = "autre";

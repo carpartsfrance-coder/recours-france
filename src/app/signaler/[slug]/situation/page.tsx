@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Page } from "@/components/chrome";
-import { chargerEntreprise } from "@/lib/fiche";
+import { resoudreCible } from "@/lib/cible";
 import { SITUATIONS, situationParCle } from "@/lib/tunnel";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 
@@ -31,8 +31,8 @@ export default async function EtapeSituation({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const base = await chargerEntreprise(slug);
-  if (!base) notFound();
+  const cible = await resoudreCible(slug);
+  if (!cible) notFound();
 
   const brouillon = await lireBrouillon();
 
@@ -67,7 +67,7 @@ export default async function EtapeSituation({
           </div>
 
           <h1 className="rfx-h2" style={{ marginTop: 26 }}>
-            Quel problème rencontrez-vous avec {base.denomination} ?
+            Quel problème rencontrez-vous avec {cible.nom} ?
           </h1>
           <p className="rfx-texte" style={{ marginTop: 10 }}>
             Choisissez la situation la plus proche de la vôtre.

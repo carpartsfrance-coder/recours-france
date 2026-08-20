@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Page } from "@/components/chrome";
-import { chargerEntreprise } from "@/lib/fiche";
+import { resoudreCible } from "@/lib/cible";
 import { effacerBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { CE_QUI_EST_PUBLIC, CE_QUI_RESTE_PRIVE, situationParCle } from "@/lib/tunnel";
 import { declarationPublique, titreSignalement } from "@/lib/observatoire";
@@ -36,14 +36,14 @@ export default async function EtapePublication({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const base = await chargerEntreprise(slug);
-  if (!base) notFound();
+  const cible = await resoudreCible(slug);
+  if (!cible) notFound();
 
   const brouillon = await lireBrouillon();
   const situation = situationParCle(brouillon.situation);
   if (!situation || !brouillon.recit) redirect(`/signaler/${slug}/situation`);
 
-  const nom = base.denomination;
+  const nom = cible.nom;
   const erreur = typeof query.erreur === "string" ? query.erreur : null;
 
   const dateFaits = brouillon.dateFaits ? new Date(brouillon.dateFaits) : new Date();

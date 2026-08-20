@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Page } from "@/components/chrome";
 import { prisma } from "@/lib/db";
-import { chargerEntreprise } from "@/lib/fiche";
+import { CIBLE_LIBRE } from "@/lib/tunnel";
 import { mediateurPublie } from "@/lib/mediation";
 import { construireGuide } from "@/lib/demarches";
 import { declarationPublique, titreSignalement } from "@/lib/observatoire";
@@ -17,8 +17,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// Titre neutre : un signalement en saisie libre n'est pas publié, et l'onglet
+// annoncerait le contraire.
 export const metadata: Metadata = {
-  title: "Votre problème est maintenant visible",
+  title: "Votre signalement",
   robots: { index: false, follow: false },
 };
 
@@ -36,22 +38,38 @@ export default async function Publie({
   params: Promise<{ slug: string; reference: string }>;
 }) {
   const { slug, reference } = await params;
-  const base = await chargerEntreprise(slug);
-  if (!base) notFound();
-
+  // L'entreprise vient du signalement, non du brouillon : celui-ci est effacé
+  // au moment de la publication, et une saisie libre n'aurait plus rien à quoi
+  // se raccrocher — la page tombait en « n'existe pas » juste après un dépôt
+  // réussi.
   const signalement = await prisma.signalement.findUnique({
     where: { reference },
-    include: { jetons: { orderBy: { creeLe: "desc" }, take: 1 } },
+    include: {
+      jetons: { orderBy: { creeLe: "desc" }, take: 1 },
+      entreprise: { select: { slug: true, denomination: true } },
+    },
   });
-  if (!signalement || signalement.entrepriseId !== base.id) notFound();
+  if (!signalement) notFound();
 
-  const total = await prisma.signalement.count({
-    where: { entrepriseId: base.id, moderation: "PUBLIE" },
-  });
+  const attendu = signalement.entreprise?.slug ?? CIBLE_LIBRE;
+  if (slug !== attendu) notFound();
 
-  const nom = base.denomination;
+  const cible = {
+    nom: signalement.entreprise?.denomination ?? signalement.entrepriseLibreNom ?? "l’entreprise",
+    entrepriseId: signalement.entrepriseId,
+    slugFiche: signalement.entreprise?.slug ?? null,
+  };
+  const publie = signalement.moderation === "PUBLIE";
+
+  const total = cible.entrepriseId
+    ? await prisma.signalement.count({
+        where: { entrepriseId: cible.entrepriseId, moderation: "PUBLIE" },
+      })
+    : 0;
+
+  const nom = cible.nom;
   const jeton = signalement.jetons[0]?.jeton ?? null;
-  const mediateur = mediateurPublie(base);
+  const mediateur = null;
 
   const titre = titreSignalement(nom, {
     categorie: signalement.categorie,
@@ -83,20 +101,34 @@ export default async function Publie({
       <div className="rfx">
         <div className="rfx-large" style={{ padding: "36px 24px 56px" }}>
           {/* ── La publication, d'abord ──────────────────────────────────── */}
-          <div className="rfx-succes" style={{ display: "inline-block", padding: "6px 12px" }}>
-            Signalement publié
+          <div
+            className={publie ? "rfx-succes" : "rfx-alerte"}
+            style={{ display: "inline-block", padding: "6px 12px" }}
+          >
+            {publie ? "Signalement publié" : "Signalement enregistré"}
           </div>
           <h1 className="rfx-h1" style={{ marginTop: 14 }}>
-            Votre problème est maintenant visible
+            {publie ? "Votre problème est maintenant visible" : "Votre signalement est enregistré"}
           </h1>
           <p className="rfx-prose" style={{ marginTop: 12 }}>
-            Votre signalement est publié sur la fiche {nom}
-            {total > 1 ? `, aux côtés des ${formatNombre(total - 1)} problèmes déjà signalés` : ""}.
+            {publie ? (
+              <>
+                Votre signalement est publié sur la fiche {nom}
+                {total > 1 ? `, aux côtés des ${formatNombre(total - 1)} problèmes déjà signalés` : ""}.
+              </>
+            ) : (
+              <>
+                Votre signalement concernant {nom} est enregistré, et vos démarches sont prêtes. Il
+                n’est pas encore publié : cette entreprise n’est pas répertoriée, et nous ne créons
+                pas de fiche publique sur la seule foi d’un nom — au risque de l’attribuer à un
+                homonyme. Le rapprochement se fait ensuite.
+              </>
+            )}
           </p>
 
           <div className="rfx-apercu" style={{ marginTop: 22, maxWidth: 720 }}>
             <div className="rfx-apercu__tete">
-              <span>Publié sur la fiche {nom}</span>
+              <span>{publie ? `Publié sur la fiche ${nom}` : `Enregistré — ${nom}`}</span>
             </div>
             <div className="rfx-apercu__corps">
               <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.35 }}>{titre}</div>
@@ -117,9 +149,11 @@ export default async function Publie({
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 18 }}>
-            <Link href={`/entreprises/${base.slug}#signalements`} className="rfx-btn">
-              Voir mon signalement
-            </Link>
+            {publie && cible.slugFiche ? (
+              <Link href={`/entreprises/${cible.slugFiche}#signalements`} className="rfx-btn">
+                Voir mon signalement
+              </Link>
+            ) : null}
             {jeton ? (
               <Link href={`/mon-espace/dossier/${jeton}`} className="rfx-btn rfx-btn--secondaire">
                 Suivre mon dossier

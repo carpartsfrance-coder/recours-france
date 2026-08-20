@@ -20,6 +20,9 @@ const LIMITE_RECIT = 1500;
 const DUREE = 60 * 60 * 24 * 7;
 
 export type Brouillon = {
+  /** Entreprise ou boutique saisie librement, quand elle n'est pas répertoriée. */
+  libreNom?: string;
+  libreSite?: string;
   situation?: string;
   sous?: string;
   recit?: string;

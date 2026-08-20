@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Page } from "@/components/chrome";
-import { chargerEntreprise } from "@/lib/fiche";
+import { resoudreCible } from "@/lib/cible";
 import { LIMITE_RECIT, ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { SEUIL_RECIT, coordonneesDansLeRecit, situationParCle } from "@/lib/tunnel";
 import { LIBELLES_DEMANDE, LIBELLES_ETAT_PRO } from "@/lib/format";
@@ -36,8 +36,8 @@ export default async function EtapeRecit({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const base = await chargerEntreprise(slug);
-  if (!base) notFound();
+  const cible = await resoudreCible(slug);
+  if (!cible) notFound();
 
   const brouillon = await lireBrouillon();
   const situation = situationParCle(brouillon.situation);
