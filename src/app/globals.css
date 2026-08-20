@@ -2632,21 +2632,24 @@ button {
 /* ── Bandeaux ─────────────────────────────────────────────────────────────── */
 .rfx-bandeau { background: var(--x-bleu-profond); color: var(--x-sur-bleu); font-size: 12px; line-height: 1.5; padding: 9px 0; }
 .rfx-fil { background: var(--x-fond-alt); border-bottom: 1px solid var(--x-filet); font-size: 13px; padding: 10px 0; color: var(--x-encre-3); }
-.rfx-fil a { color: var(--x-encre-3); }
+.rfx .rfx-fil a { color: var(--x-encre-3); }
 .rfx-fil__sep { margin: 0 8px; color: var(--x-encre-3); }
 
-/* ── Boutons ──────────────────────────────────────────────────────────────── */
-.rfx-btn {
+/* ── Boutons ───────────────────────────────────────────────────────────────
+   Sélecteurs portés à la même spécificité que « .rfx a », faute de quoi la
+   couleur et le soulignement des liens l'emportent : le libellé du bouton
+   principal s'affichait en bleu sur fond bleu, donc invisible. */
+.rfx .rfx-btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 44px; padding: 11px 22px;
   font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer;
   border: 1px solid var(--x-bleu); background: var(--x-bleu); color: #fff;
 }
-.rfx-btn:hover { background: var(--x-bleu-profond); border-color: var(--x-bleu-profond); color: #fff; }
-.rfx-btn--secondaire { background: transparent; color: var(--x-bleu); }
-.rfx-btn--secondaire:hover { background: var(--x-bleu-clair); color: var(--x-bleu); }
-.rfx-btn--blanc { background: #fff; border-color: #fff; color: var(--x-bleu-profond); }
-.rfx-btn--blanc:hover { background: var(--x-bleu-clair); border-color: var(--x-bleu-clair); color: var(--x-bleu-profond); }
+.rfx .rfx-btn:hover { background: var(--x-bleu-profond); border-color: var(--x-bleu-profond); color: #fff; text-decoration: none; }
+.rfx .rfx-btn--secondaire { background: transparent; color: var(--x-bleu); }
+.rfx .rfx-btn--secondaire:hover { background: var(--x-bleu-clair); color: var(--x-bleu); }
+.rfx .rfx-btn--blanc { background: #fff; border-color: #fff; color: var(--x-bleu-profond); }
+.rfx .rfx-btn--blanc:hover { background: var(--x-bleu-clair); border-color: var(--x-bleu-clair); color: var(--x-bleu-profond); }
 
 /* ── Badges ───────────────────────────────────────────────────────────────── */
 .rfx-badge { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border: 1px solid transparent; }
@@ -2668,17 +2671,17 @@ button {
   background: var(--x-fond); border-top: 1px solid var(--x-filet); border-bottom: 1px solid var(--x-filet);
 }
 .rfx-sommaire__liste { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 12px 0; font-size: 13.5px; }
-.rfx-sommaire a { color: var(--x-encre-2); text-decoration: none; }
-.rfx-sommaire a:hover { color: var(--x-bleu); text-decoration: underline; }
+.rfx .rfx-sommaire a { color: var(--x-encre-2); text-decoration: none; }
+.rfx .rfx-sommaire a:hover { color: var(--x-bleu); text-decoration: underline; }
 
 /* ── Listes de liens à compteur ───────────────────────────────────────────── */
 .rfx-liste { list-style: none; margin: 0; padding: 0; }
 .rfx-liste li { border-bottom: 1px solid var(--x-filet-ligne); }
-.rfx-liste a {
+.rfx .rfx-liste a {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   min-height: 44px; padding: 10px 0; font-size: 14.5px; text-decoration: none; color: var(--x-encre);
 }
-.rfx-liste a:hover { color: var(--x-bleu); text-decoration: underline; }
+.rfx .rfx-liste a:hover { color: var(--x-bleu); text-decoration: underline; }
 .rfx-liste__compteur { color: var(--x-encre-3); font-size: 13.5px; font-variant-numeric: tabular-nums; flex: none; }
 
 /* ── Barres horizontales ──────────────────────────────────────────────────── */
@@ -2702,13 +2705,13 @@ button {
 .rfx-compteur { background: var(--x-bleu); color: #fff; padding: 22px 24px; }
 .rfx-compteur__nombre { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .rfx-motifs { border: 1px solid var(--x-bord); border-top: 0; }
-.rfx-motifs a {
+.rfx .rfx-motifs a {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 24px; border-bottom: 1px solid var(--x-filet-ligne);
   font-size: 14.5px; text-decoration: none; color: var(--x-encre);
 }
-.rfx-motifs a:hover { background: var(--x-bleu-clair); }
-.rfx-motifs a:last-of-type { border-bottom: 0; }
+.rfx .rfx-motifs a:hover { background: var(--x-bleu-clair); }
+.rfx .rfx-motifs a:last-of-type { border-bottom: 0; }
 
 /* ── Lignes d'information ─────────────────────────────────────────────────── */
 .rfx-lignes { border-top: 1px solid var(--x-filet); }
