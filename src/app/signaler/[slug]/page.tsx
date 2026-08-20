@@ -1,36 +1,29 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Page } from "@/components/chrome";
-import { prisma } from "@/lib/db";
 import { resoudreCible } from "@/lib/cible";
-import { libelleSecteur } from "@/lib/maillage";
-import { formatNombre } from "@/lib/format";
-import { LEVIERS } from "@/lib/droits";
-import { MOTIFS } from "@/lib/observatoire";
+import { SITUATIONS, situationParCle } from "@/lib/tunnel";
+import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
+import { delaiCourtPourMotif } from "@/lib/droits";
 
 /**
- * Accueil du tunnel de signalement.
+ * Écran d'entrée du tunnel : la question, tout de suite.
  *
- * La promesse a changé, et le chiffre l'imposait : sur treize millions de
- * fiches, six portent un signalement. Annoncer « rendez votre problème
- * visible » à côté d'un compteur à zéro, puis avertir dix lignes plus bas que
- * la plateforme ne transmet rien et ne garantit aucune réponse, revient à
- * démentir sa propre promesse au moment où le visiteur hésite.
+ * Il y avait ici une page d'argumentaire — promesse, bénéfices, aperçu — avant
+ * que l'étape 1 ne pose enfin la question. Or le visiteur arrive d'une fiche
+ * qui compte déjà deux mille huit cents mots d'argumentaire : on lui en
+ * servait un second avant de l'écouter.
  *
- * Ce qui reste vrai quel que soit le volume, c'est le droit. Un délai de
- * quatorze jours opposable au vendeur, une garantie de deux ans due par lui et
- * non par le fabricant : ces leviers-là existent dès la première visite. La
- * page mène donc avec eux, et la visibilité redevient ce qu'elle est
- * aujourd'hui — un bénéfice réel, mais second.
+ * SignalConso, dont le taux de passage est connu pour être bon, fait
+ * l'inverse : sept cent vingt-huit mots sur l'accueil, aucune promesse, et
+ * dix-neuf situations concrètes posées d'emblée. L'argumentaire vit sur les
+ * pages de catégorie — chez nous, sur la fiche entreprise.
  *
- * Elle reprendra la tête le jour où les fiches auront du volume : le bloc de
- * droite bascule tout seul au-delà de trois signalements.
+ * Les deux écrans sont donc fusionnés. Il reste un bandeau de réassurance
+ * compact, parce que nous ne sommes pas un service de l'État et que la
+ * question « qui êtes-vous pour me demander ça » se pose ici, pas chez eux.
  */
-export const revalidate = 3600;
-
-/** En deçà, le compteur dessert la page plus qu'il ne la sert. */
-const SEUIL_PREUVE = 3;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -41,221 +34,148 @@ export async function generateMetadata({
   const cible = await resoudreCible(slug);
   if (!cible) return {};
   return {
-    title: `Réclamation ${cible.nom} : vos droits et votre courrier`,
-    description: `Un problème avec ${cible.nom} ? Obtenez gratuitement votre lettre de réclamation, le délai que le professionnel doit tenir et les recours possibles. Une minute, sans compte.`,
+    title: `Réclamation ${cible.nom} : quel est votre problème ?`,
+    description: `Un problème avec ${cible.nom} ? Choisissez votre situation et obtenez gratuitement votre lettre de réclamation, le délai applicable et les recours possibles.`,
     alternates: { canonical: `/signaler/${cible.slug}` },
     robots: { index: false, follow: true },
   };
 }
 
-export default async function AccueilTunnel({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EntreeTunnel({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
   const cible = await resoudreCible(slug);
   if (!cible) notFound();
 
-  const [total, parMotifBrut] = cible.entrepriseId
-    ? await Promise.all([
-        prisma.signalement.count({
-          where: { entrepriseId: cible.entrepriseId, moderation: "PUBLIE" },
-        }),
-        prisma.signalement.groupBy({
-          by: ["categorie"],
-          _count: { _all: true },
-          where: { entrepriseId: cible.entrepriseId, moderation: "PUBLIE" },
-        }),
-      ])
-    : [0, []];
+  const brouillon = await lireBrouillon();
+  const prechoix =
+    typeof query.s === "string" && situationParCle(query.s) ? query.s : brouillon.situation;
 
-  const nom = cible.nom;
-  const libelles = Object.fromEntries(MOTIFS.map((m) => [m.cle, m.libelle]));
-  const repartition = parMotifBrut
-    .map((g) => ({ libelle: libelles[g.categorie] ?? g.categorie, n: g._count._all }))
-    .sort((a, b) => b.n - a.n)
-    .slice(0, 3);
-
-  /** Le compteur ne s'affiche qu'à partir du moment où il plaide en notre faveur. */
-  const preuveUtile = total >= SEUIL_PREUVE;
+  async function continuer(donnees: FormData) {
+    "use server";
+    const situation = String(donnees.get("situation") ?? "");
+    if (!situationParCle(situation)) return;
+    await ecrireBrouillon({
+      situation,
+      sous: String(donnees.get(`sous-${situation}`) ?? "") || undefined,
+    });
+    redirect(`/signaler/${slug}/recit`);
+  }
 
   return (
     <Page
       entete={{ baseline: "Observatoire des problèmes consommateurs", navActive: "annuaire" }}
       fil={[
         { libelle: "Annuaire", href: "/annuaire" },
-        ...(cible.slugFiche ? [{ libelle: nom, href: `/entreprises/${cible.slugFiche}` }] : []),
+        ...(cible.slugFiche ? [{ libelle: cible.nom, href: `/entreprises/${cible.slugFiche}` }] : []),
         { libelle: "Réclamation" },
       ]}
     >
       <div className="rfx">
-        <div className="rfx-large rfx-avec-barre" style={{ padding: "36px 24px 56px" }}>
-          <div className="rfx-hero">
-            {/* ── Colonne gauche : ce que vous pouvez exiger ───────────── */}
-            <div>
-              <div className="rfx-mention" style={{ marginBottom: 12 }}>
-                {[cible.secteur ? libelleSecteur(cible.secteur) : null, cible.commune]
-                  .filter(Boolean)
-                  .join(" · ") || "Entreprise non répertoriée"}
-              </div>
+        <div className="rfx-tunnel rfx-avec-barre" style={{ padding: "0 20px 56px" }}>
+          <div className="rfx-progression">
+            <div className="rfx-progression__texte">Étape 1 sur 3</div>
+            <div className="rfx-progression__piste">
+              <div className="rfx-progression__part" style={{ width: "33%" }} />
+            </div>
+          </div>
 
-              <h1 className="rfx-h1">Un problème avec {nom} ?</h1>
-              <p
-                style={{
-                  fontSize: 29,
-                  fontWeight: 700,
-                  letterSpacing: "-0.026em",
-                  lineHeight: 1.2,
-                  color: "var(--x-bleu)",
-                  marginTop: 14,
-                }}
-              >
-                Faites valoir ce que la loi vous permet d’exiger
-              </p>
-              <p className="rfx-prose" style={{ marginTop: 14 }}>
-                Un remboursement qui n’arrive pas, une commande jamais livrée, un service après-vente
-                qui se dérobe : dans la plupart de ces situations, le professionnel est tenu par un
-                délai précis. Encore faut-il le lui rappeler par écrit — c’est ce que nous préparons
-                pour vous.
-              </p>
+          <h1 className="rfx-h2" style={{ marginTop: 26 }}>
+            Quel problème rencontrez-vous avec {cible.nom} ?
+          </h1>
+          <p className="rfx-texte" style={{ marginTop: 10 }}>
+            Choisissez la situation la plus proche de la vôtre. Le délai que le professionnel doit
+            tenir et le texte qui le fonde vous seront indiqués à l’étape suivante.
+          </p>
 
-              {/* Le levier réel passe en premier, et occupe la place. */}
-              <div className="rfx-levier" style={{ marginTop: 24 }}>
-                <div className="rfx-levier__titre">Votre lettre de réclamation, prête en une minute</div>
-                <p className="rfx-petit" style={{ marginTop: 8 }}>
-                  Rédigée à partir de votre situation, adressée à {nom}, citant le texte applicable et
-                  le délai qu’il doit tenir. C’est la pièce écrite sans laquelle aucun recours ne
-                  s’ouvre : ni la médiation, ni la suite.
-                </p>
-                <div className="rfx-lignes" style={{ marginTop: 14 }}>
-                  {[
-                    { k: "Objet", v: "Votre demande, formulée en termes opposables" },
-                    { k: "Fondement", v: "L’article qui s’applique à votre cas" },
-                    { k: "Délai", v: "Celui que le professionnel doit respecter" },
-                    { k: "Suite", v: "Ce que vous ferez s’il ne répond pas" },
-                  ].map((l) => (
-                    <div key={l.k} className="rfx-ligne">
-                      <span className="rfx-ligne__cle">{l.k}</span>
-                      <span className="rfx-ligne__valeur">{l.v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginTop: 26, maxWidth: 440 }}>
-                <Link href={`/signaler/${cible.slug}/situation`} className="rfx-btn rfx-btn--large">
-                  Préparer ma réclamation
-                </Link>
-                <p className="rfx-mention" style={{ marginTop: 10, textAlign: "center" }}>
-                  Environ 1 minute · Gratuit · Sans compte ni mot de passe
-                </p>
-              </div>
-
-              {/* Le troisième levier seulement : le deuxième — les délais —
-                  fait déjà l'objet du bloc de droite, et le répéter à deux
-                  colonnes d'écart donne l'impression d'une page qui se remplit. */}
-              <div style={{ marginTop: 30, maxWidth: 620 }}>
-                {LEVIERS.slice(2).map((l) => (
-                  <div key={l.titre} style={{ marginBottom: 18 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{l.titre}</div>
-                    <p className="rfx-petit" style={{ marginTop: 6 }}>
-                      {l.desc}
-                    </p>
+          <form action={continuer} id="tunnel-situation">
+            <div className="rfx-situations" style={{ marginTop: 22 }}>
+              {SITUATIONS.map((s) => {
+                const delai = delaiCourtPourMotif(s.categorie);
+                return (
+                  <div key={s.cle} className="rfx-situation">
+                    <label className="rfx-situation__label">
+                      <input
+                        type="radio"
+                        name="situation"
+                        value={s.cle}
+                        defaultChecked={prechoix === s.cle}
+                        required
+                      />
+                      <span className="rfx-situation__corps" style={{ minWidth: 0 }}>
+                        <span
+                          style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}
+                        >
+                          <span className="rfx-situation__titre">{s.libelle}</span>
+                          {/* Le délai dès le choix : il transforme une liste de
+                              rubriques en liste de leviers. */}
+                          {delai ? (
+                            <span
+                              className="rfx-chiffre"
+                              style={{ flex: "none", fontSize: 13, color: "var(--x-bleu)", fontWeight: 700 }}
+                            >
+                              {delai}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="rfx-situation__desc">{s.desc}</span>
+                        {s.sous.length > 0 ? (
+                          <span className="rfx-sous">
+                            {s.sous.map((sc) => (
+                              <label key={sc}>
+                                <input
+                                  type="radio"
+                                  name={`sous-${s.cle}`}
+                                  value={sc}
+                                  defaultChecked={prechoix === s.cle && brouillon.sous === sc}
+                                />
+                                {sc}
+                              </label>
+                            ))}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
                   </div>
-                ))}
-              </div>
-
-              {/* La visibilité : réelle, annoncée, mais plus en tête. */}
-              {cible.entrepriseId ? (
-                <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 12, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>
-                    Et votre problème devient public
-                  </div>
-                  <p className="rfx-petit" style={{ marginTop: 6 }}>
-                    Votre situation apparaît sur la fiche {nom}, consultable par toute personne qui se
-                    renseigne sur cette entreprise. Recours France ne lui transmet pas votre
-                    réclamation et ne garantit aucune réponse : c’est vous qui envoyez le courrier,
-                    et c’est lui qui a un effet.
-                  </p>
-                </div>
-              ) : null}
+                );
+              })}
             </div>
 
-            {/* ── Colonne droite : les délais, ou la preuve ─────────────── */}
-            <aside>
-              {preuveUtile ? (
-                <div className="rfx-bloc">
-                  <h2 className="rfx-h2 rfx-h2--secondaire" style={{ fontSize: 17 }}>
-                    {formatNombre(total)} problèmes déjà signalés
-                  </h2>
-                  <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                    {repartition.map((r) => (
-                      <div key={r.libelle} className="rfx-ligne">
-                        <span className="rfx-ligne__cle">{r.libelle}</span>
-                        <span className="rfx-ligne__valeur rfx-chiffre">{formatNombre(r.n)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {cible.slugFiche ? (
-                    <p style={{ marginTop: 10 }}>
-                      <Link href={`/entreprises/${cible.slugFiche}#signalements`} style={{ fontSize: 13.5 }}>
-                        Voir les signalements publiés
-                      </Link>
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="rfx-bloc">
-                  <h2 className="rfx-h2 rfx-h2--secondaire" style={{ fontSize: 17 }}>
-                    Les délais qu’un professionnel doit tenir
-                  </h2>
-                  <p className="rfx-source" style={{ marginTop: 6 }}>
-                    Applicables à la plupart des achats auprès d’un professionnel en France.
-                  </p>
-                  <div style={{ marginTop: 16 }}>
-                    {[
-                      { d: "14 jours", q: "pour vous rembourser après une rétractation" },
-                      { d: "30 jours", q: "pour livrer, à défaut de date convenue" },
-                      { d: "2 ans", q: "de garantie légale, due par le vendeur" },
-                      { d: "Gratuit", q: "la saisine du médiateur de la consommation" },
-                    ].map((e) => (
-                      <div key={e.d} style={{ marginBottom: 14 }}>
-                        <div className="rfx-chiffre" style={{ fontSize: 22, color: "var(--x-bleu)" }}>
-                          {e.d}
-                        </div>
-                        <div className="rfx-mention">{e.q}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", paddingTop: 10 }}>
-                    Le délai exact dépend de votre situation ; il vous sera indiqué à l’étape suivante,
-                    avec le texte sur lequel il repose.
-                  </p>
-                </div>
-              )}
+            <div style={{ marginTop: 26 }}>
+              <button type="submit" className="rfx-btn rfx-btn--large">
+                Continuer
+              </button>
+              <p className="rfx-mention" style={{ marginTop: 10, textAlign: "center" }}>
+                Environ 1 minute · Gratuit · Sans compte ni mot de passe
+              </p>
+            </div>
+          </form>
 
-              <div className="rfx-bloc" style={{ marginTop: 16 }}>
-                <h2 className="rfx-h2 rfx-h2--secondaire" style={{ fontSize: 17 }}>
-                  Ce que Recours France ne fait pas
-                </h2>
-                <ul className="rfx-petit" style={{ margin: "10px 0 0", paddingLeft: 18 }}>
-                  <li style={{ marginBottom: 4 }}>Nous ne contactons pas l’entreprise à votre place.</li>
-                  <li style={{ marginBottom: 4 }}>Nous ne négocions pas et ne représentons personne.</li>
-                  <li>Nous ne sommes ni un avocat, ni un médiateur, ni un service de l’État.</li>
-                </ul>
-                <p className="rfx-source" style={{ marginTop: 10 }}>
-                  Ce que nous faisons : vous donner l’écrit, le délai et l’ordre des démarches — ce
-                  qui suffit, dans la plupart des cas, à débloquer un dossier.
-                </p>
-              </div>
-            </aside>
+          {/* Réassurance compacte : nous ne sommes pas un service de l'État, et
+              la question « qui êtes-vous » se pose donc ici. Trois lignes, en
+              pied de page — pas un argumentaire. */}
+          <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 32, padding: "14px 16px" }}>
+            <p className="rfx-source" style={{ margin: 0 }}>
+              Vous obtenez gratuitement votre lettre de réclamation, le délai applicable et l’ordre des
+              démarches. Recours France ne transmet pas votre réclamation au professionnel et
+              n’intervient pas dans le règlement du litige : c’est vous qui envoyez le courrier.
+              {cible.entrepriseId ? " Votre problème apparaît aussi sur la fiche de l’entreprise." : ""}
+            </p>
           </div>
         </div>
 
-        {/* Sur écran étroit, le bouton sort du champ dès le premier
-            défilement : il reste ici sous le pouce. */}
+        {/* La liste des situations dépasse l'écran sur mobile : le bouton
+            reste sous le pouce, rattaché au formulaire par son identifiant. */}
         <div className="rfx-barre-fixe">
-          <Link href={`/signaler/${cible.slug}/situation`} className="rfx-btn rfx-btn--large">
-            Préparer ma réclamation
-          </Link>
-          <p className="rfx-mention">Environ 1 minute · Gratuit · Sans compte</p>
+          <button type="submit" form="tunnel-situation" className="rfx-btn rfx-btn--large">
+            Continuer
+          </button>
         </div>
       </div>
     </Page>
