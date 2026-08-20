@@ -18,6 +18,18 @@ services:
     branch: main
     buildCommand: npm ci && npm run build
     startCommand: npm start
+    # Le schéma est appliqué avant que la nouvelle version ne prenne le trafic.
+    #
+    # Sans cela, la base créée chez l'hébergeur reste vide de tables : la
+    # connexion s'établit, `SELECT 1` répond, et chaque page qui lit une table
+    # renvoie 500 sur un « P2021: The table public.Signalement does not exist ».
+    # Une panne trompeuse, puisque la sonde de vie, elle, répond 200.
+    #
+    # `preDeployCommand` est la place prévue par Render pour cela : après la
+    # compilation, avant le démarrage. Sans `--accept-data-loss` à dessein —
+    # une modification de schéma qui détruirait des données doit faire échouer
+    # le déploiement, pas s'appliquer en silence.
+    preDeployCommand: npx prisma db push --skip-generate
     # /api/vivant, surtout pas /api/sante : cette dernière répond 503 dès
     # qu'une tâche planifiée est en retard — bon pour une alerte, désastreux
     # pour une sonde, qui redémarrerait un service en parfait état de marche.
