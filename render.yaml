@@ -58,6 +58,13 @@ services:
         value: "true"
       - key: MAIL_FROM
         value: contact@recoursfrance.fr
+      # Adresse de réponse, et destinataire des alertes de tâches en échec.
+      # Le code les lit (lib/taches.ts, lib/mailer.ts) mais elles manquaient
+      # ici : sans elles, une chaîne planifiée qui tombe n'alerte personne.
+      - key: MAIL_REPLY_TO
+        sync: false
+      - key: ALERTE_EMAIL
+        sync: false
       # Le bandeau « démonstration — données fictives » doit disparaître.
       - key: DEMO_BANNER
         value: "false"
