@@ -205,16 +205,38 @@ export default async function EtapePublication({
                 transmettons rien —, ni « cela augmente fortement vos chances »
                 — nous n'avons aucune donnée qui l'établisse, et l'affirmer
                 serait la promesse que le handoff proscrit. */}
-            <div className="rfx-bloc rfx-bloc--accent" style={{ marginTop: 22, padding: "16px 18px" }}>
-              <p className="rfx-petit" style={{ margin: 0 }}>
-                <strong>Votre problème devient public.</strong> Il apparaît sur la fiche {nom},
-                consultable par toute personne qui se renseigne sur cette entreprise — y compris par
-                elle. Cette visibilité peut l’inciter à prendre connaissance de votre situation.
-              </p>
+            {/* Le bouton ne nommait que la publication, soit un tiers de ce
+                qu'on obtient — la lettre et le rappel des droits comptent
+                autant, et pour beaucoup de gens davantage. Les trois sont
+                listés, la publication en dernier : c'est celle qui engage, et
+                on la lit mieux quand les deux autres l'ont précédée.
+
+                La formulation de la visibilité reste celle que le handoff
+                autorise : elle « peut inciter » l'entreprise à prendre
+                connaissance. Ni notification promise, ni chance chiffrée. */}
+            <div className="rfx-bloc rfx-bloc--accent" style={{ marginTop: 22, padding: "18px 20px" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--x-bleu)" }}>
+                En validant, vous obtenez
+              </div>
+              <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
+                <li style={{ marginBottom: 7 }}>
+                  <strong>Votre lettre de réclamation</strong>, citant le texte applicable et fixant
+                  à {nom} un délai pour répondre.
+                </li>
+                <li style={{ marginBottom: 7 }}>
+                  <strong>Vos droits et vos recours</strong> : ce que vous pouvez exiger, et ce qui
+                  s’ouvre si l’entreprise ne répond pas.
+                </li>
+                <li>
+                  <strong>Votre problème publié</strong> sur la fiche {nom}, consultable par toute
+                  personne qui se renseigne sur elle — y compris par elle. Cette visibilité peut
+                  l’inciter à prendre connaissance de votre situation.
+                </li>
+              </ul>
             </div>
 
             <button type="submit" className="rfx-btn rfx-btn--large" style={{ marginTop: 16 }}>
-              Rendre mon problème public
+              Publier et obtenir ma lettre
             </button>
             <p className="rfx-mention" style={{ marginTop: 10, textAlign: "center" }}>
               Gratuit · sans compte · modifiable et supprimable à tout moment
