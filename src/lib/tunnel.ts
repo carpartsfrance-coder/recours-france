@@ -169,3 +169,29 @@ export const CE_QUI_RESTE_PRIVE = [
   "Votre numéro de commande",
   "Votre identité",
 ] as const;
+
+/**
+ * Issues possibles d'un problème déclaré résolu.
+ *
+ * « Résolu » seul n'apprend rien : un remboursement obtenu et un geste
+ * commercial consenti ne décrivent pas la même issue. C'est cette nuance qui
+ * renseigne la personne qui lira la fiche ensuite, et elle ne coûte qu'un clic
+ * à celle qui la déclare.
+ */
+export const RESULTATS = [
+  "Remboursement obtenu",
+  "Commande reçue",
+  "Produit remplacé",
+  "Produit réparé",
+  "Commande annulée",
+  "Geste commercial",
+  "Réponse satisfaisante",
+  "Autre",
+] as const;
+
+/** Où en est le problème, du point de vue de son auteur. */
+export const SITUATIONS_SUIVI = [
+  { cle: "en-cours", libelle: "Toujours en cours", desc: "Rien n’a changé, ou la réponse ne vous satisfait pas." },
+  { cle: "partiel", libelle: "Partiellement résolu", desc: "Vous avez obtenu une partie de ce que vous demandiez." },
+  { cle: "resolu", libelle: "Résolu", desc: "Votre demande a abouti." },
+] as const;

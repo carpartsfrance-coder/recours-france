@@ -429,6 +429,12 @@ model Signalement {
   /// Une résolution n'est comptabilisée qu'après confirmation explicite (règle n° 2).
   resolutionConfirmee   Boolean   @default(false)
   resolutionConfirmeeLe DateTime?
+  /// Ce que le consommateur a obtenu, quand il déclare une résolution.
+  ///
+  /// « Résolu » sans plus de précision n'apprend rien : un remboursement
+  /// obtenu et un geste commercial consenti ne décrivent pas la même issue, et
+  /// c'est cette nuance qui intéresse la personne qui lira la fiche ensuite.
+  resultat              String?
 
   moderation      EtatModeration @default(PUBLIE)
   motifModeration String?
