@@ -1663,6 +1663,21 @@ button {
 .rf-mt-8 { margin-top: 8px; }
 .rf-mt-10 { margin-top: 10px; }
 .rf-mt-12 { margin-top: 12px; }
+
+/* Mentions légales incomplètes : un encadré qu'on ne peut pas ne pas voir.
+   Le ton orangé des alertes existantes plutôt qu'un rouge d'erreur — rien
+   n'est cassé, il manque des informations que l'exploitant doit fournir. */
+.rf-alerte-legale {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  background: var(--rf-alerte-fond);
+  border: 1px solid var(--rf-alerte-bordure);
+  border-left: 4px solid var(--rf-alerte);
+  color: var(--rf-alerte);
+  font-size: 14.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
 .rf-mt-14 { margin-top: 14px; }
 .rf-mt-16 { margin-top: 16px; }
 .rf-mt-18 { margin-top: 18px; }

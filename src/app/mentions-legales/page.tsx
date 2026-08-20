@@ -1,13 +1,26 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageEditoriale } from "@/components/page-editoriale";
+import { EDITEUR, HEBERGEUR, mentionsManquantes, siegeSocial } from "@/lib/editeur";
 
 export const metadata: Metadata = {
   title: "Mentions légales",
   description: "Éditeur, hébergement, propriété intellectuelle et sources de données de Recours France.",
 };
 
+/**
+ * Les mentions légales sont lues à chaque requête, jamais figées au build.
+ *
+ * Sans cela, corriger une adresse de siège demanderait un redéploiement, et le
+ * jour où l'on renseigne enfin les variables d'environnement la page continuerait
+ * d'afficher l'avertissement, gravé dans le HTML compilé.
+ */
+export const dynamic = "force-dynamic";
+
 export default function MentionsLegales() {
+  const manquantes = mentionsManquantes();
+  const siege = siegeSocial();
+
   return (
     <PageEditoriale
       titre="Mentions légales"
@@ -15,9 +28,9 @@ export default function MentionsLegales() {
       maj="17 août 2026"
       chapo={
         <>
-          Recours France est une plateforme privée indépendante éditée par Recours France SAS. Elle n’est ni un
-          service de l’État, ni une autorité administrative, et ne dispose d’aucune mission de service public,
-          d’aucun agrément ni d’aucune délégation publique.
+          Recours France est une plateforme privée indépendante. Elle n’est ni un service de l’État, ni une
+          autorité administrative, et ne dispose d’aucune mission de service public, d’aucun agrément ni
+          d’aucune délégation publique.
         </>
       }
       sections={[
@@ -26,20 +39,49 @@ export default function MentionsLegales() {
           titre: "Éditeur du site",
           contenu: (
             <>
+              {/* L'avertissement passe avant le reste, et seulement s'il a lieu
+                  d'être : une page de mentions légales incomplète expose son
+                  éditeur, et rien ne doit permettre de l'oublier. */}
+              {manquantes.length > 0 ? (
+                <p className="rf-alerte-legale">
+                  <strong>Mentions légales incomplètes.</strong> Ce site ne doit pas être ouvert au public en
+                  l’état : l’article 6 III de la loi pour la confiance dans l’économie numérique impose
+                  l’identité de l’éditeur et celle de l’hébergeur. Variables à renseigner chez l’hébergeur :{" "}
+                  {manquantes.join(", ")}.
+                </p>
+              ) : null}
               <p>
-                <strong>Recours France SAS</strong>, société par actions simplifiée au capital de 10 000 €.
-                <br />
-                Siège social : [adresse du siège] — [code postal] [ville].
-                <br />
-                SIREN : [à compléter] — RCS de [ville] — TVA intracommunautaire : [à compléter].
-                <br />
-                Directeur de la publication : [nom du représentant légal].
+                <strong>{EDITEUR.raisonSociale || "Éditeur non renseigné"}</strong>
+                {EDITEUR.raisonSociale ? (
+                  <>
+                    , {EDITEUR.formeJuridique.toLowerCase()}
+                    {EDITEUR.capital ? ` au capital de ${EDITEUR.capital}` : ""}.
+                  </>
+                ) : (
+                  "."
+                )}
+                {siege ? (
+                  <>
+                    <br />
+                    Siège social : {siege}.
+                  </>
+                ) : null}
+                {EDITEUR.siren ? (
+                  <>
+                    <br />
+                    SIREN : {EDITEUR.siren}
+                    {EDITEUR.rcsVille ? ` — RCS de ${EDITEUR.rcsVille}` : ""}
+                    {EDITEUR.tva ? ` — TVA intracommunautaire : ${EDITEUR.tva}` : ""}.
+                  </>
+                ) : null}
+                {EDITEUR.directeurPublication ? (
+                  <>
+                    <br />
+                    Directeur de la publication : {EDITEUR.directeurPublication}.
+                  </>
+                ) : null}
                 <br />
                 Contact : <Link href="/contact">formulaire de contact</Link>.
-              </p>
-              <p className="rf-mt-12">
-                Ces mentions doivent être complétées avant toute mise en ligne publique : elles sont
-                obligatoires au titre de l’article 6 III de la loi pour la confiance dans l’économie numérique.
               </p>
             </>
           ),
@@ -48,10 +90,32 @@ export default function MentionsLegales() {
           id: "s2",
           titre: "Hébergement",
           contenu: (
-            <p>
-              Le site est hébergé au sein de l’Union européenne. L’identité, la raison sociale, l’adresse et le
-              numéro de téléphone de l’hébergeur doivent figurer ici avant la mise en ligne publique.
-            </p>
+            <>
+              <p>
+                {HEBERGEUR.nom ? (
+                  <>
+                    <strong>{HEBERGEUR.nom}</strong>
+                    {HEBERGEUR.adresse ? (
+                      <>
+                        <br />
+                        {HEBERGEUR.adresse}
+                      </>
+                    ) : null}
+                    {HEBERGEUR.telephone ? (
+                      <>
+                        <br />
+                        Téléphone : {HEBERGEUR.telephone}
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  "Hébergeur non renseigné."
+                )}
+              </p>
+              <p className="rf-mt-12">
+                Les données du site sont stockées à {HEBERGEUR.localisationDonnees}.
+              </p>
+            </>
           ),
         },
         {
@@ -98,7 +162,7 @@ export default function MentionsLegales() {
             <>
               <p>
                 La charte graphique, les textes éditoriaux et l’architecture du service sont la propriété de
-                Recours France SAS. Le service n’utilise aucun élément du Système de design de l’État, ni la
+                leur éditeur. Le service n’utilise aucun élément du Système de design de l’État, ni la
                 police Marianne, ni le bloc-marque « République Française », dont l’usage est réservé aux
                 entités de l’État.
               </p>

@@ -27,7 +27,9 @@
     "adresses:extraire": "tsx scripts/enrichir-adresses.ts",
     "adresses:charger": "bash scripts/charger-adresses.sh",
     "db:index-annuaire": "bash -c 'psql \"$(grep -m1 ^DATABASE_URL .env | cut -d= -f2- | tr -d \\\" | sed s/?.*//)\" -f scripts/index-annuaire.sql'",
-    "compteurs": "tsx scripts/compteurs-annuaire.ts"
+    "compteurs": "tsx scripts/compteurs-annuaire.ts",
+    "purger:demo": "tsx scripts/purger-demonstration.ts",
+    "verifier:mise-en-ligne": "tsx scripts/verifier-mise-en-ligne.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

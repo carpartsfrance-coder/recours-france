@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { nomEditeur } from "@/lib/editeur";
 
 /**
  * Logotype fourni. Le verrou complet (pictogramme + nom + signature) sert là où
@@ -213,7 +214,7 @@ export function PiedDePage({
               />
               <p className="rf-pied__texte">
                 Plateforme privée indépendante de signalement des litiges de consommation, éditée par
-                Recours France SAS. Sans lien avec l’État, une administration ou une autorité publique.
+                {nomEditeur()}. Sans lien avec l’État, une administration ou une autorité publique.
               </p>
               {institutionnel ? null : (
                 <p className="rf-pied__texte rf-mt-12" style={{ color: "var(--rf-sur-nuit-attenue)" }}>
@@ -261,7 +262,7 @@ export function PiedDePage({
             <Link href="/accessibilite">Accessibilité</Link>
             <Link href="/cookies">Cookies</Link>
           </div>
-          <span>Recours France SAS — service privé indépendant, sans mission de service public.</span>
+          <span>{nomEditeur()} — service privé indépendant, sans mission de service public.</span>
         </div>
       </div>
     </footer>

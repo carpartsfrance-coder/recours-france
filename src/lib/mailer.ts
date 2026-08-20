@@ -7,6 +7,7 @@
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { nomEditeur } from "./editeur";
 
 const DOSSIER_SORTIE = path.join(process.cwd(), ".mail-outbox");
 
@@ -76,7 +77,7 @@ export function gabarit(titre: string, corps: string): string {
       ${corps}
     </div>
     <div style="background:#101528;color:#98A3BE;padding:18px 24px;font-size:12px;line-height:1.6">
-      Recours France SAS — service privé indépendant, sans mission de service public.<br />
+      ${echapper(nomEditeur())} — service privé indépendant, sans mission de service public.<br />
       Vous pouvez demander la suppression de vos données à tout moment par simple réponse à cet email.
     </div>
   </div>

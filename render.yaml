@@ -52,6 +52,41 @@ services:
       - key: ENRICHISSEMENT_SITE_ACTIF
         value: "false"
 
+      # ── Mentions légales ──────────────────────────────────────────────
+      # Obligatoires (LCEN art. 6 III, code de commerce art. R123-237), et
+      # impossibles à deviner depuis le code : une adresse de siège inventée
+      # engagerait la société sur une information fausse. Tant qu'elles sont
+      # vides, /mentions-legales affiche un avertissement et
+      # « npm run verifier:mise-en-ligne » refuse le feu vert.
+      - key: EDITEUR_RAISON_SOCIALE
+        sync: false
+      - key: EDITEUR_FORME
+        sync: false
+      - key: EDITEUR_CAPITAL
+        sync: false
+      - key: EDITEUR_ADRESSE
+        sync: false
+      - key: EDITEUR_CODE_POSTAL
+        sync: false
+      - key: EDITEUR_VILLE
+        sync: false
+      - key: EDITEUR_SIREN
+        sync: false
+      - key: EDITEUR_RCS_VILLE
+        sync: false
+      - key: EDITEUR_TVA
+        sync: false
+      - key: EDITEUR_DIRECTEUR_PUBLICATION
+        sync: false
+      # À recopier depuis les mentions légales de l'hébergeur lui-même. Les
+      # citer de mémoire est le plus sûr moyen de publier une adresse fausse.
+      - key: HEBERGEUR_NOM
+        sync: false
+      - key: HEBERGEUR_ADRESSE
+        sync: false
+      - key: HEBERGEUR_TELEPHONE
+        sync: false
+
 # ── Tâches planifiées ────────────────────────────────────────────────────
 # Elles se surveillent mutuellement : une tâche qui ne s'exécute pas est une
 # anomalie, et /api/sante répond 503 quand une chaîne prend du retard.

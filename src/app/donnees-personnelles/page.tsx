@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ListePuces, PageEditoriale } from "@/components/page-editoriale";
+import { nomEditeur } from "@/lib/editeur";
 
 export const metadata: Metadata = {
   title: "Données personnelles",
@@ -26,7 +27,7 @@ export default function DonneesPersonnelles() {
           titre: "Responsable de traitement",
           contenu: (
             <p>
-              Recours France SAS, éditeur de la plateforme, est responsable du traitement. Toute demande relative
+              {nomEditeur()}, éditeur de la plateforme, est responsable du traitement. Toute demande relative
               à vos données peut être adressée par simple email depuis la{" "}
               <Link href="/contact">page de contact</Link>, sans justification et sans formalisme.
             </p>
