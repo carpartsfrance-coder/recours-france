@@ -78,7 +78,7 @@ export default async function EntreeTunnel({
         { libelle: "Réclamation" },
       ]}
     >
-      <div className="rfx">
+      <div className="rfx rfx--doux">
         <div className="rfx-large rfx-avec-barre" style={{ padding: "0 24px 56px" }}>
           <div className="rfx-progression">
             <div className="rfx-progression__texte">Étape 1 sur 3</div>

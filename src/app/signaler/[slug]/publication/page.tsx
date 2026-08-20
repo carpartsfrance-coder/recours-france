@@ -97,7 +97,7 @@ export default async function EtapePublication({
       entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }}
       piedComplet={false}
     >
-      <div className="rfx">
+      <div className="rfx rfx--doux">
         <div className="rfx-large" style={{ padding: "0 24px 56px" }}>
           <div className="rfx-progression">
             <div className="rfx-progression__texte">Étape 3 sur 3</div>

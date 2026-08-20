@@ -2936,3 +2936,45 @@ button {
   .rfx-etape { grid-template-columns: 1fr; gap: 28px; }
   .rfx-etape aside { position: static; }
 }
+
+/* ═══ Variante adoucie, réservée au tunnel ════════════════════════════════
+   La charte impose l'angle vif, l'absence d'ombre et la mention en 11,5 px
+   gris. Cette sécheresse est un gage sur la fiche entreprise, qui publie des
+   reproches contre des sociétés nommées. Elle dessert le tunnel, où quelqu'un
+   arrive contrarié : angles durs, filets gris et petites capitales lui parlent
+   comme un formulaire de guichet.
+
+   Quatre desserrements, et pas un de plus : un arrondi discret, un fond très
+   légèrement teinté, des mentions lisibles, un peu d'air. Aucune ombre — c'est
+   la règle qui distingue le plus nettement une interface sérieuse d'une
+   interface commerciale, et celle-là tient. */
+
+.rfx--doux { background: #fbfcfe; }
+
+.rfx--doux .rfx-bloc,
+.rfx--doux .rfx-levier,
+.rfx--doux .rfx-alerte,
+.rfx--doux .rfx-succes,
+.rfx--doux .rfx-erreur,
+.rfx--doux .rfx-apercu { border-radius: 6px; }
+
+.rfx--doux .rfx-btn,
+.rfx--doux .rfx-input,
+.rfx--doux .rfx-textarea { border-radius: 6px; }
+
+.rfx--doux .rfx-sous label { border-radius: 20px; }
+
+.rfx--doux .rfx-situation { border-radius: 6px; }
+.rfx--doux .rfx-situation__label { padding: 16px 14px; }
+.rfx--doux .rfx-situations { border-top: 0; }
+.rfx--doux .rfx-situation + .rfx-situation { margin-top: 2px; }
+
+/* Les mentions passaient sous le seuil de lecture confortable. */
+.rfx--doux .rfx-source { font-size: 13px; color: #565d6b; }
+.rfx--doux .rfx-mention { font-size: 13.5px; }
+.rfx--doux .rfx-petit { font-size: 14.5px; line-height: 1.7; }
+
+/* Un peu d'air : la densité venait autant de l'espacement que des angles. */
+.rfx--doux .rfx-bloc { padding: 24px 26px; }
+.rfx--doux .rfx-parcours { gap: 32px 24px; }
+.rfx--doux .rfx-question { padding-top: 40px; }

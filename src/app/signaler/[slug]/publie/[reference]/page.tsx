@@ -98,7 +98,7 @@ export default async function Publie({
       entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }}
       piedComplet={false}
     >
-      <div className="rfx">
+      <div className="rfx rfx--doux">
         <div className="rfx-large" style={{ padding: "36px 24px 56px" }}>
           {/* ── La publication, d'abord ──────────────────────────────────── */}
           <div
