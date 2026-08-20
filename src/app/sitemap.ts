@@ -2,7 +2,6 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { DEPARTEMENTS, SECTEURS, cheminCommune, cheminDepartement, cheminSecteur } from "@/lib/maillage";
 import {
-  DUREE_CACHE,
   PAR_FICHIER,
   RANG_COMMUNES,
   RANG_DEPARTEMENTS,
@@ -28,7 +27,19 @@ import {
  * interne construit dans `lib/maillage.ts`.
  */
 
-export const revalidate = DUREE_CACHE;
+/**
+ * Les tranches sont produites à la demande, jamais à la compilation.
+ *
+ * Sans cela, Next tentait de pré-générer les 7 566 tranches — dix-sept
+ * processus en parallèle, chacun ouvrant ses connexions à la base. PostgreSQL
+ * saturait au bout de trente-quatre pages : « sorry, too many clients
+ * already », et la compilation échouait.
+ *
+ * Un plan de site n'a de toute façon rien à faire dans une compilation : il
+ * est demandé quelques fois par jour par des robots, et le relevé des
+ * préfixes est gardé en mémoire une journée.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateSitemaps() {
   const total = await nombreDeTranches();
