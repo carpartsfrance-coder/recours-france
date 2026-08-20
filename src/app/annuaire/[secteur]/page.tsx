@@ -2,24 +2,25 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Page } from "@/components/chrome";
-import { prisma } from "@/lib/db";
 import { formatNombre } from "@/lib/format";
 import {
   DEPARTEMENTS,
   decomptes,
   listerAvecSignalDAbord,
-  SECTEURS,
   cheminDepartement,
   libelleSecteur,
   secteurExiste,
 } from "@/lib/maillage";
 
-export const revalidate = 86400;
-
-/** Les seize secteurs sont connus d'avance : autant les rendre à la compilation. */
-export function generateStaticParams() {
-  return SECTEURS.map((s) => ({ secteur: s.code }));
-}
+/**
+ * Rendue à la demande. Les seize secteurs étaient pré-rendus à la compilation,
+ * ce qui liait chaque déploiement à une base joignable — et faisait échouer le
+ * build chez l'hébergeur, où DATABASE_URL n'existe qu'à l'exécution.
+ *
+ * Les trois lectures restantes sont bon marché : deux dans la table de
+ * compteurs, une sur soixante lignes par index.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -41,11 +42,16 @@ export default async function Secteur({ params }: { params: Promise<{ secteur: s
   if (!secteurExiste(secteur)) notFound();
   const libelle = libelleSecteur(secteur);
 
-  const [parDepartement, notables, total] = await Promise.all([
+  // Le total venait d'un `count` sur le secteur entier — plusieurs millions de
+  // lignes parcourues pour afficher un nombre. Il est déjà dans la table de
+  // compteurs, sous le même filtre exactement (actives, ce secteur) : la ligne
+  // agrégée que `decomptes()` renvoie sans argument.
+  const [parDepartement, notables, parSecteur] = await Promise.all([
     decomptes(secteur),
     listerAvecSignalDAbord({ secteur, etatAdministratif: "ACTIVE" }, 60),
-    prisma.entreprise.count({ where: { secteur, etatAdministratif: "ACTIVE" } }),
+    decomptes(),
   ]);
+  const total = parSecteur.get(secteur) ?? 0;
 
   const compte = parDepartement;
   const departements = DEPARTEMENTS.filter((d) => (compte.get(d.code) ?? 0) > 0);

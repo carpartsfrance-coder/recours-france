@@ -9,7 +9,18 @@ import { SECTEURS, cheminSecteur, decomptes } from "@/lib/maillage";
  * visite. Une fois par jour suffit — le répertoire Sirene n'est lui-même publié
  * qu'une fois par mois.
  */
-export const revalidate = 86400;
+/**
+ * Rendue à la demande, jamais à la compilation.
+ *
+ * Avec `revalidate`, Next pré-rendait cette page pendant le build, donc
+ * interrogeait la base — et chez l'hébergeur la compilation tourne sans
+ * DATABASE_URL. Un déploiement échouait sur une page d'annuaire.
+ *
+ * Le coût est nul : `decomptes()` lit la table de compteurs recalculée chaque
+ * nuit, seize lignes. Ce sont les comptages en direct sur treize millions de
+ * lignes qui coûtaient deux secondes, et ils ont déjà disparu.
+ */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Annuaire des entreprises par secteur et par ville",

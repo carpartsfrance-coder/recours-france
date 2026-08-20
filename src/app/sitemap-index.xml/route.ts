@@ -10,7 +10,19 @@ import { base, nombreDeTranches } from "@/lib/plan-de-site";
  * convention de métadonnées et refuse de démarrer si une route la réclame. Le
  * robots.txt désigne donc celle-ci.
  */
-export const revalidate = 86400;
+/**
+ * Produit à l'exécution.
+ *
+ * Avec `revalidate`, Next pré-rendait cet index pendant la compilation, ce qui
+ * revenait à réclamer le relevé complet des préfixes de SIREN — treize
+ * millions de lignes — à chaque déploiement, et à faire échouer le build là où
+ * DATABASE_URL n'existe qu'à l'exécution.
+ *
+ * Le relevé est de toute façon gardé en mémoire une journée par
+ * `plan-de-site.ts`, et un index de plan de site n'est demandé que quelques
+ * fois par jour, par des robots.
+ */
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const b = base();

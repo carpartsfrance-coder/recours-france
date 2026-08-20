@@ -41,9 +41,27 @@ import {
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Le relevé des tranches ne doit jamais faire échouer une compilation.
+ *
+ * Next appelle cette fonction pendant le build pour enregistrer les routes.
+ * Elle interrogeait la base — et chez l'hébergeur, la compilation tourne sans
+ * DATABASE_URL : « Environment variable not found », et le déploiement entier
+ * s'arrête sur un plan de site.
+ *
+ * Le rattrapage ne perd rien. Les tranches sont rendues à la demande, et Next
+ * accepte un segment absent de cette liste : ce qu'elle contient décide de ce
+ * qui est pré-rendu, pas de ce qui est servi. L'inventaire réel des tranches
+ * est publié par /sitemap-index.xml, produit à l'exécution — c'est lui que
+ * robots.txt désigne, et lui seul que les moteurs lisent.
+ */
 export async function generateSitemaps() {
-  const total = await nombreDeTranches();
-  return Array.from({ length: total }, (_, id) => ({ id }));
+  try {
+    const total = await nombreDeTranches();
+    return Array.from({ length: total }, (_, id) => ({ id }));
+  } catch {
+    return [{ id: 0 }];
+  }
 }
 
 export default async function sitemap({

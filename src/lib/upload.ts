@@ -47,7 +47,13 @@ export async function enregistrerPiece(fichier: File, referenceDossier: string):
     nomOrigine: nettoyerNom(fichier.name),
     typeMime: fichier.type,
     taille: fichier.size,
-    cheminStockage: path.join(referenceDossier, nom),
+    // Une simple concaténation, pas `path.join` : ce chemin relatif n'est
+    // jamais ouvert ici, il est seulement rangé en base. Turbopack, lui,
+    // voyait un accès disque construit dynamiquement et en concluait qu'il
+    // fallait embarquer tout le projet — sources et dossier public compris —
+    // dans le paquet serveur. Les deux fragments sont produits juste au-dessus
+    // et ne contiennent pas de séparateur.
+    cheminStockage: `${referenceDossier}/${nom}`,
     sommeControle: somme,
   };
 }
