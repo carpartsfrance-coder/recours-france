@@ -2823,3 +2823,23 @@ button {
   /* Les deux colonnes des grilles étroites se replient aussi. */
   .rfx-deux { grid-template-columns: 1fr; }
 }
+
+/* ── Levier dominant du tunnel ────────────────────────────────────────────
+   Ce bloc porte la promesse de la page ; il doit peser plus que tout le reste
+   sans crier. Filet épais à gauche, fond d'accent, aucune ombre — la charte
+   n'en autorise pas, et l'emphase se fait par la surface et le contraste. */
+.rfx-levier {
+  background: var(--x-bleu-clair);
+  border: 1px solid var(--x-bleu);
+  border-left-width: 4px;
+  padding: 20px 22px;
+}
+.rfx-levier__titre {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--x-bleu);
+}
+.rfx-levier .rfx-ligne { border-bottom-color: #cfdcf8; }
+.rfx-levier .rfx-ligne__cle { width: 30%; color: var(--x-bleu); font-weight: 600; }
