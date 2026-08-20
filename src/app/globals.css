@@ -2723,3 +2723,82 @@ button {
 .rfx-final { background: var(--x-bleu-profond); color: #fff; padding: 48px 0; }
 .rfx-final .rfx-h2 { color: #fff; }
 .rfx-final p { color: var(--x-sur-bleu); }
+
+/* ═══ Tunnel de signalement ═══════════════════════════════════════════════
+   Même charte que la fiche, avec ce que le parcours ajoute : progression,
+   champs, lignes de situation. Colonne de lecture étroite — 640 px pour les
+   étapes — parce qu'un formulaire large se remplit moins bien qu'un formulaire
+   qui tient sous l'œil. */
+
+.rfx-tunnel { max-width: 640px; margin: 0 auto; padding: 0 20px; }
+.rfx-large { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+.rfx-lettre { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Progression ──────────────────────────────────────────────────────────── */
+.rfx-progression { padding: 20px 0 6px; }
+.rfx-progression__texte { font-size: 12.5px; color: var(--x-encre-3); margin-bottom: 8px; }
+.rfx-progression__piste { height: 3px; background: var(--x-filet-ligne); }
+.rfx-progression__part { height: 3px; background: var(--x-bleu); }
+
+/* ── Champs ───────────────────────────────────────────────────────────────── */
+.rfx-champ { display: block; margin-bottom: 20px; }
+.rfx-champ__label { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 6px; }
+.rfx-champ__aide { display: block; font-size: 12.5px; color: var(--x-encre-3); margin-bottom: 8px; }
+.rfx .rfx-input,
+.rfx .rfx-textarea {
+  width: 100%; font: inherit; font-size: 16px; line-height: 1.6;
+  padding: 11px 13px; border: 1px solid #b9c1d1; background: #fff; color: var(--x-encre);
+}
+.rfx .rfx-input:focus,
+.rfx .rfx-textarea:focus { outline: 2px solid var(--x-bleu); outline-offset: -1px; border-color: var(--x-bleu); }
+.rfx .rfx-textarea { min-height: 190px; resize: vertical; }
+.rfx-compteur-car { font-size: 12.5px; color: var(--x-encre-3); text-align: right; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+/* ── Lignes de situation (étape 1) ────────────────────────────────────────── */
+.rfx-situations { border-top: 1px solid var(--x-filet); }
+.rfx-situation { border-bottom: 1px solid var(--x-filet-ligne); }
+.rfx-situation__label {
+  display: flex; gap: 13px; align-items: flex-start;
+  padding: 15px 4px; cursor: pointer; min-height: 44px;
+}
+.rfx-situation__label:hover { background: var(--x-fond-alt); }
+.rfx-situation input[type="radio"] { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--x-bleu); flex: none; }
+.rfx-situation__titre { font-size: 15.5px; font-weight: 600; display: block; }
+.rfx-situation__desc { font-size: 13.5px; color: var(--x-encre-3); display: block; margin-top: 2px; }
+/* Sous-catégories dépliées sous la ligne choisie, jamais sur un autre écran. */
+.rfx-sous { display: none; padding: 4px 0 16px 44px; gap: 8px; flex-wrap: wrap; }
+.rfx-situation input[type="radio"]:checked ~ .rfx-situation__corps .rfx-sous { display: flex; }
+.rfx-sous label {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 36px;
+  padding: 6px 12px; border: 1px solid var(--x-bord); font-size: 13.5px; cursor: pointer;
+}
+.rfx-sous label:hover { background: var(--x-bleu-clair); border-color: var(--x-bleu); }
+
+/* ── Cases à cocher ───────────────────────────────────────────────────────── */
+.rfx-case { display: flex; gap: 11px; align-items: flex-start; padding: 10px 0; font-size: 14px; line-height: 1.6; cursor: pointer; }
+.rfx-case input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--x-bleu); flex: none; }
+
+/* ── Bouton pleine largeur, et son état inactif ───────────────────────────── */
+.rfx .rfx-btn--large { width: 100%; font-size: 16.5px; padding: 14px 22px; }
+.rfx .rfx-btn:disabled,
+.rfx .rfx-btn[aria-disabled="true"] { background: #b9c1d1; border-color: #b9c1d1; color: #fff; cursor: not-allowed; }
+
+/* ── Encarts d'état ───────────────────────────────────────────────────────── */
+.rfx-alerte { border: 1px solid #e8c9a8; background: var(--x-ambre-fond); color: var(--x-ambre); padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+.rfx-succes { border: 1px solid var(--x-vert-bord); background: var(--x-vert-fond); color: var(--x-vert); padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+.rfx-erreur { border: 1px solid #e8b5b0; background: var(--x-rouge-fond); color: var(--x-rouge); padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+
+/* ── Bénéfice dominant de l'accueil ───────────────────────────────────────── */
+.rfx-benefice { background: var(--x-bleu-clair); border-left: 4px solid var(--x-bleu); padding: 18px 20px; }
+
+/* ── Aperçu public ────────────────────────────────────────────────────────── */
+.rfx-apercu { border: 2px solid var(--x-bleu); }
+.rfx-apercu__tete { background: var(--x-bleu); color: #fff; padding: 9px 16px; font-size: 12.5px; display: flex; justify-content: space-between; gap: 12px; }
+.rfx-apercu__tete a { color: #fff; }
+.rfx-apercu__corps { padding: 18px 20px; }
+
+/* ── Jalons ───────────────────────────────────────────────────────────────── */
+.rfx-jalons { list-style: none; margin: 0; padding: 0; }
+.rfx-jalon { display: flex; gap: 13px; padding-bottom: 18px; position: relative; }
+.rfx-jalon__pastille { flex: none; width: 13px; height: 13px; margin-top: 4px; border: 2px solid var(--x-bleu); background: #fff; }
+.rfx-jalon--fait .rfx-jalon__pastille { background: var(--x-bleu); }

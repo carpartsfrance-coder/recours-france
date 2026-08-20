@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #FFFFFF; }
+  body { font-family: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #14161C; -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  a { color: #1B3FA0; text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: #2E5FE0; }
+  h1, h2, h3, h4, p, ul { margin: 0; }
+  ul { padding-left: 20px; }
+  input, textarea, button { font-family: inherit; }
+</style>
+</helmet>
+<div data-screen-label="Signaler un probleme" style="background:#FFFFFF;min-height:100vh">
+
+  <div style="background:#EEF1F7;border-bottom:1px solid #D7DCE5">
+    <div style="max-width:1120px;margin:0 auto;padding:10px 24px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Maquette · écrans</span>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <sc-for list="{{ screens }}" as="s" hint-placeholder-count="11">
+          <button type="button" onClick="{{ s.onClick }}" style="cursor:pointer;border:{{ s.border }};background:{{ s.bg }};color:{{ s.color }};font-size:11.5px;font-weight:600;padding:5px 9px">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid #E4E9F2">
+    <div style="max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <a href="Recours%20France%20-%20Accueil.dc.html" style="display:flex;align-items:center;gap:11px;text-decoration:none">
+        <div style="width:32px;height:32px;flex:none;background:#1B3FA0;display:flex;align-items:center;justify-content:center">
+          <span style="color:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:.04em">RF</span>
+        </div>
+        <span style="font-size:16.5px;font-weight:700;color:#1B3FA0;letter-spacing:-0.018em">Recours France</span>
+      </a>
+      <span style="font-size:12px;color:#5F6673">Aucun compte nécessaire · gratuit</span>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid #E4E9F2;background:#F8FAFD">
+    <div style="max-width:1120px;margin:0 auto;padding:8px 24px;font-size:12px;color:#5F6673">
+      <a href="Recours%20France%20-%20Accueil.dc.html" style="color:#5F6673;text-decoration:none">Accueil</a>
+      <span style="padding:0 7px;color:#98A0AE">›</span>
+      <a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="color:#5F6673;text-decoration:none">Prixnet</a>
+      <span style="padding:0 7px;color:#98A0AE">›</span>
+      <span style="color:#14161C">Mon plan d’action</span>
+    </div>
+  </div>
+
+  <sc-if value="{{ isEntry }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1040px;margin:0 auto;padding:44px 24px 72px">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,370px);gap:52px;align-items:start">
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;flex:none;background:#E7EEFF;border:1px solid #C6D2EA;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:14px;font-weight:700;color:#1B3FA0">Px</span>
+            </div>
+            <div>
+              <div style="font-size:15.5px;font-weight:700;color:#14161C">Prixnet</div>
+              <div style="font-size:12.5px;color:#4A515F;margin-top:1px">Commerce en ligne · 184 signalements publiés</div>
+            </div>
+          </div>
+
+          <h1 style="font-size:38px;font-weight:700;color:#14161C;margin-top:22px;letter-spacing:-0.032em;line-height:1.12">Un problème avec Prixnet ?</h1>
+          <div style="font-size:29px;font-weight:700;color:#1B3FA0;margin-top:10px;letter-spacing:-0.026em;line-height:1.2;max-width:600px">{{ heroPromise }}</div>
+          <p style="font-size:17px;color:#4A515F;line-height:1.65;margin-top:14px;max-width:620px;text-wrap:pretty">{{ heroText }}</p>
+          <p style="font-size:15px;color:#14161C;line-height:1.65;margin-top:14px;max-width:620px;text-wrap:pretty">Votre problème ne reste pas seulement dans une boîte email : vous pouvez aussi le rendre visible sur la fiche publique de l’entreprise.</p>
+
+          <div style="border-left:4px solid #1B3FA0;background:#E7EEFF;padding:16px 20px;margin-top:24px;max-width:600px">
+            <div style="font-size:17px;font-weight:700;color:#14161C">Signalement publié sur la fiche Prixnet</div>
+            <div style="font-size:14px;color:#14161C;line-height:1.6;margin-top:4px">Votre situation devient visible publiquement, aux côtés des 184 signalements déjà publiés.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 32px;margin-top:16px;max-width:640px">
+            <sc-for list="{{ benefits }}" as="b" hint-placeholder-count="3">
+              <div style="display:flex;gap:11px;align-items:flex-start">
+                <span style="width:19px;height:19px;flex:none;background:#E7EEFF;color:#1B3FA0;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:2px">✓</span>
+                <span style="min-width:0">
+                  <span style="display:block;font-size:14.5px;font-weight:600;color:#14161C">{{ b.title }}</span>
+                  <span style="display:block;font-size:12.5px;color:#4A515F;line-height:1.55;margin-top:2px">{{ b.desc }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button type="button" onClick="{{ goStep1 }}" style="width:100%;max-width:420px;cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:18px;font-weight:700;padding:19px;margin-top:26px" style-hover="background:#12256B">{{ ctaLabel }}</button>
+          <div style="font-size:13px;color:#5F6673;margin-top:10px;max-width:420px">Environ 1 minute · Gratuit · Sans compte</div>
+          <p style="font-size:14px;color:#14161C;line-height:1.65;margin-top:12px;max-width:560px">Vous obtenez également gratuitement les étapes à suivre et un courrier adapté à votre situation.</p>
+
+          <div style="border:1px solid #D7DCE5;padding:15px 18px;margin-top:20px;max-width:600px">
+            <div style="font-size:11.5px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.05em">Inclus avec votre signalement</div>
+            <div style="display:flex;gap:10px 26px;flex-wrap:wrap;margin-top:10px">
+              <sc-for list="{{ included }}" as="i" hint-placeholder-count="4">
+                <span style="font-size:14px;font-weight:600;color:#14161C">· {{ i }}</span>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid #E4E9F2;margin-top:26px;padding-top:16px;font-size:12.5px;color:#5F6673;line-height:1.65;max-width:620px">
+            Recours France est une plateforme indépendante d’information et d’accompagnement dans les démarches de consommation. <a href="#fonctionnement">Comment ça fonctionne ?</a>
+          </div>
+        </div>
+
+        <div style="min-width:0">
+          <div style="border:1px solid #1B3FA0">
+            <div style="background:#1B3FA0;color:#FFFFFF;padding:14px 18px;font-size:14px;font-weight:700">Ce qui se passe après votre signalement</div>
+            <div style="padding:16px 18px 18px">
+              <sc-for list="{{ afterSteps }}" as="a" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:13px;align-items:start">
+                  <div style="display:flex;flex-direction:column;align-items:center;height:100%">
+                    <span style="width:22px;height:22px;flex:none;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.border }};font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">{{ a.n }}</span>
+                    <span style="width:1px;flex:1;background:{{ a.lineColor }};min-height:{{ a.lineMin }}"></span>
+                  </div>
+                  <div style="min-width:0;padding-bottom:16px">
+                    <div style="font-size:15px;font-weight:600;color:#14161C;line-height:1.4">{{ a.title }}</div>
+                    <div style="font-size:12.5px;color:#4A515F;line-height:1.55;margin-top:3px">{{ a.desc }}</div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="font-size:12px;color:#5F6673;line-height:1.6;border-top:1px solid #EEF1F7;padding-top:12px">Une situation publiée est visible par les autres consommateurs. Cette visibilité peut inciter l’entreprise à prendre connaissance de la situation, sans que Recours France puisse le garantir.</div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;border-top:0;background:#F8FAFD;padding:16px 18px">
+            <div style="font-size:11.5px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.05em">Aperçu de votre futur signalement public</div>
+            <div style="background:#FFFFFF;border:1px solid #D7DCE5;padding:15px;margin-top:11px">
+              <div style="display:flex;gap:7px;flex-wrap:wrap">
+                <span style="background:#E7EEFF;color:#1B3FA0;font-size:10.5px;font-weight:700;padding:3px 8px">Remboursement</span>
+                <span style="background:#FBF3E8;color:#8A5200;font-size:10.5px;font-weight:700;padding:3px 8px">Problème en cours</span>
+              </div>
+              <div style="font-size:15px;font-weight:700;color:#14161C;line-height:1.35;margin-top:9px">Remboursement non reçu après retour d’une commande</div>
+              <div style="font-size:12px;color:#5F6673;margin-top:6px">Montant concerné : <strong style="color:#14161C;font-weight:600">799 €</strong> · publié le 20 août 2026</div>
+              <div style="border-left:3px solid #C6D2EA;padding-left:11px;margin-top:10px">
+                <p style="font-size:13px;color:#14161C;line-height:1.6">Le consommateur indique avoir retourné sa commande mais ne pas avoir reçu son remboursement au moment de la publication.</p>
+              </div>
+              <div style="font-size:11.5px;color:#1B3FA0;font-weight:600;margin-top:10px">Publié sur la fiche Prixnet</div>
+            </div>
+            <div style="margin-top:11px"><a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="font-size:12.5px">Voir à quoi ressemble un signalement public</a></div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;border-top:0;padding:16px 18px">
+            <div style="font-size:15px;font-weight:700;color:#14161C">184 problèmes déjà signalés concernant Prixnet</div>
+            <div style="display:flex;gap:0 22px;flex-wrap:wrap;margin-top:10px">
+              <sc-for list="{{ heroStats }}" as="h" hint-placeholder-count="3">
+                <div>
+                  <span style="font-size:17px;font-weight:700;color:#1B3FA0;font-variant-numeric:tabular-nums">{{ h.n }}</span>
+                  <span style="font-size:13px;color:#4A515F;margin-left:5px">{{ h.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12px;color:#5F6673;line-height:1.6;margin-top:10px">Votre signalement rejoint une fiche déjà consultable publiquement.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:36px 24px 72px">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:baseline">
+        <button type="button" onClick="{{ goEntry }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour</button>
+        <span style="font-size:12.5px;color:#5F6673;font-weight:600">Étape 1 sur 3</span>
+      </div>
+      <div style="height:3px;background:#E4E9F2;margin-top:10px"><div style="height:3px;width:33%;background:#1B3FA0"></div></div>
+
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:26px;letter-spacing:-0.022em;line-height:1.25">Quel problème rencontrez-vous avec Prixnet ?</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.6;margin-top:8px">Choisissez la situation la plus proche de la vôtre : elle détermine les démarches et les délais de votre plan d’action.</p>
+
+      <div style="border-top:1px solid #1B3FA0;margin-top:20px">
+        <sc-for list="{{ categories }}" as="c" hint-placeholder-count="10">
+          <div>
+            <button type="button" onClick="{{ c.onClick }}" style="width:100%;text-align:left;cursor:pointer;border:0;border-bottom:1px solid #EEF1F7;background:{{ c.bg }};padding:14px 12px;display:flex;gap:13px;align-items:center" style-hover="background:#F8FAFD">
+              <span style="width:19px;height:19px;flex:none;border-radius:50%;border:{{ c.dotBorder }};background:#FFFFFF;display:inline-flex;align-items:center;justify-content:center">
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ c.dotInner }};display:block"></span>
+              </span>
+              <span style="min-width:0;flex:1">
+                <span style="display:block;font-size:15.5px;font-weight:600;color:#14161C">{{ c.label }}</span>
+                <span style="display:block;font-size:12.5px;color:#5F6673;margin-top:2px">{{ c.hint }}</span>
+              </span>
+            </button>
+            <sc-if value="{{ c.showSub }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#F8FAFD;border-bottom:1px solid #EEF1F7;padding:14px 12px 16px">
+                <div style="font-size:13.5px;font-weight:600;color:#14161C">{{ c.subTitle }}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                  <sc-for list="{{ c.subs }}" as="s" hint-placeholder-count="5">
+                    <button type="button" onClick="{{ s.onClick }}" style="cursor:pointer;border:{{ s.border }};background:{{ s.bg }};color:{{ s.color }};font-size:13px;font-weight:600;padding:8px 13px">{{ s.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="font-size:12px;color:#5F6673;margin-top:9px">Facultatif — cela affine le courrier proposé.</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <button type="button" onClick="{{ goStep2 }}" style="width:100%;cursor:pointer;border:0;background:{{ step1Bg }};color:#FFFFFF;font-size:16.5px;font-weight:600;padding:17px;margin-top:24px">Continuer</button>
+      <div style="font-size:12.5px;color:#5F6673;text-align:center;margin-top:9px">{{ step1Hint }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:36px 24px 72px">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:baseline">
+        <button type="button" onClick="{{ goStep1 }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour</button>
+        <span style="font-size:12.5px;color:#5F6673;font-weight:600">Étape 2 sur 3</span>
+      </div>
+      <div style="height:3px;background:#E4E9F2;margin-top:10px"><div style="height:3px;width:66%;background:#1B3FA0"></div></div>
+
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:24px">
+        <span style="background:#E7EEFF;color:#1B3FA0;font-size:11.5px;font-weight:700;padding:4px 9px">{{ chosenCategory }}</span>
+        <sc-if value="{{ hasSub }}" hint-placeholder-val="{{ false }}">
+          <span style="background:#F2F4F8;color:#4A515F;font-size:11.5px;font-weight:700;padding:4px 9px">{{ chosenSub }}</span>
+        </sc-if>
+        <button type="button" onClick="{{ goStep1 }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:12.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">Modifier</button>
+      </div>
+
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:14px;letter-spacing:-0.022em;line-height:1.25">Que s’est-il passé ?</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.6;margin-top:8px">Expliquez simplement votre situation. Ce texte sert à préparer votre courrier de réclamation.</p>
+
+      <textarea rows="7" onChange="{{ onStory }}" value="{{ story }}" placeholder="Exemple : J’ai retourné ma commande il y a deux semaines. Le suivi indique que le colis a été réceptionné, mais je n’ai toujours pas reçu mon remboursement malgré plusieurs relances." style="width:100%;border:1px solid #B9C1D1;background:#FFFFFF;outline:0;padding:14px 15px;font-size:15.5px;color:#14161C;line-height:1.7;resize:vertical;margin-top:16px"></textarea>
+
+      <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:9px">
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <sc-for list="{{ tips }}" as="t" hint-placeholder-count="3">
+            <span style="font-size:12.5px;color:#4A515F">· {{ t }}</span>
+          </sc-for>
+        </div>
+        <span style="font-size:12.5px;color:{{ counterColor }};font-variant-numeric:tabular-nums;white-space:nowrap">{{ storyCount }} caractères</span>
+      </div>
+      <div style="font-size:12px;color:#5F6673;margin-top:7px">N’indiquez pas de coordonnées personnelles dans votre texte.</div>
+
+      <sc-if value="{{ showModeration }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #E8C9A8;background:#FBF3E8;padding:16px 18px;margin-top:16px">
+          <div style="font-size:15px;font-weight:700;color:#8A5200">Vérifiez votre texte</div>
+          <p style="font-size:14px;color:#14161C;line-height:1.65;margin-top:7px">Certaines informations semblent personnelles ({{ moderationWhat }}). Nous vous recommandons de les retirer : ce texte peut être publié sur la fiche Prixnet.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button type="button" onClick="{{ dismissModeration }}" style="cursor:pointer;border:1px solid #8A5200;background:#FFFFFF;color:#8A5200;font-size:13.5px;font-weight:600;padding:9px 15px">Modifier mon texte</button>
+            <button type="button" onClick="{{ ignoreModeration }}" style="cursor:pointer;border:0;background:transparent;padding:9px 0;font-size:13.5px;color:#4A515F;text-decoration:underline;text-underline-offset:3px">Continuer quand même</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="border-top:1px solid #E4E9F2;margin-top:24px;padding-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:22px">
+        <div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">
+            <label style="font-size:15px;font-weight:600;color:#14161C">Montant concerné</label>
+            <span style="font-size:12px;color:#5F6673">Facultatif</span>
+          </div>
+          <div style="display:flex;align-items:stretch;margin-top:8px">
+            <input type="text" defaultValue="799" style="width:100%;border:1px solid #B9C1D1;border-right:0;background:#FFFFFF;outline:0;padding:12px 14px;font-size:16px;color:#14161C" />
+            <span style="flex:none;border:1px solid #B9C1D1;background:#F8FAFD;padding:12px 15px;font-size:16px;color:#4A515F">€</span>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">
+            <label style="font-size:15px;font-weight:600;color:#14161C">Date des faits</label>
+            <span style="font-size:12px;color:#5F6673">Utile pour les délais</span>
+          </div>
+          <input type="text" defaultValue="29/07/2026" style="width:100%;border:1px solid #B9C1D1;background:#FFFFFF;outline:0;padding:12px 14px;font-size:16px;color:#14161C;margin-top:8px" />
+        </div>
+      </div>
+      <button type="button" onClick="{{ toggleAmountPublic }}" style="cursor:pointer;border:0;background:transparent;padding:14px 0 0;display:flex;gap:11px;align-items:center;text-align:left">
+        <span style="width:20px;height:20px;flex:none;border:{{ amountBorder }};background:{{ amountBg }};color:#FFFFFF;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">{{ amountMark }}</span>
+        <span style="font-size:14px;color:#14161C">Afficher ce montant publiquement sur la fiche Prixnet</span>
+      </button>
+
+      <button type="button" onClick="{{ goStep3 }}" style="width:100%;cursor:pointer;border:0;background:{{ step2Bg }};color:#FFFFFF;font-size:16.5px;font-weight:600;padding:17px;margin-top:24px">Continuer</button>
+      <div style="font-size:12.5px;color:#5F6673;text-align:center;margin-top:9px">{{ step2Hint }}</div>
+      <div style="font-size:12px;color:#5F6673;text-align:center;margin-top:14px">Votre saisie est conservée sur cet appareil.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:36px 24px 72px">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:baseline">
+        <button type="button" onClick="{{ goStep2 }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour</button>
+        <span style="font-size:12.5px;color:#5F6673;font-weight:600">Étape 3 sur 3</span>
+      </div>
+      <div style="height:3px;background:#E4E9F2;margin-top:10px"><div style="height:3px;width:100%;background:#1B3FA0"></div></div>
+
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:26px;letter-spacing:-0.022em;line-height:1.25">Voici ce qui sera publié</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.6;margin-top:8px">Relisez votre signalement avant sa mise en ligne sur la fiche Prixnet. Votre email sert à retrouver votre dossier et à recevoir votre plan d’action.</p>
+
+      <input type="text" defaultValue="" placeholder="Adresse email" style="width:100%;border:1px solid #B9C1D1;background:#FFFFFF;outline:0;padding:15px;font-size:16px;color:#14161C;margin-top:16px" />
+      <div style="font-size:13px;color:#4A515F;line-height:1.6;margin-top:8px">Votre email reste privé. Il sert uniquement à vous envoyer votre plan d’action et à gérer votre dossier.</div>
+
+      <div style="border:2px solid #1B3FA0;margin-top:20px">
+        <div style="background:#1B3FA0;color:#FFFFFF;padding:11px 16px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:700">Aperçu public sur la fiche Prixnet</span>
+          <button type="button" onClick="{{ goStep2 }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:12.5px;color:#FFFFFF;text-decoration:underline;text-underline-offset:3px">Modifier</button>
+        </div>
+        <div style="padding:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:#E7EEFF;color:#1B3FA0;font-size:11.5px;font-weight:700;padding:4px 9px">{{ chosenCategory }}</span>
+            <span style="background:#FBF3E8;color:#8A5200;font-size:11.5px;font-weight:700;padding:4px 9px">Problème en cours</span>
+            <sc-if value="{{ hasAmount }}" hint-placeholder-val="{{ true }}">
+              <span style="background:#F2F4F8;color:#4A515F;font-size:11.5px;font-weight:700;padding:4px 9px">799 €</span>
+            </sc-if>
+          </div>
+          <div style="font-size:17.5px;font-weight:700;color:#14161C;line-height:1.35;margin-top:11px">{{ autoTitle }}</div>
+          <div style="font-size:12px;color:#5F6673;margin-top:6px">Intitulé proposé automatiquement, modifiable après publication · 20 août 2026</div>
+          <div style="border-left:3px solid #C6D2EA;padding-left:14px;margin-top:12px">
+            <p style="font-size:14.5px;color:#14161C;line-height:1.7">{{ storyDisplay }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:0 24px;border:1px solid #D7DCE5;border-top:0;padding:16px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.05em">Public</div>
+          <ul style="font-size:13.5px;color:#14161C;line-height:1.7;margin-top:7px">
+            <li>l’intitulé du problème</li>
+            <li>votre description</li>
+            <li>la catégorie et le statut</li>
+            <li>la date de publication</li>
+            <li>le montant, si vous l’acceptez</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.05em">Privé</div>
+          <ul style="font-size:13.5px;color:#14161C;line-height:1.7;margin-top:7px">
+            <li>votre email</li>
+            <li>vos justificatifs</li>
+            <li>votre numéro de commande</li>
+            <li>votre identité</li>
+          </ul>
+        </div>
+        <div style="grid-column:1/-1;margin-top:8px;border-top:1px solid #EEF1F7;padding-top:12px">
+          <button type="button" onClick="{{ togglePublish }}" style="width:100%;cursor:pointer;border:0;background:transparent;padding:0;display:flex;gap:12px;align-items:flex-start;text-align:left">
+            <span style="width:21px;height:21px;flex:none;border:{{ publishBorder }};background:{{ publishBg }};color:#FFFFFF;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px">{{ publishMark }}</span>
+            <span style="min-width:0">
+              <span style="display:block;font-size:14.5px;font-weight:600;color:#14161C">Afficher le montant de 799 € publiquement</span>
+              <span style="display:block;font-size:12.5px;color:#4A515F;line-height:1.6;margin-top:3px">Sans cette option, votre signalement est publié sans montant et reste compté dans les statistiques.</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" onClick="{{ toggleRules }}" style="width:100%;cursor:pointer;border:0;background:transparent;padding:18px 0 0;display:flex;gap:12px;align-items:flex-start;text-align:left">
+        <span style="width:21px;height:21px;flex:none;border:{{ rulesBorder }};background:{{ rulesBg }};color:#FFFFFF;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px">{{ rulesMark }}</span>
+        <span style="font-size:14px;color:#14161C;line-height:1.6">J’accepte les <a href="#conditions">conditions de publication</a> et la <a href="#moderation">politique de modération</a>.</span>
+      </button>
+
+      <button type="button" onClick="{{ goVerify }}" style="width:100%;cursor:pointer;border:0;background:{{ step3Bg }};color:#FFFFFF;font-size:17px;font-weight:700;padding:18px;margin-top:20px">Publier mon signalement</button>
+      <div style="font-size:12.5px;color:#5F6673;text-align:center;margin-top:9px">{{ step3Hint }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:560px;margin:0 auto;padding:64px 24px 80px;text-align:center">
+      <div style="width:52px;height:52px;margin:0 auto;background:#E7EEFF;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:22px;color:#1B3FA0">✉</span>
+      </div>
+      <h1 style="font-size:28px;font-weight:700;color:#14161C;margin-top:20px;letter-spacing:-0.024em;line-height:1.25">Confirmez pour publier votre signalement</h1>
+      <p style="font-size:16px;color:#4A515F;line-height:1.7;margin-top:12px">Un lien a été envoyé à <strong style="color:#14161C;font-weight:700">j••••@gmail.com</strong>. Cliquez dessus pour publier votre signalement sur la fiche Prixnet et retrouver votre dossier à tout moment.</p>
+      <button type="button" onClick="{{ goPlan }}" style="width:100%;cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:16px;font-weight:600;padding:17px;margin-top:26px" style-hover="background:#12256B">Publier mon signalement</button>
+      <div style="display:flex;gap:20px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+        <button type="button" onClick="{{ goPlan }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">Renvoyer le lien</button>
+        <button type="button" onClick="{{ goStep3 }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#5F6673;text-decoration:underline;text-underline-offset:3px">Modifier mon email</button>
+      </div>
+      <div style="border-top:1px solid #E4E9F2;margin-top:32px;padding-top:18px;font-size:12.5px;color:#5F6673;line-height:1.7">Votre saisie est conservée sur cet appareil. Le lien est valable 7 jours.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPlan }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1040px;margin:0 auto;padding:40px 24px 80px">
+      <div style="display:flex;gap:13px;align-items:center">
+        <span style="width:32px;height:32px;flex:none;background:#EDF6F0;color:#1B7A4B;font-size:15px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">✓</span>
+        <h1 style="font-size:32px;font-weight:700;color:#14161C;letter-spacing:-0.028em;line-height:1.18">Votre problème est maintenant visible</h1>
+      </div>
+      <p style="font-size:16px;color:#4A515F;line-height:1.65;margin-top:10px;max-width:760px">Votre signalement est publié sur la fiche Prixnet, aux côtés des 184 problèmes déjà signalés.</p>
+
+      <div style="border:2px solid #1B3FA0;padding:20px 24px;margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px;align-items:center">
+        <div style="min-width:0">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:#E7EEFF;color:#1B3FA0;font-size:11.5px;font-weight:700;padding:4px 9px">{{ chosenCategory }}</span>
+            <span style="background:#FBF3E8;color:#8A5200;font-size:11.5px;font-weight:700;padding:4px 9px">Problème en cours</span>
+            <span style="background:#F2F4F8;color:#4A515F;font-size:11.5px;font-weight:700;padding:4px 9px">799 €</span>
+          </div>
+          <div style="font-size:19px;font-weight:700;color:#14161C;line-height:1.35;margin-top:11px">{{ autoTitle }}</div>
+          <div style="font-size:12.5px;color:#5F6673;margin-top:6px">Référence RF-2026-08-42115 · publié le 20 août 2026 sur la fiche Prixnet</div>
+        </div>
+        <div style="justify-self:end;max-width:280px;width:100%">
+          <a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="display:block;background:#1B3FA0;color:#FFFFFF;text-align:center;font-size:16px;font-weight:600;padding:15px;text-decoration:none" style-hover="background:#12256B">Voir mon signalement</a>
+          <div style="font-size:12px;color:#5F6673;text-align:center;margin-top:7px">Sur la fiche publique de Prixnet</div>
+        </div>
+      </div>
+
+      <h2 style="font-size:24px;font-weight:700;color:#14161C;letter-spacing:-0.022em;margin-top:38px">Maintenant, poursuivez vos démarches</h2>
+      <p style="font-size:15.5px;color:#4A515F;line-height:1.65;margin-top:9px;max-width:760px">À partir des informations que vous avez fournies, voici les prochaines démarches à envisager.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,340px);gap:44px;margin-top:26px;align-items:start">
+        <div style="min-width:0">
+
+          <div style="border:2px solid #1B3FA0;padding:22px 24px">
+            <div style="font-size:11.5px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.06em">À faire maintenant</div>
+            <h2 style="font-size:24px;font-weight:700;color:#14161C;margin-top:9px;letter-spacing:-0.022em;line-height:1.3">Envoyer votre réclamation à Prixnet</h2>
+            <p style="font-size:15.5px;color:#14161C;line-height:1.7;margin-top:10px;max-width:620px">Formalisez votre demande par écrit afin de conserver une trace de votre démarche. Votre courrier est déjà rédigé à partir de votre situation.</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:18px">
+              <button type="button" onClick="{{ goLetter }}" style="cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:16px;font-weight:600;padding:15px 24px" style-hover="background:#12256B">Voir mon courrier</button>
+              <button type="button" onClick="{{ goLetter }}" style="cursor:pointer;border:1px solid #1B3FA0;background:#FFFFFF;color:#1B3FA0;font-size:15px;font-weight:600;padding:14px 20px" style-hover="background:#E7EEFF">Copier le courrier</button>
+            </div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;border-top:0;padding:22px 24px">
+            <h2 style="font-size:19px;font-weight:700;color:#14161C;letter-spacing:-0.016em">Avant l’envoi</h2>
+            <p style="font-size:13.5px;color:#4A515F;line-height:1.6;margin-top:6px">Documents utiles pour un problème de remboursement après retour.</p>
+            <div style="margin-top:14px">
+              <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="5">
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #EEF1F7">
+                  <span style="width:19px;height:19px;flex:none;border:1px solid #B9C1D1;background:#FFFFFF;display:block;margin-top:2px"></span>
+                  <span style="min-width:0">
+                    <span style="display:block;font-size:14.5px;font-weight:600;color:#14161C">{{ c.label }}</span>
+                    <span style="display:block;font-size:12.5px;color:#5F6673;line-height:1.5;margin-top:2px">{{ c.hint }}</span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:14px">
+              <button type="button" onClick="{{ goProof }}" style="cursor:pointer;border:1px solid #1B3FA0;background:#FFFFFF;color:#1B3FA0;font-size:13.5px;font-weight:600;padding:9px 16px" style-hover="background:#E7EEFF">Conserver mes justificatifs ici</button>
+              <span style="font-size:12.5px;color:#5F6673">Vos documents restent privés.</span>
+            </div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;border-top:0;padding:22px 24px">
+            <h2 style="font-size:19px;font-weight:700;color:#14161C;letter-spacing:-0.016em">Les prochaines étapes</h2>
+            <div style="margin-top:16px">
+              <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:16px;align-items:start">
+                  <div style="display:flex;flex-direction:column;align-items:center;height:100%">
+                    <span style="width:13px;height:13px;flex:none;background:{{ t.dot }};border:{{ t.dotBorder }};margin-top:5px"></span>
+                    <span style="width:1px;flex:1;background:{{ t.lineColor }};min-height:{{ t.lineMin }}"></span>
+                  </div>
+                  <div style="min-width:0;padding-bottom:20px">
+                    <div style="font-size:12.5px;font-weight:700;color:{{ t.whenColor }}">{{ t.when }}</div>
+                    <div style="font-size:16px;font-weight:600;color:#14161C;margin-top:4px;line-height:1.4">{{ t.title }}</div>
+                    <div style="font-size:13.5px;color:#4A515F;line-height:1.65;margin-top:4px">{{ t.desc }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12.5px;color:#5F6673;line-height:1.65;border-top:1px solid #EEF1F7;padding-top:12px">Les dates sont calculées à partir des informations que vous avez fournies. Lorsqu’une information manque, la date exacte dépend de votre situation et n’est pas affichée. Ces informations sont générales et ne constituent pas un conseil juridique personnalisé.</div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;border-top:0;padding:22px 24px;background:#F8FAFD">
+            <h2 style="font-size:17px;font-weight:700;color:#14161C;letter-spacing:-0.014em">Votre signalement</h2>
+            <p style="font-size:13.5px;color:#4A515F;line-height:1.65;margin-top:7px;max-width:640px">Votre situation est également publiée sur la fiche Prixnet afin de contribuer aux statistiques et d’aider d’autres consommateurs à identifier des problèmes similaires.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
+              <span style="background:#FBF3E8;color:#8A5200;font-size:11.5px;font-weight:700;padding:4px 9px">Signalement enregistré</span>
+              <span style="font-size:12.5px;color:#5F6673">Référence RF-2026-08-42115 · publication après modération</span>
+            </div>
+            <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px">
+              <button type="button" onClick="{{ goManage }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">Gérer mon signalement</button>
+              <a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="font-size:13px">Voir la fiche Prixnet</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="min-width:0">
+          <div style="border:1px solid #D7DCE5;padding:20px">
+            <h2 style="font-size:15px;font-weight:700;color:#14161C">Votre démarche</h2>
+            <div style="margin-top:14px">
+              <sc-for list="{{ progress }}" as="p" hint-placeholder-count="4">
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #EEF1F7">
+                  <span style="width:20px;height:20px;flex:none;background:{{ p.bg }};color:{{ p.fg }};border:{{ p.border }};font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px">{{ p.mark }}</span>
+                  <span style="min-width:0">
+                    <span style="display:block;font-size:14px;font-weight:{{ p.weight }};color:{{ p.color }};line-height:1.4">{{ p.label }}</span>
+                    <span style="display:block;font-size:12px;color:#5F6673;margin-top:2px">{{ p.note }}</span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border:1px solid #1B3FA0;background:#E7EEFF;padding:20px;margin-top:18px">
+            <h2 style="font-size:15px;font-weight:700;color:#14161C">Prochaine échéance</h2>
+            <div style="font-size:19px;font-weight:700;color:#1B3FA0;margin-top:8px;letter-spacing:-0.015em">4 septembre 2026</div>
+            <p style="font-size:13.5px;color:#14161C;line-height:1.65;margin-top:6px">Date à laquelle vérifier si Prixnet a répondu à votre réclamation.</p>
+            <button type="button" onClick="{{ toggleReminder }}" style="width:100%;cursor:pointer;border:{{ reminderBorder }};background:{{ reminderBg }};color:{{ reminderColor }};font-size:14px;font-weight:600;padding:12px;margin-top:14px">{{ reminderLabel }}</button>
+            <div style="font-size:12px;color:#4A515F;line-height:1.55;margin-top:8px">{{ reminderNote }}</div>
+          </div>
+
+          <div style="border:1px solid #D7DCE5;padding:20px;margin-top:18px">
+            <h2 style="font-size:15px;font-weight:700;color:#14161C">Situations similaires</h2>
+            <sc-if value="{{ hasSimilar }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-size:14px;color:#14161C;line-height:1.6;margin-top:9px">Des consommateurs ont signalé une situation similaire.</div>
+                <div style="font-size:25px;font-weight:700;color:#1B3FA0;margin-top:10px;line-height:1;font-variant-numeric:tabular-nums">17</div>
+                <div style="font-size:12.5px;color:#5F6673;margin-top:4px">signalements similaires</div>
+                <div style="margin-top:12px">
+                  <sc-for list="{{ similarBreakdown }}" as="b" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #EEF1F7;align-items:baseline">
+                      <span style="font-size:13px;color:#14161C">{{ b.label }}</span>
+                      <span style="font-size:13px;font-weight:600;color:#4A515F;font-variant-numeric:tabular-nums">{{ b.n }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="margin-top:12px"><a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="font-size:13px">Voir les signalements similaires</a></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noSimilar }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:13.5px;color:#4A515F;line-height:1.65;margin-top:9px">Aucun signalement similaire n’a encore été publié sur Recours France. Votre plan d’action reste identique.</p>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLetter }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:800px;margin:0 auto;padding:40px 24px 80px">
+      <button type="button" onClick="{{ goPlan }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour à mon plan d’action</button>
+      <h1 style="font-size:28px;font-weight:700;color:#14161C;margin-top:18px;letter-spacing:-0.024em;line-height:1.22">Votre courrier de réclamation</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.65;margin-top:9px;max-width:700px">Rédigé à partir de votre situation : remboursement non reçu après retour, 799 €, retour du 29 juillet 2026. Relisez-le et complétez les mentions entre crochets.</p>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+        <button type="button" style="cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:14.5px;font-weight:600;padding:12px 20px">Copier</button>
+        <button type="button" style="cursor:pointer;border:1px solid #1B3FA0;background:#FFFFFF;color:#1B3FA0;font-size:14.5px;font-weight:600;padding:12px 20px">Télécharger en PDF</button>
+        <button type="button" style="cursor:pointer;border:1px solid #D7DCE5;background:#FFFFFF;color:#4A515F;font-size:14.5px;font-weight:600;padding:12px 20px">Modifier le texte</button>
+      </div>
+
+      <div style="border:1px solid #D7DCE5;background:#FFFFFF;padding:36px 40px;margin-top:18px">
+        <div style="font-size:14px;color:#14161C;line-height:1.85">
+          <div style="text-align:right;color:#4A515F">[Vos nom, prénom et adresse]<br />[Ville], le 20 août 2026</div>
+          <div style="margin-top:26px">Service réclamations — Prixnet<br />12 quai des Chartrons<br />33000 Bordeaux</div>
+          <div style="margin-top:26px;font-weight:700">Objet : demande de remboursement de la commande n° [numéro de commande]</div>
+          <div style="margin-top:8px;color:#4A515F;font-size:13px">Lettre recommandée avec avis de réception</div>
+          <div style="margin-top:24px">Madame, Monsieur,</div>
+          <p style="margin-top:16px">Le [date de commande], j’ai passé auprès de vos services la commande n° [numéro de commande], pour un montant de 799 €.</p>
+          <p style="margin-top:14px">Ayant exercé mon droit de rétractation, j’ai retourné cet article le 29 juillet 2026. Le suivi du colis indique une réception par vos services le 8 août 2026. À ce jour, aucun remboursement ne m’a été versé, malgré deux relances adressées à votre service client.</p>
+          <p style="margin-top:14px">Je vous demande donc de procéder au remboursement de la somme de 799 € dans un délai de quinze jours à compter de la réception de ce courrier.</p>
+          <p style="margin-top:14px">À défaut de règlement dans ce délai, je me réserve la possibilité de saisir le médiateur de la consommation compétent, ainsi que toute autre voie de recours utile.</p>
+          <p style="margin-top:14px">Vous trouverez ci-joint copie de la facture, de la preuve de retour et des échanges intervenus avec votre service client.</p>
+          <p style="margin-top:14px">Je vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées.</p>
+          <div style="margin-top:26px;color:#4A515F">[Signature]</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #D7DCE5;background:#F8FAFD;padding:16px 18px;margin-top:16px">
+        <div style="font-size:14px;font-weight:700;color:#14161C">Avant d’envoyer</div>
+        <ul style="font-size:13.5px;color:#14161C;line-height:1.75;margin-top:7px">
+          <li>Complétez les mentions entre crochets : identité, adresse, numéro et date de commande.</li>
+          <li>Joignez les documents listés dans votre plan d’action.</li>
+          <li>Privilégiez la lettre recommandée avec avis de réception : elle date votre demande.</li>
+          <li>Conservez une copie du courrier et le récépissé d’envoi.</li>
+        </ul>
+        <div style="font-size:12.5px;color:#5F6673;line-height:1.6;margin-top:10px">Ce modèle est une information générale, adaptée à votre situation déclarée. Il ne constitue pas un conseil juridique personnalisé et n’engage pas Recours France.</div>
+      </div>
+
+      <button type="button" onClick="{{ goPlan }}" style="width:100%;cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:16px;font-weight:600;padding:17px;margin-top:22px" style-hover="background:#12256B">J’ai envoyé mon courrier</button>
+      <div style="font-size:12.5px;color:#5F6673;text-align:center;margin-top:9px">Nous programmerons alors la vérification de la réponse au 4 septembre 2026.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isProof }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:40px 24px 80px">
+      <button type="button" onClick="{{ goPlan }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour à mon plan d’action</button>
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:18px;letter-spacing:-0.022em;line-height:1.25">Conserver vos justificatifs</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.65;margin-top:9px">Facultatif. Vos documents restent privés : ils vous sont utiles pour vos envois, et permettent d’ajouter une mention publique de fiabilité à votre signalement.</p>
+
+      <div style="border:1px dashed #B9C1D1;background:#F8FAFD;padding:32px 24px;text-align:center;margin-top:20px">
+        <div style="font-size:16px;font-weight:700;color:#14161C">Déposer un fichier</div>
+        <div style="font-size:13px;color:#5F6673;line-height:1.6;margin-top:7px">PDF, JPG ou PNG — 10 Mo maximum par fichier</div>
+        <div style="display:inline-block;border:1px solid #1B3FA0;color:#1B3FA0;background:#FFFFFF;font-size:14px;font-weight:600;padding:11px 20px;margin-top:15px;cursor:pointer">Parcourir mes fichiers</div>
+      </div>
+
+      <div style="border:1px solid #D7DCE5;margin-top:16px">
+        <div style="padding:13px 16px;border-bottom:1px solid #EEF1F7;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#14161C">facture-commande-21-07.pdf</div>
+            <div style="font-size:12px;color:#5F6673;margin-top:2px">248 Ko · déposé à l’instant</div>
+          </div>
+          <span style="background:#EDF6F0;color:#1B7A4B;font-size:11.5px;font-weight:700;padding:4px 9px">Reçu</span>
+        </div>
+        <div style="padding:13px 16px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#14161C">capture-echange-sav.png</div>
+            <div style="font-size:12px;color:#A32A22;margin-top:2px">Échec de l’envoi — fichier trop volumineux (14 Mo)</div>
+          </div>
+          <button type="button" style="flex:none;cursor:pointer;border:1px solid #A32A22;background:#FFFFFF;color:#A32A22;font-size:13px;font-weight:600;padding:8px 14px">Réessayer</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
+        <div style="font-size:14.5px;font-weight:700;color:#14161C">Ce qui pourra apparaître publiquement</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:11px">
+          <sc-for list="{{ proofBadges }}" as="b" hint-placeholder-count="3">
+            <span style="background:#E7EEFF;color:#1B3FA0;font-size:12px;font-weight:700;padding:5px 10px">{{ b }}</span>
+          </sc-for>
+        </div>
+        <div style="font-size:12.5px;color:#5F6673;line-height:1.65;margin-top:10px">Ces mentions indiquent qu’un élément a été fourni ou contrôlé. Elles ne signifient pas que le signalement est certifié exact : Recours France ne se prononce pas sur le bien-fondé du litige.</div>
+      </div>
+
+      <button type="button" onClick="{{ goPlan }}" style="width:100%;cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:16.5px;font-weight:600;padding:17px;margin-top:24px" style-hover="background:#12256B">Enregistrer</button>
+      <button type="button" onClick="{{ goPlan }}" style="width:100%;cursor:pointer;border:0;background:transparent;padding:14px 0 0;font-size:14px;color:#4A515F;text-decoration:underline;text-underline-offset:3px">Passer cette étape</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:760px;margin:0 auto;padding:40px 24px 80px">
+      <div style="background:#F8FAFD;border:1px solid #D7DCE5;padding:12px 16px;font-size:12.5px;color:#4A515F;line-height:1.6">Vous consultez votre dossier via le lien sécurisé reçu par email. Aucun compte n’est nécessaire ; ce lien reste valable 12 mois.</div>
+
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:22px;letter-spacing:-0.022em;line-height:1.25">Mon signalement concernant Prixnet</h1>
+
+      <div style="border:1px solid #BFE0CD;background:#EDF6F0;padding:16px 18px;margin-top:18px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="min-width:0">
+          <div style="font-size:11.5px;font-weight:700;color:#1B7A4B;text-transform:uppercase;letter-spacing:.05em">Visibilité</div>
+          <div style="font-size:16px;font-weight:600;color:#14161C;margin-top:4px">Votre problème est actuellement visible sur la fiche Prixnet.</div>
+        </div>
+        <a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="flex:none;border:1px solid #1B7A4B;color:#1B7A4B;background:#FFFFFF;font-size:13.5px;font-weight:600;padding:11px 17px;text-decoration:none">Voir la version publique</a>
+      </div>
+
+      <div style="border:1px solid #1B3FA0;background:#E7EEFF;padding:16px 18px;margin-top:18px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="min-width:0">
+          <div style="font-size:11.5px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.05em">Mes prochaines démarches</div>
+          <div style="font-size:16.5px;font-weight:700;color:#14161C;margin-top:4px">Envoyer votre réclamation, puis vérifier la réponse avant le 4 septembre</div>
+        </div>
+        <button type="button" onClick="{{ goPlan }}" style="flex:none;cursor:pointer;border:0;background:#1B3FA0;color:#FFFFFF;font-size:14px;font-weight:600;padding:12px 18px">Voir mon plan d’action</button>
+      </div>
+
+      <div style="border:1px solid #D7DCE5;margin-top:18px">
+        <div style="border-bottom:1px solid #EEF1F7;padding:14px 18px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <span style="background:{{ statusBg }};color:{{ statusColor }};font-size:12px;font-weight:700;padding:5px 10px">{{ statusLabel }}</span>
+            <span style="background:#E7EEFF;color:#1B3FA0;font-size:11.5px;font-weight:700;padding:4px 9px">{{ chosenCategory }}</span>
+            <span style="background:#E7EEFF;color:#1B3FA0;font-size:11.5px;font-weight:700;padding:4px 9px">Justificatif fourni</span>
+          </div>
+          <span style="font-size:12px;color:#5F6673">RF-2026-08-42115</span>
+        </div>
+        <div style="padding:18px">
+          <div style="font-size:18px;font-weight:700;color:#14161C;line-height:1.4">{{ autoTitle }}</div>
+          <div style="display:flex;gap:0 24px;flex-wrap:wrap;margin-top:11px">
+            <span style="font-size:12.5px;color:#5F6673">Montant : <strong style="color:#14161C;font-weight:600">799 €</strong></span>
+            <span style="font-size:12.5px;color:#5F6673">Publié le <strong style="color:#14161C;font-weight:600">20 août 2026</strong></span>
+            <span style="font-size:12.5px;color:#5F6673">Vu <strong style="color:#14161C;font-weight:600">312 fois</strong></span>
+          </div>
+          <div style="border-left:3px solid #C6D2EA;padding-left:15px;margin-top:15px">
+            <p style="font-size:15px;color:#14161C;line-height:1.7">{{ storyDisplay }}</p>
+          </div>
+        </div>
+        <div style="border-top:1px solid #EEF1F7;background:#F8FAFD;padding:16px 18px">
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:14.5px;font-weight:700;color:#14161C">Réponse de Prixnet</span>
+            <span style="background:#1B3FA0;color:#FFFFFF;font-size:11px;font-weight:700;padding:3px 8px">Entreprise vérifiée</span>
+            <span style="font-size:11.5px;color:#5F6673">19 août 2026</span>
+          </div>
+          <p style="font-size:14px;color:#14161C;line-height:1.7;margin-top:9px">Le service client indique que le colis retourné a été réceptionné le 8 août et que le remboursement a été engagé le 14 août, avec un délai bancaire de trois à cinq jours ouvrés.</p>
+        </div>
+      </div>
+
+      <div style="border:1px solid #D7DCE5;border-top:0">
+        <sc-for list="{{ manageActions }}" as="a" hint-placeholder-count="5">
+          <button type="button" onClick="{{ a.onClick }}" style="width:100%;text-align:left;cursor:pointer;border:0;border-bottom:1px solid #EEF1F7;background:#FFFFFF;padding:15px 18px;display:flex;justify-content:space-between;gap:16px;align-items:center" style-hover="background:#F8FAFD">
+            <span style="min-width:0">
+              <span style="display:block;font-size:15.5px;font-weight:600;color:#14161C">{{ a.label }}</span>
+              <span style="display:block;font-size:12.5px;color:#5F6673;margin-top:3px">{{ a.hint }}</span>
+            </span>
+            <span style="flex:none;font-size:15px;color:#1B3FA0">›</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:18px">
+        <a href="Recours%20France%20-%20Fiche%20entreprise.dc.html" style="font-size:13.5px;font-weight:600">Voir la fiche Prixnet</a>
+        <a href="#supprimer" style="font-size:13px;color:#5F6673">Demander la suppression de mon signalement</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isUpdate }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:40px 24px 80px">
+      <button type="button" onClick="{{ goManage }}" style="cursor:pointer;border:0;background:transparent;padding:0;font-size:13.5px;color:#1B3FA0;text-decoration:underline;text-underline-offset:3px">← Retour à mon dossier</button>
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;margin-top:18px;letter-spacing:-0.022em;line-height:1.25">Où en est votre problème ?</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.6;margin-top:8px">Votre réponse met à jour votre plan d’action et, si vous avez publié votre situation, la fiche Prixnet.</p>
+
+      <div style="border-top:1px solid #1B3FA0;margin-top:20px">
+        <sc-for list="{{ situations }}" as="s" hint-placeholder-count="3">
+          <button type="button" onClick="{{ s.onClick }}" style="width:100%;text-align:left;cursor:pointer;border:0;border-bottom:1px solid #EEF1F7;background:{{ s.bg }};padding:15px 12px;display:flex;gap:13px;align-items:center" style-hover="background:#F8FAFD">
+            <span style="width:19px;height:19px;flex:none;border-radius:50%;border:{{ s.dotBorder }};background:#FFFFFF;display:inline-flex;align-items:center;justify-content:center">
+              <span style="width:9px;height:9px;border-radius:50%;background:{{ s.dotInner }};display:block"></span>
+            </span>
+            <span style="min-width:0;flex:1">
+              <span style="display:block;font-size:15.5px;font-weight:600;color:#14161C">{{ s.label }}</span>
+              <span style="display:block;font-size:12.5px;color:#5F6673;margin-top:2px">{{ s.hint }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ showOutcome }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:26px">
+          <div style="font-size:16px;font-weight:700;color:#14161C">Comment cela s’est-il terminé ?</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="8">
+              <button type="button" onClick="{{ o.onClick }}" style="cursor:pointer;border:{{ o.border }};background:{{ o.bg }};color:{{ o.color }};font-size:13.5px;font-weight:600;padding:9px 14px">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showNextStep }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #1B3FA0;background:#E7EEFF;padding:16px 18px;margin-top:22px">
+          <div style="font-size:11.5px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.05em">Votre plan d’action sera mis à jour</div>
+          <div style="font-size:16px;font-weight:700;color:#14161C;margin-top:6px">Prochaine étape : saisine du médiateur de la consommation</div>
+          <p style="font-size:13.5px;color:#14161C;line-height:1.65;margin-top:6px">Votre réclamation écrite est restée sans réponse satisfaisante : la condition préalable est remplie. Nous préparerons votre dossier de saisine.</p>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:26px">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap">
+          <span style="font-size:15.5px;font-weight:600;color:#14161C">Ajouter un commentaire</span>
+          <span style="font-size:12.5px;color:#5F6673">Facultatif</span>
+        </div>
+        <textarea rows="4" placeholder="Exemple : remboursement reçu le 18 août après une relance écrite." style="width:100%;border:1px solid #B9C1D1;background:#FFFFFF;outline:0;padding:13px 15px;font-size:15px;color:#14161C;line-height:1.7;resize:vertical;margin-top:9px"></textarea>
+      </div>
+
+      <sc-if value="{{ showOutcome }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #BFE0CD;background:#EDF6F0;padding:14px 16px;margin-top:18px;font-size:13.5px;color:#14161C;line-height:1.65">
+          Votre signalement affichera publiquement <strong style="font-weight:700;color:#1B7A4B">Résolu selon le consommateur</strong>, avec la date de votre mise à jour. Recours France n’est pas intervenu dans ce dossier.
+        </div>
+      </sc-if>
+
+      <button type="button" onClick="{{ saveUpdate }}" style="width:100%;cursor:pointer;border:0;background:{{ updateBg }};color:#FFFFFF;font-size:16.5px;font-weight:600;padding:17px;margin-top:22px">Enregistrer la mise à jour</button>
+      <div style="font-size:12.5px;color:#5F6673;text-align:center;margin-top:9px">{{ updateHint }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isErrors }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:40px 24px 80px">
+      <h1 style="font-size:27px;font-weight:700;color:#14161C;letter-spacing:-0.022em">États d’erreur</h1>
+      <p style="font-size:15px;color:#4A515F;line-height:1.65;margin-top:8px;max-width:700px">Tous les messages restent factuels et proposent une sortie. Aucun ton juridique, aucune formulation anxiogène.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:18px;margin-top:24px">
+        <sc-for list="{{ errors }}" as="e" hint-placeholder-count="6">
+          <div style="border:1px solid #D7DCE5">
+            <div style="border-bottom:1px solid #EEF1F7;padding:11px 16px;font-size:11.5px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.05em">{{ e.context }}</div>
+            <div style="padding:16px">
+              <div style="border-left:3px solid {{ e.tone }};padding-left:14px">
+                <div style="font-size:15.5px;font-weight:700;color:#14161C;line-height:1.4">{{ e.title }}</div>
+                <p style="font-size:13.5px;color:#14161C;line-height:1.65;margin-top:6px">{{ e.body }}</p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+                <span style="border:1px solid #1B3FA0;background:#FFFFFF;color:#1B3FA0;font-size:13px;font-weight:600;padding:8px 14px">{{ e.primary }}</span>
+                <span style="font-size:13px;color:#4A515F;padding:8px 0;text-decoration:underline;text-underline-offset:3px">{{ e.secondary }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#EEF1F7;padding:36px 24px 48px">
+      <div style="max-width:1040px;margin:0 auto">
+        <div style="font-size:12px;font-weight:700;color:#5F6673;text-transform:uppercase;letter-spacing:.06em">Version mobile — 390 px</div>
+        <div style="font-size:13.5px;color:#4A515F;line-height:1.6;margin-top:6px;max-width:700px">Au-dessus de la ligne de flottaison : l’entreprise, la promesse, trois bénéfices et le bouton. La preuve détaillée vient ensuite.</div>
+
+        <div style="display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;align-items:flex-start">
+
+          <div style="width:390px;flex:none;background:#FFFFFF;border:1px solid #C6D2EA">
+            <div style="border-bottom:1px solid #E4E9F2;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="width:28px;height:28px;background:#1B3FA0;display:flex;align-items:center;justify-content:center"><span style="color:#FFFFFF;font-size:11px;font-weight:700">RF</span></div>
+                <span style="font-size:14.5px;font-weight:700;color:#1B3FA0;letter-spacing:-0.015em">Recours France</span>
+              </div>
+              <span style="font-size:18px;color:#4A515F;line-height:1">☰</span>
+            </div>
+            <div style="padding:18px 16px 20px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;flex:none;background:#E7EEFF;border:1px solid #C6D2EA;display:flex;align-items:center;justify-content:center"><span style="font-size:12px;font-weight:700;color:#1B3FA0">Px</span></div>
+                <div>
+                  <div style="font-size:14.5px;font-weight:700;color:#14161C">Prixnet</div>
+                  <div style="font-size:11.5px;color:#4A515F">Commerce en ligne</div>
+                </div>
+              </div>
+              <h2 style="font-size:26px;font-weight:700;color:#14161C;letter-spacing:-0.028em;line-height:1.15;margin-top:16px">Un problème avec Prixnet ?</h2>
+              <div style="font-size:20px;font-weight:700;color:#1B3FA0;margin-top:7px;line-height:1.25">{{ heroPromise }}</div>
+              <p style="font-size:13.5px;color:#4A515F;line-height:1.6;margin-top:9px">Publiez votre situation sur la fiche de l’entreprise et obtenez les prochaines étapes pour agir.</p>
+              <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+                <sc-for list="{{ mobileBenefits }}" as="b" hint-placeholder-count="3">
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <span style="width:17px;height:17px;flex:none;background:#E7EEFF;color:#1B3FA0;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">✓</span>
+                    <span style="font-size:14px;font-weight:600;color:#14161C">{{ b }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:#1B3FA0;color:#FFFFFF;text-align:center;font-size:16px;font-weight:700;padding:16px;margin-top:18px">{{ ctaLabel }}</div>
+              <div style="font-size:11.5px;color:#5F6673;text-align:center;margin-top:8px">1 minute · Gratuit · Sans compte</div>
+            </div>
+            <div style="border-top:1px solid #E4E9F2;background:#F8FAFD;padding:16px">
+              <div style="font-size:12.5px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.05em">Ce qui se passe après</div>
+              <div style="margin-top:10px">
+                <sc-for list="{{ afterSteps }}" as="a" hint-placeholder-count="4">
+                  <div style="padding:10px 0;border-bottom:1px solid #E4E9F2;display:flex;gap:11px;align-items:flex-start">
+                    <span style="width:19px;height:19px;flex:none;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.border }};font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px">{{ a.n }}</span>
+                    <span style="min-width:0">
+                      <span style="display:block;font-size:13.5px;font-weight:600;color:#14161C;line-height:1.4">{{ a.title }}</span>
+                      <span style="display:block;font-size:11.5px;color:#4A515F;line-height:1.5;margin-top:2px">{{ a.desc }}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:11px;color:#5F6673;line-height:1.55;margin-top:12px">Une situation publiée est visible par les autres consommateurs. Recours France est une plateforme indépendante d’information et d’accompagnement.</div>
+            </div>
+          </div>
+
+          <div style="width:390px;flex:none;background:#FFFFFF;border:1px solid #C6D2EA;position:relative;overflow:hidden">
+            <div style="border-bottom:1px solid #E4E9F2;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="width:28px;height:28px;background:#1B3FA0;display:flex;align-items:center;justify-content:center"><span style="color:#FFFFFF;font-size:11px;font-weight:700">RF</span></div>
+                <span style="font-size:14.5px;font-weight:700;color:#1B3FA0;letter-spacing:-0.015em">Recours France</span>
+              </div>
+              <span style="font-size:18px;color:#4A515F;line-height:1">☰</span>
+            </div>
+            <div style="padding:18px 16px 14px">
+              <div style="font-size:11.5px;font-weight:700;color:#1B7A4B;text-transform:uppercase;letter-spacing:.06em">✓ Signalement publié</div>
+              <h2 style="font-size:23px;font-weight:700;color:#14161C;letter-spacing:-0.026em;line-height:1.18;margin-top:8px">Votre problème est maintenant visible</h2>
+              <p style="font-size:13px;color:#4A515F;line-height:1.6;margin-top:7px">Publié sur la fiche Prixnet. Poursuivez maintenant vos démarches.</p>
+            </div>
+            <div style="border:2px solid #1B3FA0;margin:0 16px;padding:16px">
+              <div style="font-size:11px;font-weight:700;color:#1B3FA0;text-transform:uppercase;letter-spacing:.06em">À faire maintenant</div>
+              <div style="font-size:18px;font-weight:700;color:#14161C;margin-top:7px;line-height:1.3">Envoyer votre réclamation à Prixnet</div>
+              <p style="font-size:13.5px;color:#14161C;line-height:1.65;margin-top:8px">Votre courrier est déjà rédigé à partir de votre situation.</p>
+              <div style="background:#1B3FA0;color:#FFFFFF;text-align:center;font-size:15px;font-weight:600;padding:14px;margin-top:13px">Voir mon courrier</div>
+            </div>
+            <div style="padding:18px 16px 10px">
+              <div style="font-size:15.5px;font-weight:700;color:#14161C">Les prochaines étapes</div>
+              <div style="margin-top:12px">
+                <sc-for list="{{ mobileTimeline }}" as="t" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:12px;align-items:start">
+                    <div style="display:flex;flex-direction:column;align-items:center;height:100%">
+                      <span style="width:11px;height:11px;flex:none;background:{{ t.dot }};border:{{ t.dotBorder }};margin-top:4px"></span>
+                      <span style="width:1px;flex:1;background:{{ t.lineColor }};min-height:{{ t.lineMinMobile }}"></span>
+                    </div>
+                    <div style="min-width:0;padding-bottom:16px">
+                      <div style="font-size:11.5px;font-weight:700;color:{{ t.whenColor }}">{{ t.when }}</div>
+                      <div style="font-size:14.5px;font-weight:600;color:#14161C;margin-top:3px;line-height:1.4">{{ t.title }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="margin:0 16px 18px;border:1px solid #1B3FA0;background:#E7EEFF;padding:14px">
+              <div style="font-size:12.5px;font-weight:700;color:#14161C">Prochaine échéance</div>
+              <div style="font-size:17px;font-weight:700;color:#1B3FA0;margin-top:5px">4 septembre 2026</div>
+              <div style="border:1px solid #1B3FA0;background:#FFFFFF;color:#1B3FA0;text-align:center;font-size:13.5px;font-weight:600;padding:11px;margin-top:11px">Recevoir un rappel</div>
+            </div>
+            <div style="height:74px"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFFFF;border-top:1px solid #D7DCE5;padding:12px 16px">
+              <div style="background:#1B3FA0;color:#FFFFFF;text-align:center;font-size:15.5px;font-weight:600;padding:15px">Voir mon courrier</div>
+              <div style="font-size:11px;color:#5F6673;text-align:center;margin-top:6px">Prêt à copier ou télécharger</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="border-top:1px solid #E4E9F2;background:#F8FAFD">
+    <div style="max-width:1120px;margin:0 auto;padding:20px 24px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:12px;color:#5F6673">
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <a href="#conditions" style="color:#5F6673;text-decoration:none">Conditions de publication</a>
+        <a href="#moderation" style="color:#5F6673;text-decoration:none">Politique de modération</a>
+        <a href="#independance" style="color:#5F6673;text-decoration:none">Notre indépendance</a>
+        <a href="#confidentialite" style="color:#5F6673;text-decoration:none">Confidentialité</a>
+      </div>
+      <span>Recours France est une plateforme indépendante d’information et d’accompagnement. Elle n’est ni un service de l’État, ni un tribunal, ni un avocat, ni un médiateur de la consommation.</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:900},&quot;ctaVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Rendre mon problème visible&quot;,&quot;Publier mon signalement&quot;],&quot;default&quot;:&quot;Rendre mon problème visible&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Accueil&quot;},&quot;hasSimilarReports&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Plan d’action&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: "entry", cat: "Remboursement", sub: "Non reçu",
+    story: "J’ai retourné ma commande le 29 juillet. Le suivi indique que le colis a été réceptionné le 8 août, mais je n’ai toujours pas reçu mon remboursement malgré deux relances écrites au service client.",
+    amountPublic: true, publish: true, rules: true, modDismissed: false,
+    reminder: false, situation: "Toujours en cours", outcome: "Remboursement obtenu"
+  };
+
+  renderVals() {
+    const blue = "#1B3FA0", grey = "#5F6673", green = "#1B7A4B", amber = "#8A5200", red = "#A32A22";
+    const s = this.state;
+    const hasSimilarReports = this.props.hasSimilarReports ?? true;
+    const go = (k) => () => this.setState({ screen: k });
+
+    const screenDefs = [
+      { key: "entry", label: "1 · Accueil" },
+      { key: "step1", label: "2 · Catégorie" },
+      { key: "step2", label: "3 · Récit" },
+      { key: "step3", label: "4 · Email" },
+      { key: "verify", label: "5 · Confirmation" },
+      { key: "plan", label: "6 · Plan d’action" },
+      { key: "letter", label: "7 · Courrier" },
+      { key: "proof", label: "8 · Justificatifs" },
+      { key: "manage", label: "9 · Mon dossier" },
+      { key: "update", label: "10 · Mise à jour" },
+      { key: "errors", label: "11 · Erreurs" },
+      { key: "mobile", label: "12 · Mobile" }
+    ];
+    const screens = screenDefs.map(d => {
+      const on = s.screen === d.key;
+      return {
+        label: d.label,
+        border: on ? "1px solid " + blue : "1px solid #D7DCE5",
+        bg: on ? blue : "#FFFFFF",
+        color: on ? "#FFFFFF" : "#4A515F",
+        onClick: go(d.key)
+      };
+    });
+
+    const benefits = [
+      { title: "Votre problème consultable publiquement", desc: "Les autres consommateurs peuvent voir votre expérience." },
+      { title: "Courrier de réclamation préparé", desc: "Recours France vous aide à formaliser votre demande." },
+      { title: "Étapes et échéances", desc: "Sachez quoi faire ensuite si le problème persiste." }
+    ];
+
+    const included = ["Courrier adapté", "Étapes à suivre", "Échéances", "Recours possibles"];
+
+    const heroStats = [
+      { n: "63", label: "remboursements" },
+      { n: "41", label: "livraisons" },
+      { n: "27", label: "SAV" }
+    ];
+
+    const afterStepDefs = [
+      { n: "1", title: "Votre signalement est publié", desc: "Sur la fiche publique de Prixnet, après modération.", strong: true },
+      { n: "2", title: "Votre situation devient visible", desc: "Les autres consommateurs peuvent la consulter." },
+      { n: "3", title: "Vous recevez votre plan d’action", desc: "Courrier, démarches et pièces utiles." },
+      { n: "4", title: "Vous suivez les prochaines étapes", desc: "Échéances, médiation et autres recours si nécessaire." }
+    ];
+    const afterSteps = afterStepDefs.map((a, i) => Object.assign({}, a, {
+      bg: a.strong ? blue : "#FFFFFF",
+      fg: a.strong ? "#FFFFFF" : grey,
+      border: a.strong ? "0" : "1px solid #B9C1D1",
+      lineColor: i === afterStepDefs.length - 1 ? "transparent" : "#E4E9F2",
+      lineMin: i === afterStepDefs.length - 1 ? "0px" : "18px"
+    }));
+
+    const variantB = (this.props.ctaVariant ?? "Rendre mon problème visible") === "Publier mon signalement";
+    const ctaLabel = variantB ? "Publier mon signalement" : "Rendre mon problème visible";
+    const heroPromise = variantB ? "Rendez votre situation publique et agissez" : "Rendez votre problème visible publiquement";
+    const heroText = variantB
+      ? "Publiez votre signalement sur la fiche de Prixnet. Recours France vous aide ensuite à préparer votre réclamation et à poursuivre vos démarches."
+      : "Publiez votre situation sur la fiche de Prixnet pour qu’elle soit visible par les autres consommateurs. Vous recevrez également les étapes à suivre, un courrier adapté et les prochaines échéances utiles.";
+
+    const catDefs = [
+      { label: "Remboursement", hint: "Somme non remboursée ou remboursement partiel", subTitle: "Quel problème de remboursement ?", subs: ["Non reçu", "Refusé", "Partiel", "Trop long", "Autre"] },
+      { label: "Commande non reçue", hint: "Colis jamais livré ou annoncé livré à tort" },
+      { label: "Livraison", hint: "Retard, colis endommagé, livraison incomplète" },
+      { label: "Produit défectueux", hint: "Panne, défaut, produit non conforme" },
+      { label: "SAV / garantie", hint: "Réparation, échange ou prise en charge refusée", subTitle: "Quelle situation ?", subs: ["Prise en charge refusée", "Réparation sans suite", "Délai trop long", "Autre"] },
+      { label: "Retour / rétractation", hint: "Retour refusé ou rétractation non prise en compte" },
+      { label: "Marketplace / vendeur tiers", hint: "Problème avec un vendeur présent sur la plateforme" },
+      { label: "Paiement / prélèvement", hint: "Double débit, prélèvement contesté, frais inattendus" },
+      { label: "Compte client", hint: "Accès bloqué, données ou commandes introuvables" },
+      { label: "Autre problème", hint: "Aucune des situations ci-dessus" }
+    ];
+
+    const categories = catDefs.map(c => {
+      const on = s.cat === c.label;
+      return {
+        label: c.label, hint: c.hint,
+        bg: on ? "#F8FAFD" : "#FFFFFF",
+        dotBorder: on ? "1px solid " + blue : "1px solid #B9C1D1",
+        dotInner: on ? blue : "transparent",
+        onClick: () => this.setState({ cat: c.label, sub: null }),
+        showSub: on && !!c.subs,
+        subTitle: c.subTitle || "",
+        subs: (c.subs || []).map(x => {
+          const sOn = s.sub === x;
+          return {
+            label: x,
+            border: sOn ? "1px solid " + blue : "1px solid #D7DCE5",
+            bg: sOn ? blue : "#FFFFFF",
+            color: sOn ? "#FFFFFF" : "#4A515F",
+            onClick: () => this.setState({ sub: sOn ? null : x })
+          };
+        })
+      };
+    });
+
+    const story = s.story || "";
+    const suspicious = [];
+    if (/[\w.+-]+@[\w-]+\.[a-z]{2,}/i.test(story)) suspicious.push("une adresse email");
+    if (/(?:\+33|0)\s?[1-9](?:[\s.-]?\d{2}){4}/.test(story)) suspicious.push("un numéro de téléphone");
+    if (/\b(?:\d[ -]?){13,19}\b/.test(story)) suspicious.push("un numéro de carte");
+    const showModeration = suspicious.length > 0 && !s.modDismissed;
+
+    const titleMap = {
+      "Remboursement": "Remboursement non reçu après retour d’une commande",
+      "Commande non reçue": "Commande Prixnet non reçue malgré un suivi indiquant la livraison",
+      "Livraison": "Retard de livraison sur une commande Prixnet",
+      "Produit défectueux": "Produit défectueux reçu chez Prixnet",
+      "SAV / garantie": "Prise en charge SAV refusée par Prixnet",
+      "Retour / rétractation": "Rétractation non prise en compte par Prixnet",
+      "Marketplace / vendeur tiers": "Vendeur Marketplace Prixnet sans réponse",
+      "Paiement / prélèvement": "Double débit constaté sur une commande Prixnet",
+      "Compte client": "Accès au compte client Prixnet bloqué",
+      "Autre problème": "Problème signalé concernant Prixnet"
+    };
+
+    const enoughStory = story.trim().length >= 60;
+
+    const checklist = [
+      { label: "Facture ou confirmation de commande", hint: "Identifie la commande et le montant" },
+      { label: "Preuve de paiement", hint: "Relevé bancaire ou reçu" },
+      { label: "Preuve de retour", hint: "Bordereau d’envoi et suivi du colis retourné" },
+      { label: "Captures des échanges", hint: "Courriels ou messages avec le service client" },
+      { label: "Suivi du colis", hint: "Capture indiquant la réception par le vendeur" }
+    ];
+
+    const timeline = [
+      { when: "Aujourd’hui", whenColor: blue, dot: blue, dotBorder: "0", title: "Envoyer votre réclamation", desc: "Lettre recommandée avec avis de réception, courrier prêt dans votre dossier." },
+      { when: "À partir du 4 septembre 2026", whenColor: "#14161C", dot: "#FFFFFF", dotBorder: "2px solid " + blue, title: "Vérifier si Prixnet a répondu", desc: "Quinze jours après réception de votre courrier. Vous indiquerez alors où en est votre problème." },
+      { when: "Si aucune solution satisfaisante", whenColor: grey, dot: "#FFFFFF", dotBorder: "1px solid #B9C1D1", title: "Passer à l’étape suivante", desc: "Nous mettons à jour votre plan selon la réponse obtenue." },
+      { when: "Date dépendant de votre situation", whenColor: grey, dot: "#FFFFFF", dotBorder: "1px solid #B9C1D1", title: "Médiation envisageable si les conditions sont réunies", desc: "Recevable après une réclamation écrite restée sans réponse satisfaisante. Gratuit pour le consommateur." },
+      { when: "À tout moment", whenColor: grey, dot: "#FFFFFF", dotBorder: "1px solid #B9C1D1", title: "Autre recours possible", desc: "SignalConso pour une pratique commerciale trompeuse, ou autre démarche selon le montant en jeu." }
+    ];
+
+    const withLines = (arr) => arr.map((t, i) => Object.assign({}, t, {
+      lineColor: i === arr.length - 1 ? "transparent" : "#E4E9F2",
+      lineMin: i === arr.length - 1 ? "0px" : "26px",
+      lineMinMobile: i === arr.length - 1 ? "0px" : "20px"
+    }));
+    const mobileTimeline = withLines(timeline.slice(0, 4));
+
+    const progress = [
+      { label: "Problème décrit", note: "20 août 2026", mark: "✓", bg: "#EDF6F0", fg: green, border: "0", color: "#14161C", weight: "500" },
+      { label: "Réclamation à envoyer", note: "Étape actuelle", mark: "2", bg: blue, fg: "#FFFFFF", border: "0", color: blue, weight: "700" },
+      { label: "Attendre et vérifier la réponse", note: "À partir du 4 septembre", mark: "3", bg: "#FFFFFF", fg: grey, border: "1px solid #B9C1D1", color: "#4A515F", weight: "500" },
+      { label: "Médiation ou autre recours si nécessaire", note: "Selon la réponse obtenue", mark: "4", bg: "#FFFFFF", fg: grey, border: "1px solid #B9C1D1", color: "#4A515F", weight: "500" }
+    ];
+
+    const similarBreakdown = [
+      { label: "Remboursements non reçus", n: "11" },
+      { label: "Retours contestés", n: "4" },
+      { label: "Autres situations", n: "2" }
+    ];
+
+    const manageActions = [
+      { label: "Voir la version publique de mon signalement", hint: "Tel qu’il apparaît sur la fiche Prixnet", onClick: go("plan") },
+      { label: "Voir ou modifier mon courrier", hint: "Réclamation préparée à partir de votre situation", onClick: go("letter") },
+      { label: "Mettre à jour ma situation", hint: "En cours, partiellement résolu ou résolu", onClick: go("update") },
+      { label: "Ajouter un justificatif", hint: "Reste privé, jamais publié", onClick: go("proof") },
+      { label: "Modifier mon signalement", hint: "Intitulé, description, catégorie ou montant", onClick: go("proof") },
+      { label: "Gérer mes rappels", hint: "Prochaine échéance : 4 septembre 2026", onClick: go("plan") }
+    ];
+
+    const sitDefs = [
+      { label: "Toujours en cours", hint: "Aucune évolution depuis votre réclamation" },
+      { label: "Partiellement résolu", hint: "Une partie du problème a été réglée" },
+      { label: "Résolu", hint: "Votre problème a été réglé" }
+    ];
+    const situations = sitDefs.map(x => {
+      const on = s.situation === x.label;
+      return {
+        label: x.label, hint: x.hint,
+        bg: on ? "#F8FAFD" : "#FFFFFF",
+        dotBorder: on ? "1px solid " + blue : "1px solid #B9C1D1",
+        dotInner: on ? blue : "transparent",
+        onClick: () => this.setState({ situation: x.label })
+      };
+    });
+
+    const outcomes = ["Remboursement obtenu", "Commande reçue", "Remplacement", "Réparation", "Annulation", "Geste commercial", "Réponse satisfaisante", "Autre"].map(x => {
+      const on = s.outcome === x;
+      return {
+        label: x,
+        border: on ? "1px solid " + blue : "1px solid #D7DCE5",
+        bg: on ? blue : "#FFFFFF",
+        color: on ? "#FFFFFF" : "#4A515F",
+        onClick: () => this.setState({ outcome: x })
+      };
+    });
+
+    const errors = [
+      { context: "Étape 2 — description", tone: red, title: "Votre description est trop courte", body: "Ajoutez quelques mots pour que nous puissions préparer votre courrier : ce qui s’est passé, quand, et ce que vous demandez.", primary: "Compléter ma description", secondary: "Voir un exemple" },
+      { context: "Étape 3 — email", tone: red, title: "Cette adresse email semble incorrecte", body: "Vérifiez l’orthographe : sans email valide, nous ne pouvons pas vous envoyer votre plan d’action.", primary: "Corriger mon email", secondary: "Utiliser une autre adresse" },
+      { context: "Étape 3 — envoi", tone: amber, title: "L’envoi n’a pas abouti", body: "Votre saisie est conservée sur cet appareil. Réessayez dans quelques instants, rien n’est perdu.", primary: "Réessayer", secondary: "Reprendre plus tard" },
+      { context: "Plan d’action — dates", tone: amber, title: "Une date ne peut pas être calculée", body: "La date de votre commande n’a pas été renseignée : l’échéance exacte dépend de votre situation. Ajoutez-la pour obtenir un calendrier précis.", primary: "Ajouter la date", secondary: "Continuer sans" },
+      { context: "Lien de gestion", tone: amber, title: "Ce lien n’est plus valide", body: "Indiquez votre adresse email : nous vous renvoyons un accès à votre dossier et à votre plan d’action.", primary: "Recevoir un nouvel accès", secondary: "Nous contacter" },
+      { context: "Justificatif", tone: red, title: "Ce fichier n’a pas pu être ajouté", body: "Formats acceptés : PDF, JPG et PNG, jusqu’à 10 Mo. Votre plan d’action reste inchangé.", primary: "Choisir un autre fichier", secondary: "Passer cette étape" }
+    ];
+
+    const published = s.screen === "manage";
+
+    return {
+      screens,
+      isEntry: s.screen === "entry", isStep1: s.screen === "step1", isStep2: s.screen === "step2",
+      isStep3: s.screen === "step3", isVerify: s.screen === "verify", isPlan: s.screen === "plan",
+      isLetter: s.screen === "letter", isProof: s.screen === "proof", isManage: s.screen === "manage",
+      isUpdate: s.screen === "update", isErrors: s.screen === "errors", isMobile: s.screen === "mobile",
+      goEntry: go("entry"), goStep1: go("step1"), goStep2: go("step2"), goStep3: go("step3"),
+      goVerify: go("verify"), goPlan: go("plan"), goLetter: go("letter"), goProof: go("proof"),
+      goManage: go("manage"), goUpdate: go("update"),
+
+      benefits, included, heroStats, afterSteps, ctaLabel, heroPromise, heroText,
+      mobileBenefits: ["Publication publique", "Courrier préparé", "Étapes à suivre"],
+
+      categories,
+      step1Bg: s.cat ? blue : "#B9C1D1",
+      step1Hint: s.cat ? "Situation sélectionnée : " + s.cat : "Sélectionnez une situation pour continuer",
+
+      chosenCategory: s.cat || "Catégorie",
+      hasSub: !!s.sub, chosenSub: s.sub || "",
+      story, onStory: (e) => this.setState({ story: e.target.value, modDismissed: false }),
+      storyCount: story.length,
+      counterColor: enoughStory ? grey : amber,
+      tips: ["Dates importantes", "Ce que vous avez déjà demandé", "Situation actuelle"],
+      showModeration, moderationWhat: suspicious.join(" et "),
+      dismissModeration: () => this.setState({ modDismissed: true }),
+      ignoreModeration: () => this.setState({ modDismissed: true }),
+      amountMark: s.amountPublic ? "✓" : "",
+      amountBg: s.amountPublic ? blue : "#FFFFFF",
+      amountBorder: s.amountPublic ? "1px solid " + blue : "1px solid #B9C1D1",
+      toggleAmountPublic: () => this.setState(p => ({ amountPublic: !p.amountPublic })),
+      step2Bg: enoughStory ? blue : "#B9C1D1",
+      step2Hint: enoughStory ? "Ces informations servent à préparer votre courrier" : "Quelques mots de plus pour préparer votre courrier",
+
+      autoTitle: titleMap[s.cat] || titleMap["Autre problème"],
+      hasAmount: s.amountPublic,
+      publishMark: s.publish ? "✓" : "",
+      publishBg: s.publish ? blue : "#FFFFFF",
+      publishBorder: s.publish ? "1px solid " + blue : "1px solid #B9C1D1",
+      togglePublish: () => this.setState(p => ({ publish: !p.publish })),
+      rulesMark: s.rules ? "✓" : "",
+      rulesBg: s.rules ? blue : "#FFFFFF",
+      rulesBorder: s.rules ? "1px solid " + blue : "1px solid #B9C1D1",
+      toggleRules: () => this.setState(p => ({ rules: !p.rules })),
+      step3Bg: s.rules ? blue : "#B9C1D1",
+      step3Hint: s.rules ? "Votre plan d’action est prêt en quelques secondes" : "Acceptez les conditions de publication pour continuer",
+
+      checklist, timeline: withLines(timeline), mobileTimeline, progress,
+      reminderLabel: s.reminder ? "✓ Rappel programmé" : "Recevoir un rappel",
+      reminderBg: s.reminder ? "#FFFFFF" : blue,
+      reminderColor: s.reminder ? green : "#FFFFFF",
+      reminderBorder: s.reminder ? "1px solid " + green : "0",
+      reminderNote: s.reminder
+        ? "Nous vous écrirons le 4 septembre à j••••@gmail.com pour faire le point."
+        : "Un email le jour de l’échéance, à l’adresse déjà fournie. Vous pouvez l’annuler à tout moment.",
+      toggleReminder: () => this.setState(p => ({ reminder: !p.reminder })),
+      hasSimilar: hasSimilarReports, noSimilar: !hasSimilarReports, similarBreakdown,
+
+      proofBadges: ["Justificatif fourni", "Achat justifié", "Élément vérifié"],
+      statusLabel: published ? "Publié" : "En cours de vérification",
+      statusColor: published ? green : amber,
+      statusBg: published ? "#EDF6F0" : "#FBF3E8",
+      storyDisplay: story,
+      manageActions,
+
+      situations, showOutcome: s.situation === "Résolu",
+      showNextStep: s.situation === "Toujours en cours", outcomes,
+      updateBg: s.situation ? blue : "#B9C1D1",
+      updateHint: s.situation === "Résolu"
+        ? "Affiché publiquement : Résolu selon le consommateur"
+        : "Votre plan d’action sera mis à jour en conséquence",
+      saveUpdate: go("plan"),
+
+      errors
+    };
+  }
+}
+</script>
+</body>
+</html>
