@@ -2876,13 +2876,23 @@ button {
   color: var(--x-encre-3);
 }
 
-/* La question revient à une colonne de lecture étroite : une liste de dix
-   situations se parcourt mal sur toute la largeur. */
+/* La question tient dans une colonne de lecture — une liste de dix situations
+   se parcourt mal sur toute la largeur — mais elle n'est plus seule : la
+   colonne d'appui occupe le reste. Sans elle, six cents pixels de vide à
+   droite faisaient lire la page comme étroite. */
 .rfx-question {
-  max-width: 640px;
-  margin: 44px 0 0;
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(280px, 1fr);
+  gap: 48px;
+  align-items: start;
+  margin-top: 44px;
   padding-top: 34px;
   border-top: 1px solid var(--x-filet);
+}
+.rfx-question > * { min-width: 0; }
+
+@media (max-width: 900px) {
+  .rfx-question { grid-template-columns: 1fr; gap: 32px; }
 }
 
 @media (max-width: 900px) {

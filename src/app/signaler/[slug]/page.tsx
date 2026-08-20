@@ -105,7 +105,11 @@ export default async function EntreeTunnel({
             ))}
           </div>
 
+          {/* Deux colonnes sous les scènes : la liste seule laissait six cents
+              pixels de vide à droite sur un écran large, ce qui fait lire la
+              page comme étroite alors qu'elle est déséquilibrée. */}
           <div className="rfx-question">
+            <div>
             <h2 className="rfx-h2">Quel problème rencontrez-vous avec {cible.nom} ?</h2>
             <p className="rfx-texte" style={{ marginTop: 10 }}>
               Choisissez la situation la plus proche de la vôtre. Le délai que le professionnel doit
@@ -175,17 +179,47 @@ export default async function EntreeTunnel({
             </div>
           </form>
 
-          {/* Réassurance compacte : nous ne sommes pas un service de l'État, et
-              la question « qui êtes-vous » se pose donc ici. Trois lignes, en
-              pied de page — pas un argumentaire. */}
-          <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 32, padding: "14px 16px" }}>
-            <p className="rfx-source" style={{ margin: 0 }}>
-              Vous obtenez gratuitement votre lettre de réclamation, le délai applicable et l’ordre des
-              démarches. Recours France ne transmet pas votre réclamation au professionnel et
-              n’intervient pas dans le règlement du litige : c’est vous qui envoyez le courrier.
-              {cible.entrepriseId ? " Votre problème apparaît aussi sur la fiche de l’entreprise." : ""}
-            </p>
-          </div>
+            </div>
+
+            {/* La colonne d'appui : ce qu'on obtient, et ce que nous ne faisons
+                pas. Placée ici, elle occupe le vide et répond à la question
+                « qui êtes-vous pour me demander ça » au moment où elle se pose. */}
+            <aside>
+              <div className="rfx-bloc">
+                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
+                  Ce que vous obtenez
+                </h3>
+                <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
+                  <li style={{ marginBottom: 6 }}>
+                    Une lettre de réclamation citant le texte applicable
+                  </li>
+                  <li style={{ marginBottom: 6 }}>Le délai que le professionnel doit tenir</li>
+                  <li style={{ marginBottom: 6 }}>L’ordre des démarches, et le médiateur compétent</li>
+                  <li>Un lien de suivi, sans compte ni mot de passe</li>
+                </ul>
+                <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12 }}>
+                  Gratuit. Aucune donnée n’est enregistrée avant votre adresse électronique.
+                </p>
+              </div>
+
+              <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 16 }}>
+                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
+                  Ce que nous ne faisons pas
+                </h3>
+                <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
+                  <li style={{ marginBottom: 6 }}>
+                    Nous ne transmettons pas votre réclamation au professionnel.
+                  </li>
+                  <li style={{ marginBottom: 6 }}>Nous ne négocions pas et ne représentons personne.</li>
+                  <li>Nous ne sommes ni un avocat, ni un médiateur, ni un service de l’État.</li>
+                </ul>
+                {cible.entrepriseId ? (
+                  <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12 }}>
+                    Votre problème apparaît en revanche sur la fiche publique de {cible.nom}.
+                  </p>
+                ) : null}
+              </div>
+            </aside>
           </div>
         </div>
 
