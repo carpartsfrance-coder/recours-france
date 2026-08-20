@@ -3060,3 +3060,49 @@ button {
   text-transform: uppercase;
   color: var(--x-bleu);
 }
+
+/* ── Public / privé, en un coup d'œil ─────────────────────────────────────
+   Deux cartes empilées occupaient la moitié de l'écran, et leurs puces se
+   perdaient dans le fond teinté. Or l'information est un contraste : ce qui
+   se voit, ce qui ne se voit pas. Un contraste se montre côte à côte, pas
+   l'un sous l'autre.
+
+   Un seul bloc, deux colonnes séparées par un filet, une icône par colonne —
+   l'œil et le cadenas disent en un instant ce que deux titres mettaient trois
+   lignes à expliquer. */
+.rfx-visibilite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--x-bord);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.rfx-visibilite__col { padding: 16px 18px; min-width: 0; }
+.rfx-visibilite__col + .rfx-visibilite__col {
+  border-left: 1px solid var(--x-filet);
+  background: var(--x-fond-alt);
+}
+.rfx-visibilite__tete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.rfx-visibilite__tete--public { color: var(--x-bleu); }
+.rfx-visibilite__tete--prive { color: var(--x-encre-3); }
+.rfx-visibilite ul { list-style: none; margin: 12px 0 0; padding: 0; }
+.rfx-visibilite li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 5px 0;
+  color: var(--x-encre-2);
+}
+.rfx-visibilite li strong { color: var(--x-encre); }
+
+@media (max-width: 560px) {
+  .rfx-visibilite { grid-template-columns: 1fr; }
+  .rfx-visibilite__col + .rfx-visibilite__col { border-left: 0; border-top: 1px solid var(--x-filet); }
+}

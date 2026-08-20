@@ -136,28 +136,49 @@ export default async function EtapePublication({
               que de le faire disparaître au défilement. */}
           <div className="rfx-etape">
             <div>
-          {/* ── Public / Privé, en toutes lettres ───────────────────────── */}
-          <div className="rfx-deux" style={{ gap: "16px 20px", marginTop: 22 }}>
-            <div className="rfx-bloc" style={{ padding: "14px 16px" }}>
-              <div className="rfx-h4" style={{ color: "var(--x-bleu)" }}>Public</div>
-              <ul className="rfx-petit" style={{ margin: "10px 0 0", paddingLeft: 18 }}>
+          {/* Un contraste se montre côte à côte : deux cartes empilées
+              faisaient lire une liste puis une autre, sans opposition. L'œil
+              et le cadenas la disent en un instant. */}
+          <div className="rfx-visibilite" style={{ marginTop: 22 }}>
+            <div className="rfx-visibilite__col">
+              <div className="rfx-visibilite__tete rfx-visibilite__tete--public">
+                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                  <path
+                    d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                  <circle cx="8" cy="8" r="2.1" fill="currentColor" />
+                </svg>
+                Public
+              </div>
+              <ul>
                 {CE_QUI_EST_PUBLIC.map((l) => (
-                  <li key={l} style={{ marginBottom: 4 }}>
-                    {l}
-                  </li>
+                  <li key={l}>{l}</li>
                 ))}
               </ul>
             </div>
-            <div className="rfx-bloc rfx-bloc--alt" style={{ padding: "14px 16px" }}>
-              <div className="rfx-h4">Privé</div>
-              <ul className="rfx-petit" style={{ margin: "10px 0 0", paddingLeft: 18 }}>
-                <li style={{ marginBottom: 4 }}>
+
+            <div className="rfx-visibilite__col">
+              <div className="rfx-visibilite__tete rfx-visibilite__tete--prive">
+                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                  <rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor" />
+                  <path
+                    d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+                Privé
+              </div>
+              <ul>
+                <li>
                   <strong>Votre description des faits</strong>
                 </li>
                 {CE_QUI_RESTE_PRIVE.map((l) => (
-                  <li key={l} style={{ marginBottom: 4 }}>
-                    {l}
-                  </li>
+                  <li key={l}>{l}</li>
                 ))}
               </ul>
             </div>
