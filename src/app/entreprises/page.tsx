@@ -372,7 +372,7 @@ export default async function Annuaire({
                   <Link href={`/entreprises/${r.slug}`} className="rf-btn rf-btn--secondaire rf-btn--sm">
                     Voir la fiche
                   </Link>
-                  <Link href={`/signaler?siren=${r.siren}`} className="rf-btn rf-btn--primaire rf-btn--sm">
+                  <Link href={`/signaler/${r.slug}`} className="rf-btn rf-btn--primaire rf-btn--sm">
                     Signaler un litige
                   </Link>
                 </div>

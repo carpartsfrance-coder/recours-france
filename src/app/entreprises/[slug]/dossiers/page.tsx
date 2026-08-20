@@ -81,7 +81,7 @@ export default async function TousLesDossiers({
                 gratuitement : le signalement prend trois à cinq minutes et ne demande aucun compte.
               </p>
               <p style={{ marginTop: 18 }}>
-                <Link href={`/signaler?siren=${entreprise.siren}`} className="rfi-bouton" style={{ display: "inline-block" }}>
+                <Link href={`/signaler/${entreprise.slug}`} className="rfi-bouton" style={{ display: "inline-block" }}>
                   Signaler un litige
                 </Link>
               </p>

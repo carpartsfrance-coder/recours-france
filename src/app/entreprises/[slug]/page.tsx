@@ -25,6 +25,7 @@ import {
   faq,
   titreSignalement,
 } from "@/lib/observatoire";
+import { situationPourMotif } from "@/lib/tunnel";
 import {
   cheminCommune,
   cheminDepartement,
@@ -268,7 +269,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                 retour ou le SAV.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-                <Link href={`/signaler?siren=${entreprise.siren}`} className="rfx-btn">
+                <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn">
                   Signaler un problème avec {nom}
                 </Link>
                 <a href="#signalements" className="rfx-btn rfx-btn--secondaire">
@@ -313,7 +314,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     France.
                   </p>
                   <Link
-                    href={`/signaler?siren=${entreprise.siren}`}
+                    href={`/signaler/${entreprise.slug}`}
                     className="rfx-btn"
                     style={{ marginTop: 16, width: "100%" }}
                   >
@@ -338,7 +339,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   {s.libelle}
                 </a>
               ))}
-              <Link href={`/signaler?siren=${entreprise.siren}`} style={{ marginLeft: "auto", fontWeight: 600 }}>
+              <Link href={`/signaler/${entreprise.slug}`} style={{ marginLeft: "auto", fontWeight: 600 }}>
                 Signaler mon problème →
               </Link>
             </div>
@@ -356,7 +357,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             <ul className="rfx-liste rfx-deux" style={{ marginTop: 20 }}>
               {MOTIFS.map((m) => (
                 <li key={m.cle}>
-                  <Link href={`/signaler?siren=${entreprise.siren}&categorie=${m.cle}`}>
+                  <Link href={`/signaler/${entreprise.slug}/situation?s=${situationPourMotif(m.cle)}`}>
                     <span>{m.libelle}</span>
                     {aDesSignalements && parMotif.get(m.cle) ? (
                       <span className="rfx-liste__compteur">
@@ -510,7 +511,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               Publiez votre expérience pour qu’elle soit comptabilisée parmi les problèmes signalés
               concernant {nom}.
             </p>
-            <Link href={`/signaler?siren=${entreprise.siren}`} className="rfx-btn" style={{ marginTop: 16 }}>
+            <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn" style={{ marginTop: 16 }}>
               Signaler mon problème
             </Link>
             <p className="rfx-mention" style={{ marginTop: 10 }}>
@@ -967,7 +968,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               tard s’il a été résolu.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 22 }}>
-              <Link href={`/signaler?siren=${entreprise.siren}`} className="rfx-btn rfx-btn--blanc">
+              <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn rfx-btn--blanc">
                 Signaler mon problème
               </Link>
               <a href="#signalements" style={{ color: "#fff", alignSelf: "center" }}>

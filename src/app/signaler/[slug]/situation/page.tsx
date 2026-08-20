@@ -22,12 +22,24 @@ export const metadata: Metadata = {
  * ligne choisie, sans écran supplémentaire — une étape de plus, c'est un
  * abandon de plus.
  */
-export default async function EtapeSituation({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EtapeSituation({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
   const base = await chargerEntreprise(slug);
   if (!base) notFound();
 
   const brouillon = await lireBrouillon();
+
+  // Le motif cliqué sur la fiche ouvre l'étape sur la bonne ligne : refaire
+  // choisir ce qui vient de l'être fait perdre du monde entre deux écrans.
+  const prechoix =
+    typeof query.s === "string" && situationParCle(query.s) ? query.s : brouillon.situation;
 
   async function continuer(donnees: FormData) {
     "use server";
@@ -70,7 +82,7 @@ export default async function EtapeSituation({ params }: { params: Promise<{ slu
                       type="radio"
                       name="situation"
                       value={s.cle}
-                      defaultChecked={brouillon.situation === s.cle}
+                      defaultChecked={prechoix === s.cle}
                       required
                     />
                     <span className="rfx-situation__corps" style={{ minWidth: 0 }}>
@@ -84,7 +96,7 @@ export default async function EtapeSituation({ params }: { params: Promise<{ slu
                                 type="radio"
                                 name={`sous-${s.cle}`}
                                 value={sc}
-                                defaultChecked={brouillon.situation === s.cle && brouillon.sous === sc}
+                                defaultChecked={prechoix === s.cle && brouillon.sous === sc}
                               />
                               {sc}
                             </label>

@@ -195,3 +195,15 @@ export const SITUATIONS_SUIVI = [
   { cle: "partiel", libelle: "Partiellement résolu", desc: "Vous avez obtenu une partie de ce que vous demandiez." },
   { cle: "resolu", libelle: "Résolu", desc: "Votre demande a abouti." },
 ] as const;
+
+/**
+ * Situation du tunnel correspondant à une catégorie de la fiche.
+ *
+ * La fiche compte six motifs — ceux que la base sait compter — et le tunnel dix
+ * situations. Cliquer un motif doit ouvrir l'étape 1 sur la bonne ligne :
+ * refaire choisir ce qui vient d'être choisi est le meilleur moyen de perdre
+ * quelqu'un entre deux écrans.
+ */
+export function situationPourMotif(categorie: string): string {
+  return SITUATIONS.find((s) => s.categorie === categorie)?.cle ?? "autre";
+}

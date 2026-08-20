@@ -150,7 +150,7 @@ export default async function LaisserUnAvis({
                 Un avis raconte votre problème. Un signalement Recours France vous aide à l’organiser et à agir :
                 démarches dans le bon ordre, preuves à conserver, médiateur compétent.
               </p>
-              <Link href={`/signaler?siren=${entreprise.siren}`} className="rf-btn rf-btn--primaire rf-btn--bloc rf-mt-12">
+              <Link href={`/signaler/${entreprise.slug}`} className="rf-btn rf-btn--primaire rf-btn--bloc rf-mt-12">
                 Signaler un litige plutôt
               </Link>
             </div>
