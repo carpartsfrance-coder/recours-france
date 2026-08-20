@@ -150,38 +150,45 @@ export function delaiCourtPourMotif(motif: string): string | null {
 }
 
 /**
- * L'escalier des recours, du plus simple au dernier.
+ * L'escalier des recours, et ce que chaque marche exige.
  *
- * C'est ce qui répond à la seule vraie peur : « et s'ils m'ignorent encore ? »
- * Savoir qu'il existe une suite, et qu'elle est gratuite jusqu'au bout ou
- * presque, change le sentiment d'un dossier. Cet enchaînement figurait déjà
- * dans le plan d'action — mais après le dépôt, c'est-à-dire trop tard pour
- * décider quelqu'un.
+ * Une première version affichait le prix de chaque étape — gratuit, gratuit,
+ * gratuit. La conclusion qu'en tirait le lecteur était juste et désastreuse :
+ * « je peux le faire seul ». On lui démontrait qu'il n'avait pas besoin de
+ * nous.
  *
- * SignalConso est délibérément hors de cette liste : il alerte
- * l'administration et ne règle pas le litige individuel. Le présenter comme
- * une marche vers le remboursement serait trompeur ; il est mentionné à part,
- * comme une démarche parallèle.
+ * Ce que cette version-là taisait, c'est la condition commune : aucune de ces
+ * marches ne s'ouvre sans une réclamation écrite, datée, correctement
+ * formulée, dont on garde la preuve d'envoi. Le médiateur déclare irrecevable
+ * un dossier qui ne la produit pas ; le conciliateur et le juge travaillent
+ * sur les mêmes pièces.
+ *
+ * La colonne dit donc ce qu'il faut fournir, et non ce que cela coûte. Le fait
+ * que tout soit gratuit est conservé — il rassure et il est vrai — mais en une
+ * phrase, pas en colonne dominante.
+ *
+ * SignalConso reste hors de cette liste : il alerte l'administration et ne
+ * règle pas le litige individuel.
  */
 export const ESCALIER = [
   {
     etape: "Réclamation écrite",
-    cout: "Gratuit",
-    detail: "Ce que vous préparez ici. Elle ouvre tout le reste.",
+    exige: "Le point de départ",
+    detail: "Datée, fondée sur le bon texte, avec une preuve d’envoi. C’est ce que nous préparons.",
   },
   {
     etape: "Médiateur de la consommation",
-    cout: "Gratuit",
-    detail: "Après une réclamation restée sans réponse satisfaisante.",
+    exige: "Votre réclamation",
+    detail: "Sans elle, le dossier est déclaré irrecevable et vous repartez à zéro.",
   },
   {
     etape: "Conciliateur de justice",
-    cout: "Gratuit",
-    detail: "Un auxiliaire de justice bénévole, saisi sans formalité.",
+    exige: "Le même dossier",
+    detail: "Vos échanges, vos dates, vos montants — réutilisés tels quels.",
   },
   {
     etape: "Tribunal judiciaire",
-    cout: "Sans avocat sous 5 000 €",
-    detail: "Votre dossier et vos pièces sont réutilisables en l’état.",
+    exige: "Le même dossier",
+    detail: "Sans avocat en dessous de 5 000 €, si le dossier tient debout.",
   },
 ] as const;

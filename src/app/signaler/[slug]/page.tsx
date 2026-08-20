@@ -250,7 +250,8 @@ export default async function EntreeTunnel({
                   Et s’ils ne répondent pas ?
                 </h3>
                 <p className="rfx-petit" style={{ marginTop: 8 }}>
-                  Il existe une suite, et vous n’êtes pas obligé de la payer.
+                  Il existe une suite, et elle est gratuite. Mais chaque recours réclame la même
+                  pièce : votre réclamation écrite. Sans elle, on n’y entre pas.
                 </p>
                 <div className="rfx-lignes" style={{ marginTop: 12 }}>
                   {ESCALIER.map((e) => (
@@ -258,10 +259,9 @@ export default async function EntreeTunnel({
                       <span style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
                         <span style={{ fontSize: 14, fontWeight: 700 }}>{e.etape}</span>
                         <span
-                          className="rfx-chiffre"
                           style={{ flex: "none", fontSize: 12.5, color: "var(--x-bleu)", fontWeight: 700 }}
                         >
-                          {e.cout}
+                          {e.exige}
                         </span>
                       </span>
                       <span className="rfx-source" style={{ display: "block", marginTop: 3 }}>
@@ -270,6 +270,10 @@ export default async function EntreeTunnel({
                     </div>
                   ))}
                 </div>
+                <p className="rfx-petit" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 12, paddingTop: 12 }}>
+                  C’est cette pièce que nous écrivons pour vous — et c’est elle qui ouvre tout le
+                  reste.
+                </p>
                 <p className="rfx-source" style={{ marginTop: 10 }}>
                   Vous pouvez aussi signaler l’entreprise sur SignalConso, le service public de la
                   répression des fraudes. Cette démarche alerte l’administration ; elle ne règle pas
