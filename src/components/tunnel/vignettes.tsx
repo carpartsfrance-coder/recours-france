@@ -143,25 +143,41 @@ export function SceneEcheance({ taille = 200 }: { taille?: number }): ReactEleme
   );
 }
 
+/**
+ * Le parcours, raconté par ce qu'il apporte.
+ *
+ * Les légendes décrivaient des étapes, et deux d'entre elles étaient des
+ * avertissements — « Recours France ne le fait pas à votre place », « vous seul
+ * déclarez ». Au milieu de la section qui doit donner confiance, la page
+ * s'excusait deux fois.
+ *
+ * Elles racontent maintenant ce que la personne obtient, dans l'ordre où elle
+ * l'obtiendra : une minute, une lettre, une entreprise tenue de répondre, et
+ * une suite si rien ne bouge. Aucune promesse de résultat — nous ne garantissons
+ * aucune réponse — mais aucune excuse non plus.
+ *
+ * Ce que nous ne faisons pas reste expliqué en colonne d'appui, où c'est un
+ * argument, et dans le bandeau de chaque page, où c'est une obligation.
+ */
 export const PARCOURS = [
   {
     Scene: SceneSituation,
-    titre: "Vous décrivez votre situation",
-    desc: "Quelques choix fermés et vos dates. Une minute environ.",
+    titre: "Vous dites ce qui s’est passé",
+    desc: "Quelques clics. Une minute, pas plus.",
   },
   {
     Scene: SceneCourrier,
-    titre: "Nous rédigeons votre courrier",
-    desc: "Avec le délai applicable et l’article qui le fonde.",
+    titre: "Vous repartez avec la bonne lettre",
+    desc: "Celle qui cite la loi et fixe une date limite à l’entreprise.",
   },
   {
     Scene: SceneEnvoi,
-    titre: "Vous l’envoyez au professionnel",
-    desc: "C’est vous qui postez : Recours France ne le fait pas à votre place.",
+    titre: "L’entreprise reçoit une vraie réclamation",
+    desc: "Datée, fondée en droit. C’est ce à quoi un service client doit répondre.",
   },
   {
     Scene: SceneEcheance,
-    titre: "Vous suivez vos échéances",
-    desc: "Et vous seul déclarez si votre problème a été résolu.",
+    titre: "Et si rien ne bouge, vous avez la suite",
+    desc: "Le médiateur, gratuit. Vous saurez quand et comment le saisir.",
   },
 ] as const;
