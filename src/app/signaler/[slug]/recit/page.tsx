@@ -6,6 +6,7 @@ import { resoudreCible } from "@/lib/cible";
 import { LIMITE_RECIT, ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { SEUIL_RECIT, coordonneesDansLeRecit, situationParCle } from "@/lib/tunnel";
 import { LIBELLES_DEMANDE, LIBELLES_ETAT_PRO } from "@/lib/format";
+import { droitPour } from "@/lib/droits";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export default async function EtapeRecit({
   const situation = situationParCle(brouillon.situation);
   if (!situation) redirect(`/signaler/${slug}/situation`);
 
+  const droit = droitPour(situation.cle);
   const trop_court = query.court === "1";
   const alerte = typeof query.perso === "string" ? query.perso.split("|").filter(Boolean) : [];
 
@@ -96,7 +98,38 @@ export default async function EtapeRecit({
             </Link>
           </div>
 
-          <h1 className="rfx-h2" style={{ marginTop: 16 }}>
+          {/* La promesse de la page d'accueil se vérifie ici, ou elle se
+              dégonfle : on annonçait un délai opposable et le texte qui le
+              fonde, les voici, avant même que la personne écrive une ligne.
+              C'est aussi ce qui donne un sens au temps qu'on lui demande. */}
+          <div className="rfx-levier" style={{ marginTop: 18 }}>
+            <div className="rfx-levier__titre">{droit.exigence}</div>
+            <div className="rfx-lignes" style={{ marginTop: 12 }}>
+              {droit.delai ? (
+                <div className="rfx-ligne">
+                  <span className="rfx-ligne__cle">Délai</span>
+                  <span className="rfx-ligne__valeur rfx-chiffre" style={{ fontWeight: 700 }}>
+                    {droit.delai}
+                  </span>
+                </div>
+              ) : null}
+              {droit.fondement ? (
+                <div className="rfx-ligne">
+                  <span className="rfx-ligne__cle">Fondement</span>
+                  <span className="rfx-ligne__valeur">{droit.fondement}</span>
+                </div>
+              ) : null}
+            </div>
+            <p className="rfx-petit" style={{ marginTop: 12 }}>
+              {droit.precision}
+            </p>
+            <p className="rfx-source" style={{ marginTop: 10 }}>
+              Information générale, à adapter à votre situation. Ce fondement et ce délai seront
+              repris dans votre courrier de réclamation.
+            </p>
+          </div>
+
+          <h1 className="rfx-h2" style={{ marginTop: 26 }}>
             Que s’est-il passé ?
           </h1>
 
