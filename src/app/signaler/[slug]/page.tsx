@@ -197,8 +197,17 @@ export default async function EntreeTunnel({
                   <li style={{ marginBottom: 6 }}>L’ordre des démarches, et le médiateur compétent</li>
                   <li>Un lien de suivi, sans compte ni mot de passe</li>
                 </ul>
-                <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12 }}>
-                  Gratuit. Aucune donnée n’est enregistrée avant votre adresse électronique.
+                {/* Dire de quel côté on se tient, sans prétendre arbitrer :
+                    aider quelqu'un à exercer ses droits n'est pas prendre parti
+                    sur les faits, et c'est cette distinction qui tient si une
+                    entreprise conteste. Le fait sur les données reste, en second :
+                    c'est une garantie réelle, et la perdre serait dommage. */}
+                <p style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12, fontSize: 14.5, fontWeight: 700, color: "var(--x-bleu)" }}>
+                  Gratuit, et de votre côté.
+                </p>
+                <p className="rfx-source" style={{ marginTop: 6 }}>
+                  Recours France existe pour les consommateurs. Rien n’est enregistré tant que vous
+                  n’avez pas donné votre adresse.
                 </p>
               </div>
 
