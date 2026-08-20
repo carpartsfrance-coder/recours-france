@@ -44,7 +44,35 @@ export default async function Dossier({
   const query = await searchParams;
 
   const acces = await resoudreJetonSuivi(jeton);
-  if (!acces?.signalement) notFound();
+
+  // Un lien expiré n'est pas un lien inconnu : renvoyer « page introuvable »
+  // laisserait croire à une erreur d'adresse, alors qu'il suffit d'en demander
+  // un nouveau. L'écran d'erreur doit toujours offrir une sortie.
+  if (!acces?.signalement) {
+    const connu = await prisma.jetonAcces.findUnique({ where: { jeton }, select: { expireLe: true } });
+    if (!connu) notFound();
+    return (
+      <Page entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }} piedComplet={false}>
+        <div className="rfx">
+          <div className="rfx-tunnel" style={{ padding: "48px 20px 64px" }}>
+            <h1 className="rfx-h2">Ce lien de suivi a expiré</h1>
+            <p className="rfx-texte" style={{ marginTop: 12 }}>
+              Les liens de suivi restent valables douze mois et se prolongent à chaque visite.
+              Celui-ci a dépassé sa durée de validité le {formatDateLongue(connu.expireLe)}.
+            </p>
+            <p className="rfx-texte" style={{ marginTop: 12 }}>
+              Votre signalement n’est pas perdu : demandez un nouveau lien avec l’adresse électronique
+              que vous aviez indiquée, il vous sera envoyé aussitôt.
+            </p>
+            <Link href="/mon-espace" className="rfx-btn rfx-btn--large" style={{ marginTop: 22 }}>
+              Recevoir un nouveau lien
+            </Link>
+          </div>
+        </div>
+      </Page>
+    );
+  }
+
   await prolongerJeton(jeton);
 
   const signalement = await prisma.signalement.findUnique({

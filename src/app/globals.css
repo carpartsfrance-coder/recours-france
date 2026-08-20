@@ -2802,3 +2802,24 @@ button {
 .rfx-jalon { display: flex; gap: 13px; padding-bottom: 18px; position: relative; }
 .rfx-jalon__pastille { flex: none; width: 13px; height: 13px; margin-top: 4px; border: 2px solid var(--x-bleu); background: #fff; }
 .rfx-jalon--fait .rfx-jalon__pastille { background: var(--x-bleu); }
+
+/* ── Barre d'action fixe, mobile uniquement ───────────────────────────────
+   Sur un écran étroit, le bouton principal sort du champ dès le premier
+   défilement : la personne lit la page sans plus voir ce qu'elle est venue
+   faire. La barre le garde sous le pouce, avec la réserve d'espace qui évite
+   qu'elle recouvre la fin du contenu. */
+.rfx-barre-fixe { display: none; }
+
+@media (max-width: 767px) {
+  .rfx-barre-fixe {
+    display: block;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: #fff; border-top: 1px solid var(--x-bord);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+  .rfx-barre-fixe .rfx-mention { text-align: center; margin-top: 6px; }
+  /* Réserve sous le contenu : sans elle, la barre masque le dernier bloc. */
+  .rfx-avec-barre { padding-bottom: 100px; }
+  /* Les deux colonnes des grilles étroites se replient aussi. */
+  .rfx-deux { grid-template-columns: 1fr; }
+}

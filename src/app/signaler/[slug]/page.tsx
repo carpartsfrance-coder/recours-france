@@ -71,7 +71,7 @@ export default async function AccueilTunnel({ params }: { params: Promise<{ slug
       ]}
     >
       <div className="rfx">
-        <div className="rfx-large" style={{ padding: "36px 24px 56px" }}>
+        <div className="rfx-large rfx-avec-barre" style={{ padding: "36px 24px 56px" }}>
           <div className="rfx-hero">
             {/* ── Colonne gauche : la promesse ─────────────────────────── */}
             <div>
@@ -221,6 +221,15 @@ export default async function AccueilTunnel({ params }: { params: Promise<{ slug
               )}
             </aside>
           </div>
+        </div>
+
+        {/* Sur écran étroit, le bouton sort du champ dès le premier
+            défilement : il reste ici sous le pouce. */}
+        <div className="rfx-barre-fixe">
+          <Link href={`/signaler/${base.slug}/situation`} className="rfx-btn rfx-btn--large">
+            Rendre mon problème visible
+          </Link>
+          <p className="rfx-mention">Environ 1 minute · Gratuit · Sans compte</p>
         </div>
       </div>
     </Page>
