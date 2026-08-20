@@ -184,100 +184,38 @@ export default async function EntreeTunnel({
             {/* La colonne d'appui : ce qu'on obtient, et ce que nous ne faisons
                 pas. Placée ici, elle occupe le vide et répond à la question
                 « qui êtes-vous pour me demander ça » au moment où elle se pose. */}
+            {/* Une colonne d'appui, pas un second article.
+                Elle en comptait 255 mots sur 1 515 pixels — presque le double
+                de la liste qu'elle accompagne. Trois blocs empilés au fil des
+                corrections, chacun défendable, l'ensemble illisible.
+
+                Réduite aux trois questions qu'on se pose avant de cliquer :
+                qu'est-ce que j'y gagne, et s'ils m'ignorent, combien ça coûte.
+                Le reste — pourquoi c'est vous qui postez, le détail de chaque
+                recours — se lit après le dépôt, sur le plan d'action, quand la
+                question se pose vraiment. */}
             <aside>
               <div className="rfx-bloc">
                 <h3 className="rfx-h3" style={{ fontSize: 17 }}>
                   Ce que vous obtenez
                 </h3>
                 <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
-                  <li style={{ marginBottom: 6 }}>
-                    Une lettre de réclamation citant le texte applicable
-                  </li>
-                  <li style={{ marginBottom: 6 }}>Le délai que le professionnel doit tenir</li>
-                  <li style={{ marginBottom: 6 }}>L’ordre des démarches, et le médiateur compétent</li>
-                  <li>Un lien de suivi, sans compte ni mot de passe</li>
+                  <li style={{ marginBottom: 6 }}>Votre lettre de réclamation, citant la loi</li>
+                  <li style={{ marginBottom: 6 }}>Le délai que l’entreprise doit tenir</li>
+                  <li>Le suivi de votre dossier, sans compte</li>
                 </ul>
-                {/* Dire de quel côté on se tient, sans prétendre arbitrer :
-                    aider quelqu'un à exercer ses droits n'est pas prendre parti
-                    sur les faits, et c'est cette distinction qui tient si une
-                    entreprise conteste. Le fait sur les données reste, en second :
-                    c'est une garantie réelle, et la perdre serait dommage. */}
-                <p style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12, fontSize: 14.5, fontWeight: 700, color: "var(--x-bleu)" }}>
+                <p style={{ marginTop: 14, fontSize: 14.5, fontWeight: 700, color: "var(--x-bleu)" }}>
                   Gratuit, et de votre côté.
                 </p>
-                <p className="rfx-source" style={{ marginTop: 6 }}>
-                  Recours France existe pour les consommateurs. Rien n’est enregistré tant que vous
-                  n’avez pas donné votre adresse.
-                </p>
               </div>
 
-              {/* Ce bloc listait ce que la plateforme ne fait pas — trois
-                  négations à l'instant de décider, qui font conclure que ça ne
-                  sert à rien. L'avertissement figure déjà dans le bandeau de
-                  chaque page et dans le pied : le répéter ici ne protégeait
-                  rien de plus et coûtait des dépôts.
-
-                  À la place, la limite est retournée en argument, et c'en est
-                  un vrai : une réclamation adressée par le consommateur
-                  lui-même fait courir les délais et ouvre la médiation. Le
-                  courrier d'un intermédiaire n'a pas cet effet. */}
               <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 16 }}>
-                {/* Écrit pour être lu par quelqu'un d'énervé, pas par un
-                    juriste : « faire courir les délais » et « saisine du
-                    médiateur » sont du vocabulaire de métier, et personne ne
-                    parle comme ça. Phrases courtes, mots courants, et la seule
-                    chose qui compte pour lui — l'entreprise est obligée de
-                    répondre. */}
                 <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  La lettre part de vous, et c’est ce qui compte
+                  Et si elle ne répond pas ?
                 </h3>
                 <p className="rfx-petit" style={{ marginTop: 10 }}>
-                  C’est votre réclamation, signée de votre main, qui oblige l’entreprise à vous
-                  répondre dans un délai précis. Et si elle ne bouge pas, c’est elle aussi qui vous
-                  ouvre le recours gratuit au médiateur.
-                </p>
-                <p className="rfx-petit" style={{ marginTop: 8 }}>
-                  Nous l’écrivons pour vous : ce que dit la loi, ce que vous demandez, la date
-                  limite. Vous n’avez plus qu’à la signer et la poster.
-                </p>
-              </div>
-              {/* L'escalier des recours, avant le dépôt et non après. Il
-                  répond à la seule vraie peur — « et s'ils m'ignorent
-                  encore ? » — et le prix de chaque marche compte autant que la
-                  marche elle-même. */}
-              <div className="rfx-bloc" style={{ marginTop: 16 }}>
-                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Et s’ils ne répondent pas ?
-                </h3>
-                <p className="rfx-petit" style={{ marginTop: 8 }}>
-                  Il existe une suite, et elle est gratuite. Mais chaque recours réclame la même
-                  pièce : votre réclamation écrite. Sans elle, on n’y entre pas.
-                </p>
-                <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                  {ESCALIER.map((e) => (
-                    <div key={e.etape} className="rfx-ligne" style={{ display: "block", padding: "10px 0" }}>
-                      <span style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>{e.etape}</span>
-                        <span
-                          style={{ flex: "none", fontSize: 12.5, color: "var(--x-bleu)", fontWeight: 700 }}
-                        >
-                          {e.exige}
-                        </span>
-                      </span>
-                      <span className="rfx-source" style={{ display: "block", marginTop: 3 }}>
-                        {e.detail}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p className="rfx-petit" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 12, paddingTop: 12 }}>
-                  C’est cette pièce que nous écrivons pour vous — et c’est elle qui ouvre tout le
-                  reste.
-                </p>
-                <p className="rfx-source" style={{ marginTop: 10 }}>
-                  Vous pouvez aussi signaler l’entreprise sur SignalConso, le service public de la
-                  répression des fraudes. Cette démarche alerte l’administration ; elle ne règle pas
-                  votre litige et se mène en parallèle.
+                  Médiateur, conciliateur, tribunal : trois recours gratuits. Tous exigent la même
+                  lettre — c’est elle qui les ouvre.
                 </p>
               </div>
             </aside>
