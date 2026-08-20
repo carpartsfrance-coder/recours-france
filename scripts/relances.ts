@@ -65,7 +65,7 @@ async function main() {
           const jeton = await creerJetonSuivi(s.id, s.email);
           await envoyerAlerteVeille({
             email: s.email,
-            prenom: s.prenom,
+            prenom: s.prenom ?? "",
             reference: s.reference,
             jeton,
             titre: alerte.titre,
@@ -117,7 +117,7 @@ async function main() {
       const jeton = await creerJetonSuivi(s.id, s.email);
       await envoyerRappel({
         email: s.email,
-        prenom: s.prenom,
+        prenom: s.prenom ?? "",
         reference: s.reference,
         entreprise,
         jeton,

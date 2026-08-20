@@ -55,8 +55,8 @@ export default async function Confirmation({ params }: { params: Promise<{ jeton
     categorie: signalement.categorie as Categorie,
     montant: signalement.montant ? formatMontant(Number(signalement.montant)) : null,
     dateFaits: signalement.dateFaits,
-    prenom: signalement.prenom,
-    nom: signalement.nom,
+    prenom: signalement.prenom ?? "",
+    nom: signalement.nom ?? "",
   });
 
   const guide = construireGuide({

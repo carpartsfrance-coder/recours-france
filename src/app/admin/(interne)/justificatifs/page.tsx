@@ -123,7 +123,7 @@ export default async function Justificatifs({
                     <div className="rf-tuile rf-tuile--moyenne">
                       <div className="rf-etiquette">Consommateur</div>
                       <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 4 }}>
-                        {s.prenom} {s.nom.charAt(0)}. · {masquerEmail(s.email)}
+                        {s.prenom} {(s.nom ?? "").charAt(0)}. · {masquerEmail(s.email)}
                       </div>
                     </div>
                   </div>

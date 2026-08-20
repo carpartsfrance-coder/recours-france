@@ -65,7 +65,7 @@ async function main() {
 
     await envoyerIssueContestation({
       email: c.signalement.email,
-      prenom: c.signalement.prenom,
+      prenom: c.signalement.prenom ?? "",
       reference: c.signalement.reference,
       entreprise,
       maintenu: false,

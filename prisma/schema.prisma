@@ -376,7 +376,15 @@ model Signalement {
   rapprochementFait   Boolean @default(false)
 
   categorie   CategorieLitige
+  /// Précision choisie par le consommateur sous la situation — « Annoncée
+  /// livrée », « Prise en charge refusée ». Dix situations sont proposées pour
+  /// six catégories : celui qui cherche ne formule pas son problème avec le
+  /// vocabulaire d'une nomenclature.
+  sousCategorie String?
   montant     Decimal? @db.Decimal(12, 2)
+  /// Le montant est toujours compté dans les statistiques ; c'est son affichage
+  /// public que l'auteur accepte ou refuse.
+  montantPublic Boolean @default(true)
   dateFaits   DateTime
   contactPrealable ContactPrealable
 
@@ -398,8 +406,13 @@ model Signalement {
   /// était le principal obstacle du formulaire.
   resume      String?  @db.Text
 
-  prenom String
-  nom    String
+  /// Identité facultative : le tunnel ne la demande pas.
+  ///
+  /// Quatre informations sont réclamées avant publication — situation, récit,
+  /// montant et date, adresse électronique — et rien d'autre. Exiger un nom
+  /// pour un contenu qui paraît sans lui ferait abandonner sans rien apporter.
+  prenom String?
+  nom    String?
   email  String
 
   certifie     Boolean @default(false)

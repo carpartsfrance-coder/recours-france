@@ -403,7 +403,7 @@ export async function trancherContestation(_precedent: EtatAdmin, donnees: FormD
 
   await envoyerIssueContestation({
     email: contestation.signalement.email,
-    prenom: contestation.signalement.prenom,
+    prenom: contestation.signalement.prenom ?? "",
     reference: contestation.signalement.reference,
     entreprise,
     maintenu: !retenue,

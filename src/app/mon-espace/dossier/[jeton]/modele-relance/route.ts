@@ -28,8 +28,8 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ jet
     categorie: signalement.categorie as Categorie,
     montant: signalement.montant ? formatMontant(Number(signalement.montant)) : null,
     dateFaits: signalement.dateFaits,
-    prenom: signalement.prenom,
-    nom: signalement.nom,
+    prenom: signalement.prenom ?? "",
+    nom: signalement.nom ?? "",
   });
 
   return new Response(texte, {

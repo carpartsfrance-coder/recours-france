@@ -288,7 +288,7 @@ export async function contesterSignalement(
     data: {
       signalementId: signalement.id,
       email: d.email,
-      nom: d.nom,
+      nom: d.nom ?? "",
       qualite: d.qualite,
       motif: d.motif,
       etat: "PIECE_DEMANDEE",
@@ -303,7 +303,7 @@ export async function contesterSignalement(
     const jeton = await creerJetonSuivi(signalement.id, signalement.email);
     await envoyerDemandeDePiece({
       email: signalement.email,
-      prenom: signalement.prenom,
+      prenom: signalement.prenom ?? "",
       reference: signalement.reference,
       entreprise: entreprise.denomination,
       jeton,

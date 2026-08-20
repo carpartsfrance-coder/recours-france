@@ -156,10 +156,10 @@ export const INCLUS = [
  * une mauvaise surprise.
  */
 export const CE_QUI_EST_PUBLIC = [
-  "L’intitulé de votre problème",
-  "Votre description des faits",
-  "La catégorie et le statut",
-  "La date de publication",
+  "L’intitulé de votre problème, composé automatiquement",
+  "Ce que vous demandez, et où en est le professionnel",
+  "Le nombre de relances que vous déclarez",
+  "La catégorie, le statut et la date",
   "Le montant, si vous l’acceptez",
 ] as const;
 

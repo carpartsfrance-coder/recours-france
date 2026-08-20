@@ -248,7 +248,7 @@ async function creerAvis(entrepriseIds: string[]) {
         signalementId: s.id,
         note: [4, 2, 1, 3][index % 4],
         texte: TEXTES_AVIS[index % TEXTES_AVIS.length],
-        auteur: `${s.prenom} ${s.nom.charAt(0)}.`,
+        auteur: `${s.prenom} ${(s.nom ?? "").charAt(0)}.`,
         ville: aleatoire(VILLES, index),
         email: s.email,
         verifie: true,
