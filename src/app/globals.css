@@ -3024,3 +3024,39 @@ button {
 
 /* Les encarts d'information reprennent la teinte plutôt que le gris. */
 .rfx--doux .rfx-bloc--alt { background: #f4f7fd; border-color: #dde5f5; }
+
+/* ── Ce que l'on obtient, à l'instant de valider ──────────────────────────
+   Le bloc listait trois bénéfices en puces ordinaires : les marqueurs se
+   perdaient, les trois lignes se lisaient comme un pavé, et le troisième était
+   deux fois plus long que les autres. Personne ne scanne un paragraphe au
+   moment de cliquer.
+
+   Chaque bénéfice devient une ligne à deux étages — un intitulé en gras, une
+   explication en gris — précédée d'une coche. Un filet les sépare. On lit les
+   trois intitulés en deux secondes, et le détail seulement si on le veut. */
+.rfx-obtenu { list-style: none; margin: 16px 0 0; padding: 0; }
+.rfx-obtenu li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  padding: 13px 0;
+  border-top: 1px solid #cfdcf8;
+}
+.rfx-obtenu li:first-child { border-top: 0; padding-top: 0; }
+.rfx-obtenu li:last-child { padding-bottom: 0; }
+.rfx-obtenu__coche { color: var(--x-bleu); margin-top: 1px; }
+.rfx-obtenu__titre { display: block; font-size: 15px; font-weight: 700; line-height: 1.35; }
+.rfx-obtenu__detail {
+  display: block;
+  margin-top: 3px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--x-encre-2);
+}
+.rfx-obtenu__entete {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--x-bleu);
+}

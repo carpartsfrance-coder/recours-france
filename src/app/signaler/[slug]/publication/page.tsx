@@ -214,24 +214,48 @@ export default async function EtapePublication({
                 La formulation de la visibilité reste celle que le handoff
                 autorise : elle « peut inciter » l'entreprise à prendre
                 connaissance. Ni notification promise, ni chance chiffrée. */}
-            <div className="rfx-bloc rfx-bloc--accent" style={{ marginTop: 22, padding: "18px 20px" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--x-bleu)" }}>
-                En validant, vous obtenez
-              </div>
-              <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
-                <li style={{ marginBottom: 7 }}>
-                  <strong>Votre lettre de réclamation</strong>, citant le texte applicable et fixant
-                  à {nom} un délai pour répondre.
-                </li>
-                <li style={{ marginBottom: 7 }}>
-                  <strong>Vos droits et vos recours</strong> : ce que vous pouvez exiger, et ce qui
-                  s’ouvre si l’entreprise ne répond pas.
-                </li>
-                <li>
-                  <strong>Votre problème publié</strong> sur la fiche {nom}, consultable par toute
-                  personne qui se renseigne sur elle — y compris par elle. Cette visibilité peut
-                  l’inciter à prendre connaissance de votre situation.
-                </li>
+            <div className="rfx-bloc rfx-bloc--accent" style={{ marginTop: 22, padding: "20px 22px" }}>
+              <div className="rfx-obtenu__entete">En validant, vous obtenez</div>
+              <ul className="rfx-obtenu">
+                {[
+                  {
+                    titre: "Votre lettre de réclamation",
+                    detail: `Citant le texte applicable, et fixant à ${nom} un délai pour répondre.`,
+                  },
+                  {
+                    titre: "Vos droits et vos recours",
+                    detail: "Ce que vous pouvez exiger, et ce qui s’ouvre si l’entreprise ne répond pas.",
+                  },
+                  {
+                    titre: "Votre problème publié",
+                    detail: `Sur la fiche ${nom}, consultable par toute personne qui se renseigne sur elle — y compris par elle.`,
+                  },
+                ].map((b) => (
+                  <li key={b.titre}>
+                    <svg
+                      className="rfx-obtenu__coche"
+                      width="22"
+                      height="22"
+                      viewBox="0 0 22 22"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="11" cy="11" r="10" fill="currentColor" />
+                      <path
+                        d="M6.5 11.2l3 3 6-6.4"
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span style={{ minWidth: 0 }}>
+                      <span className="rfx-obtenu__titre">{b.titre}</span>
+                      <span className="rfx-obtenu__detail">{b.detail}</span>
+                    </span>
+                  </li>
+                ))}
               </ul>
             </div>
 
