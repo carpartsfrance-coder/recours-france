@@ -2843,3 +2843,22 @@ button {
 }
 .rfx-levier .rfx-ligne { border-bottom-color: #cfdcf8; }
 .rfx-levier .rfx-ligne__cle { width: 30%; color: var(--x-bleu); font-weight: 600; }
+
+/* ── Parcours illustré du tunnel ──────────────────────────────────────────
+   Quatre vignettes au trait, dans la couleur institutionnelle. Elles sont la
+   seule entorse à la règle « aucune illustration » : la fiche garde son
+   austérité, qui lui sert ; le tunnel accueille quelqu'un en colère, à qui
+   des filets gris parlent comme un formulaire d'administration. */
+.rfx-parcours {
+  display: grid;
+  /* Quatre colonnes tiennent dans les 640 px du tunnel : 4 × 130 + 3 × 18.
+     Au-dessus, la grille se rangeait en 3 + 1, ce qui casse la lecture d'un
+     parcours en quatre temps. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+  gap: 26px 18px;
+  margin-top: 34px;
+  padding-top: 28px;
+  border-top: 1px solid var(--x-filet);
+}
+.rfx-parcours__etape { min-width: 0; }
+.rfx-parcours__vignette { display: block; color: var(--x-bleu); }

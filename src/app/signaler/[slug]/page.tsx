@@ -5,6 +5,7 @@ import { resoudreCible } from "@/lib/cible";
 import { SITUATIONS, situationParCle } from "@/lib/tunnel";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { delaiCourtPourMotif } from "@/lib/droits";
+import { PARCOURS } from "@/components/tunnel/vignettes";
 
 /**
  * Écran d'entrée du tunnel : la question, tout de suite.
@@ -156,6 +157,26 @@ export default async function EntreeTunnel({
               </p>
             </div>
           </form>
+
+          {/* Le parcours en quatre temps, sous la question et non au-dessus :
+              la personne choisit d'abord, se rassure ensuite. Un écart assumé à
+              la charte, qui proscrit l'illustration — l'austérité sert la fiche
+              et dessert le tunnel, où quelqu'un arrive en colère. */}
+          <div className="rfx-parcours">
+            {PARCOURS.map(({ Vignette, titre, desc }) => (
+              <div key={titre} className="rfx-parcours__etape">
+                <span className="rfx-parcours__vignette">
+                  <Vignette taille={56} />
+                </span>
+                <span style={{ fontSize: 14.5, fontWeight: 700, display: "block", marginTop: 10 }}>
+                  {titre}
+                </span>
+                <span className="rfx-mention" style={{ display: "block", marginTop: 4 }}>
+                  {desc}
+                </span>
+              </div>
+            ))}
+          </div>
 
           {/* Réassurance compacte : nous ne sommes pas un service de l'État, et
               la question « qui êtes-vous » se pose donc ici. Trois lignes, en
