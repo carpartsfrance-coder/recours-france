@@ -2914,3 +2914,25 @@ button {
   .rfx-parcours__titre { grid-column: 2; align-self: end; margin-top: 0; }
   .rfx-parcours__desc { grid-column: 2; align-self: start; }
 }
+
+/* ── Étapes du tunnel, en deux colonnes ───────────────────────────────────
+   Le handoff prescrit 640 pixels pour les étapes, et c'est juste pour la
+   colonne de saisie : un formulaire large se remplit moins bien. Mais laissé
+   seul dans un conteneur de 1 040, il abandonnait six cents pixels de vide à
+   droite — d'où l'impression d'étroitesse. L'appui les occupe. */
+.rfx-etape {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(280px, 1fr);
+  gap: 48px;
+  align-items: start;
+  margin-top: 8px;
+}
+.rfx-etape > * { min-width: 0; }
+/* L'appui suit le défilement : sur l'étape 2 il porte le droit applicable,
+   qu'on relit en remplissant. */
+.rfx-etape aside { position: sticky; top: 20px; }
+
+@media (max-width: 900px) {
+  .rfx-etape { grid-template-columns: 1fr; gap: 28px; }
+  .rfx-etape aside { position: static; }
+}

@@ -98,7 +98,7 @@ export default async function EtapePublication({
       piedComplet={false}
     >
       <div className="rfx">
-        <div className="rfx-tunnel" style={{ padding: "0 20px 56px" }}>
+        <div className="rfx-large" style={{ padding: "0 24px 56px" }}>
           <div className="rfx-progression">
             <div className="rfx-progression__texte">Étape 3 sur 3</div>
             <div className="rfx-progression__piste">
@@ -131,36 +131,13 @@ export default async function EtapePublication({
           ) : null}
 
           {/* ── L'aperçu, tel quel ───────────────────────────────────────── */}
-          <div className="rfx-apercu" style={{ marginTop: 22 }}>
-            <div className="rfx-apercu__tete">
-              <span>Aperçu public sur la fiche {nom}</span>
-              <Link href={`/signaler/${slug}/recit`}>Modifier</Link>
-            </div>
-            <div className="rfx-apercu__corps">
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                <span className="rfx-badge rfx-badge--categorie">{situation.libelle}</span>
-                <span className="rfx-badge rfx-badge--encours">Problème en cours</span>
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.35 }}>{titre}</div>
-              <div className="rfx-mention" style={{ marginTop: 8 }}>
-                {[
-                  montantVisible ? formatMontant(montant!) : null,
-                  `Faits : ${formatDateLongue(dateFaits)}`,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
-              <div className="rfx-declaration" style={{ marginTop: 12 }}>
-                {phrase}
-              </div>
-              <p className="rfx-source" style={{ marginTop: 8 }}>
-                Déclaration du consommateur. Non vérifiée par Recours France.
-              </p>
-            </div>
-          </div>
-
+          {/* L'aperçu passe en appui, comme le récapitulatif d'une commande :
+              on le garde sous les yeux pendant qu'on renseigne l'adresse, plutôt
+              que de le faire disparaître au défilement. */}
+          <div className="rfx-etape">
+            <div>
           {/* ── Public / Privé, en toutes lettres ───────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 22 }}>
+          <div className="rfx-deux" style={{ gap: "16px 20px", marginTop: 22 }}>
             <div className="rfx-bloc" style={{ padding: "14px 16px" }}>
               <div className="rfx-h4" style={{ color: "var(--x-bleu)" }}>Public</div>
               <ul className="rfx-petit" style={{ margin: "10px 0 0", paddingLeft: 18 }}>
@@ -226,6 +203,39 @@ export default async function EtapePublication({
               Gratuit · sans compte · modifiable et supprimable à tout moment
             </p>
           </form>
+
+            </div>
+
+            <aside>
+            <div className="rfx-apercu" style={{ marginTop: 22 }}>
+              <div className="rfx-apercu__tete">
+                <span>Aperçu public sur la fiche {nom}</span>
+                <Link href={`/signaler/${slug}/recit`}>Modifier</Link>
+              </div>
+              <div className="rfx-apercu__corps">
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span className="rfx-badge rfx-badge--categorie">{situation.libelle}</span>
+                  <span className="rfx-badge rfx-badge--encours">Problème en cours</span>
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.35 }}>{titre}</div>
+                <div className="rfx-mention" style={{ marginTop: 8 }}>
+                  {[
+                    montantVisible ? formatMontant(montant!) : null,
+                    `Faits : ${formatDateLongue(dateFaits)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+                <div className="rfx-declaration" style={{ marginTop: 12 }}>
+                  {phrase}
+                </div>
+                <p className="rfx-source" style={{ marginTop: 8 }}>
+                  Déclaration du consommateur. Non vérifiée par Recours France.
+                </p>
+              </div>
+            </div>
+            </aside>
+          </div>
 
           <p className="rfx-mention" style={{ marginTop: 24 }}>
             <Link href={`/signaler/${slug}/recit`}>← Revenir</Link>

@@ -91,7 +91,7 @@ export default async function EtapeRecit({
       piedComplet={false}
     >
       <div className="rfx">
-        <div className="rfx-tunnel" style={{ padding: "0 20px 56px" }}>
+        <div className="rfx-large" style={{ padding: "0 24px 56px" }}>
           <div className="rfx-progression">
             <div className="rfx-progression__texte">Étape 2 sur 3</div>
             <div className="rfx-progression__piste">
@@ -111,33 +111,11 @@ export default async function EtapeRecit({
               dégonfle : on annonçait un délai opposable et le texte qui le
               fonde, les voici, avant même que la personne écrive une ligne.
               C'est aussi ce qui donne un sens au temps qu'on lui demande. */}
-          <div className="rfx-levier" style={{ marginTop: 18 }}>
-            <div className="rfx-levier__titre">{droit.exigence}</div>
-            <div className="rfx-lignes" style={{ marginTop: 12 }}>
-              {droit.delai ? (
-                <div className="rfx-ligne">
-                  <span className="rfx-ligne__cle">Délai</span>
-                  <span className="rfx-ligne__valeur rfx-chiffre" style={{ fontWeight: 700 }}>
-                    {droit.delai}
-                  </span>
-                </div>
-              ) : null}
-              {droit.fondement ? (
-                <div className="rfx-ligne">
-                  <span className="rfx-ligne__cle">Fondement</span>
-                  <span className="rfx-ligne__valeur">{droit.fondement}</span>
-                </div>
-              ) : null}
-            </div>
-            <p className="rfx-petit" style={{ marginTop: 12 }}>
-              {droit.precision}
-            </p>
-            <p className="rfx-source" style={{ marginTop: 10 }}>
-              Information générale, à adapter à votre situation. Ce fondement et ce délai seront
-              repris dans votre courrier de réclamation.
-            </p>
-          </div>
-
+          {/* Deux colonnes : le formulaire à gauche, le droit applicable en
+              appui. Il servait de préambule pleine largeur, ce qui repoussait
+              la première question sous la ligne de flottaison. */}
+          <div className="rfx-etape">
+            <div>
           <h1 className="rfx-h2" style={{ marginTop: 26 }}>
             Que s’est-il passé ?
           </h1>
@@ -314,6 +292,38 @@ export default async function EtapeRecit({
               </p>
             </div>
           </form>
+
+            </div>
+
+            <aside>
+            <div className="rfx-levier" style={{ marginTop: 18 }}>
+              <div className="rfx-levier__titre">{droit.exigence}</div>
+              <div className="rfx-lignes" style={{ marginTop: 12 }}>
+                {droit.delai ? (
+                  <div className="rfx-ligne">
+                    <span className="rfx-ligne__cle">Délai</span>
+                    <span className="rfx-ligne__valeur rfx-chiffre" style={{ fontWeight: 700 }}>
+                      {droit.delai}
+                    </span>
+                  </div>
+                ) : null}
+                {droit.fondement ? (
+                  <div className="rfx-ligne">
+                    <span className="rfx-ligne__cle">Fondement</span>
+                    <span className="rfx-ligne__valeur">{droit.fondement}</span>
+                  </div>
+                ) : null}
+              </div>
+              <p className="rfx-petit" style={{ marginTop: 12 }}>
+                {droit.precision}
+              </p>
+              <p className="rfx-source" style={{ marginTop: 10 }}>
+                Information générale, à adapter à votre situation. Ce fondement et ce délai seront
+                repris dans votre courrier de réclamation.
+              </p>
+            </div>
+            </aside>
+          </div>
 
           <p className="rfx-mention" style={{ marginTop: 24 }}>
             <Link href={`/signaler/${slug}/situation`}>← Revenir</Link>
