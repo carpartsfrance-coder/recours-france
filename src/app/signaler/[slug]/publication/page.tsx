@@ -196,8 +196,25 @@ export default async function EtapePublication({
               </span>
             </label>
 
-            <button type="submit" className="rfx-btn rfx-btn--large" style={{ marginTop: 18 }}>
-              Publier mon signalement
+            {/* Ce que publier produit, dit juste avant le bouton — il ne
+                disait rien, et « publier mon signalement » ne motive personne.
+
+                La formulation reste celle que le handoff autorise : la
+                visibilité « peut inciter l'entreprise à prendre connaissance de
+                la situation ». Ni « l'entreprise sera alertée » — nous ne lui
+                transmettons rien —, ni « cela augmente fortement vos chances »
+                — nous n'avons aucune donnée qui l'établisse, et l'affirmer
+                serait la promesse que le handoff proscrit. */}
+            <div className="rfx-bloc rfx-bloc--accent" style={{ marginTop: 22, padding: "16px 18px" }}>
+              <p className="rfx-petit" style={{ margin: 0 }}>
+                <strong>Votre problème devient public.</strong> Il apparaît sur la fiche {nom},
+                consultable par toute personne qui se renseigne sur cette entreprise — y compris par
+                elle. Cette visibilité peut l’inciter à prendre connaissance de votre situation.
+              </p>
+            </div>
+
+            <button type="submit" className="rfx-btn rfx-btn--large" style={{ marginTop: 16 }}>
+              Rendre mon problème public
             </button>
             <p className="rfx-mention" style={{ marginTop: 10, textAlign: "center" }}>
               Gratuit · sans compte · modifiable et supprimable à tout moment
