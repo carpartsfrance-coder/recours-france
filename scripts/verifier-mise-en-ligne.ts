@@ -46,6 +46,23 @@ async function main() {
       : `DEMO_BANNER=${process.env.DEMO_BANNER ?? "(absent)"} — le site annoncerait des données fictives`,
   );
 
+  // ── Forme de l'URL de base ─────────────────────────────────────────────
+  // Le bouton « copier » du tableau de bord donne l'URL entière ; à la
+  // sélection manuelle on emporte facilement « motdepasse@hote/base » sans le
+  // « postgresql://user: » qui precede. Prisma ne le dit qu'à la première
+  // requête, page par page, en pleine production.
+  const urlBase = process.env.DATABASE_URL ?? "";
+  const urlValide = /^postgres(ql)?:\/\/[^:]+:[^@]+@/.test(urlBase);
+  verifier(
+    "Forme de DATABASE_URL",
+    urlValide,
+    urlValide
+      ? "protocole, identifiant et mot de passe présents"
+      : urlBase
+        ? `commence par « ${urlBase.slice(0, 24)}… » — il manque le préfixe postgresql://utilisateur:`
+        : "absente",
+  );
+
   // ── Secrets ────────────────────────────────────────────────────────────
   const secret = process.env.APP_SECRET ?? "";
   verifier(
@@ -66,29 +83,34 @@ async function main() {
   );
 
   // ── Données de démonstration ───────────────────────────────────────────
-  const fictifs = await prisma.signalement.count({
-    where: {
-      OR: [
-        { email: { endsWith: "@example.com" } },
-        { email: { in: ["k@gmail.com", "ki@gmail.com", "killian@gmail.com", "killian.belabbes@gmail.com"] } },
-      ],
-    },
-  });
-  verifier(
-    "Signalements de démonstration",
-    fictifs === 0,
-    fictifs === 0
-      ? "aucun"
-      : `${fictifs} reproche(s) inventé(s) visant des sociétés réelles — npm run purger:demo -- --appliquer`,
-  );
+  // Les lectures en base sont isolées : une base injoignable est un résultat
+  // de contrôle, pas une raison d'interrompre les autres. Sans cela le script
+  // mourait sur la première requête — et le contrôle de forme d'URL
+  // ci-dessus, écrit précisément pour diagnostiquer ce cas, ne s'affichait
+  // jamais.
+  try {
+    const fictifs = await prisma.signalement.count({
+      where: {
+        OR: [
+          { email: { endsWith: "@example.com" } },
+          { email: { in: ["k@gmail.com", "ki@gmail.com", "killian@gmail.com", "killian.belabbes@gmail.com"] } },
+        ],
+      },
+    });
+    verifier(
+      "Signalements de démonstration",
+      fictifs === 0,
+      fictifs === 0
+        ? "aucun"
+        : `${fictifs} reproche(s) inventé(s) visant des sociétés réelles — npm run purger:demo -- --appliquer`,
+    );
 
-  // ── Contenu réel ───────────────────────────────────────────────────────
-  const entreprises = await prisma.entreprise.count();
-  verifier(
-    "Annuaire",
-    entreprises > 1_000_000,
-    `${entreprises.toLocaleString("fr-FR")} fiches`,
-  );
+    // ── Contenu réel ─────────────────────────────────────────────────────
+    const entreprises = await prisma.entreprise.count();
+    verifier("Annuaire", entreprises > 1_000_000, `${entreprises.toLocaleString("fr-FR")} fiches`);
+  } catch {
+    verifier("Base de données", false, "injoignable — les contrôles de contenu n'ont pas pu s'exécuter");
+  }
 
   // ── Restitution ────────────────────────────────────────────────────────
   const largeur = Math.max(...controles.map((c) => c.titre.length));
