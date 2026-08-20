@@ -144,7 +144,7 @@ export default async function Publie({
                     </p>
                     {jeton ? (
                       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
-                        <Link href={`/mon-espace/dossier/${jeton}/modele-relance`} className="rfx-btn">
+                        <Link href={`/mon-espace/dossier/${jeton}/courrier`} className="rfx-btn">
                           Voir mon courrier
                         </Link>
                       </div>
