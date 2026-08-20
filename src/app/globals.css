@@ -2900,6 +2900,9 @@ button {
 }
 @media (max-width: 520px) {
   .rfx-parcours { grid-template-columns: 1fr; }
+  /* La bande garde son fond mais resserre ses marges : 28 px de chaque côté
+     sur un écran de 375 pris deux fois, il ne reste plus de place au texte. */
+  .rfx--doux .rfx-parcours { padding: 22px 16px; }
   /* La scène à gauche, le texte à droite. Sans le placement explicite, la
      description retombait dans la colonne de 96 px et s'y comprimait sur cinq
      lignes — l'étape compte trois enfants, pas deux. */
@@ -2978,3 +2981,46 @@ button {
 .rfx--doux .rfx-bloc { padding: 24px 26px; }
 .rfx--doux .rfx-parcours { gap: 32px 24px; }
 .rfx--doux .rfx-question { padding-top: 40px; }
+
+/* ── Ce que SignalConso fait, et que nous ne faisions pas ─────────────────
+   Mesuré sur leur page : #000091 pour le bleu, #E3E3FD pour les encarts,
+   #F5F5FE pour la bande de pied — et un rayon de 0 pixel partout, boutons
+   compris. Leur douceur ne vient donc pas de l'arrondi mais de deux choses :
+   de larges zones teintées qui rythment la page, et des choix présentés en
+   cartes bordées plutôt qu'en lignes séparées par un filet.
+
+   Le bleu France reste hors d'atteinte : c'est l'élément identifiant du
+   Système de Design de l'État. Nous gardons le nôtre et prenons le procédé. */
+
+/* Une bande teintée derrière le parcours, au lieu du blanc continu.
+   Deux tons plus clair que les cercles des scènes : à teinte égale, les
+   illustrations se dissolvaient dans le fond et perdaient leur assise. */
+.rfx--doux .rfx-parcours {
+  background: #f2f6ff;
+  border-radius: 8px;
+  padding: 32px 28px;
+  margin-top: 30px;
+}
+
+/* Les situations deviennent des cartes : bordées, aérées, et nettement
+   sélectionnées. Une ligne séparée par un filet se lit comme un tableau ;
+   une carte se lit comme un choix. */
+.rfx--doux .rfx-situation {
+  border: 1px solid var(--x-bord);
+  border-bottom: 1px solid var(--x-bord);
+  background: #fff;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+.rfx--doux .rfx-situation + .rfx-situation { margin-top: 8px; }
+.rfx--doux .rfx-situation:hover { border-color: var(--x-bleu); }
+.rfx--doux .rfx-situation:has(input[name="situation"]:checked),
+.rfx--doux .rfx-situation:has(input[name="resultat"]:checked),
+.rfx--doux .rfx-situation:has(input[name="situation"]:checked) {
+  border-color: var(--x-bleu);
+  border-width: 2px;
+  background: #fbfcff;
+}
+.rfx--doux .rfx-situation__label:hover { background: transparent; }
+
+/* Les encarts d'information reprennent la teinte plutôt que le gris. */
+.rfx--doux .rfx-bloc--alt { background: #f4f7fd; border-color: #dde5f5; }

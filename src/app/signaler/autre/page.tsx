@@ -57,7 +57,7 @@ export default async function CibleLibre({
       entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }}
       piedComplet={false}
     >
-      <div className="rfx">
+      <div className="rfx rfx--doux">
         <div className="rfx-tunnel" style={{ padding: "36px 20px 56px" }}>
           <h1 className="rfx-h2">Quelle entreprise ou boutique ?</h1>
           <p className="rfx-texte" style={{ marginTop: 10 }}>

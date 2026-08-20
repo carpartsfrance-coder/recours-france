@@ -70,7 +70,7 @@ export default async function Signaler({
       entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }}
       fil={[{ libelle: "Signaler un problème" }]}
     >
-      <div className="rfx">
+      <div className="rfx rfx--doux">
         <div className="rfx-tunnel" style={{ padding: "36px 20px 56px" }}>
           <h1 className="rfx-h2">Avec quelle entreprise avez-vous un problème ?</h1>
           <p className="rfx-texte" style={{ marginTop: 10 }}>
