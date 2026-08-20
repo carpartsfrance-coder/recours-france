@@ -222,16 +222,23 @@ export default async function EntreeTunnel({
                   lui-même fait courir les délais et ouvre la médiation. Le
                   courrier d'un intermédiaire n'a pas cet effet. */}
               <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 16 }}>
+                {/* Écrit pour être lu par quelqu'un d'énervé, pas par un
+                    juriste : « faire courir les délais » et « saisine du
+                    médiateur » sont du vocabulaire de métier, et personne ne
+                    parle comme ça. Phrases courtes, mots courants, et la seule
+                    chose qui compte pour lui — l'entreprise est obligée de
+                    répondre. */}
                 <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Pourquoi c’est vous qui envoyez
+                  La lettre part de vous, et c’est ce qui compte
                 </h3>
                 <p className="rfx-petit" style={{ marginTop: 10 }}>
-                  Une réclamation adressée par vous-même fait courir les délais légaux et ouvre la
-                  saisine du médiateur. Le courrier d’un intermédiaire n’a pas cet effet.
+                  C’est votre réclamation, signée de votre main, qui oblige l’entreprise à vous
+                  répondre dans un délai précis. Et si elle ne bouge pas, c’est elle aussi qui vous
+                  ouvre le recours gratuit au médiateur.
                 </p>
                 <p className="rfx-petit" style={{ marginTop: 8 }}>
-                  Nous le rédigeons, avec le texte applicable et le délai qu’il impose. Vous n’avez
-                  qu’à le signer et le poster — c’est ce geste-là qui a une portée juridique.
+                  Nous l’écrivons pour vous : ce que dit la loi, ce que vous demandez, la date
+                  limite. Vous n’avez plus qu’à la signer et la poster.
                 </p>
               </div>
             </aside>
