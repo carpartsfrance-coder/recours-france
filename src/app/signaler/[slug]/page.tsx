@@ -211,22 +211,28 @@ export default async function EntreeTunnel({
                 </p>
               </div>
 
+              {/* Ce bloc listait ce que la plateforme ne fait pas — trois
+                  négations à l'instant de décider, qui font conclure que ça ne
+                  sert à rien. L'avertissement figure déjà dans le bandeau de
+                  chaque page et dans le pied : le répéter ici ne protégeait
+                  rien de plus et coûtait des dépôts.
+
+                  À la place, la limite est retournée en argument, et c'en est
+                  un vrai : une réclamation adressée par le consommateur
+                  lui-même fait courir les délais et ouvre la médiation. Le
+                  courrier d'un intermédiaire n'a pas cet effet. */}
               <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 16 }}>
                 <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Ce que nous ne faisons pas
+                  Pourquoi c’est vous qui envoyez
                 </h3>
-                <ul className="rfx-petit" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
-                  <li style={{ marginBottom: 6 }}>
-                    Nous ne transmettons pas votre réclamation au professionnel.
-                  </li>
-                  <li style={{ marginBottom: 6 }}>Nous ne négocions pas et ne représentons personne.</li>
-                  <li>Nous ne sommes ni un avocat, ni un médiateur, ni un service de l’État.</li>
-                </ul>
-                {cible.entrepriseId ? (
-                  <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", marginTop: 14, paddingTop: 12 }}>
-                    Votre problème apparaît en revanche sur la fiche publique de {cible.nom}.
-                  </p>
-                ) : null}
+                <p className="rfx-petit" style={{ marginTop: 10 }}>
+                  Une réclamation adressée par vous-même fait courir les délais légaux et ouvre la
+                  saisine du médiateur. Le courrier d’un intermédiaire n’a pas cet effet.
+                </p>
+                <p className="rfx-petit" style={{ marginTop: 8 }}>
+                  Nous le rédigeons, avec le texte applicable et le délai qu’il impose. Vous n’avez
+                  qu’à le signer et le poster — c’est ce geste-là qui a une portée juridique.
+                </p>
               </div>
             </aside>
           </div>
