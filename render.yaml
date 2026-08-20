@@ -1,0 +1,108 @@
+# Déploiement Render.
+#
+# Le port n'est jamais fixé ici : Render l'attribue par la variable PORT, et
+# « next start » la lit seul. Un port codé en dur — c'était le cas — fait
+# déclarer le service en échec, faute de réponse sur celui que Render surveille.
+#
+# La base n'est pas décrite dans ce fichier. Treize gigaoctets de données ne se
+# recréent pas à chaque déploiement, et une base déclarée ici serait liée au
+# cycle de vie du service. Créez-la à part, puis collez son URL interne dans
+# DATABASE_URL.
+
+services:
+  - type: web
+    name: recours-france
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    # /api/vivant, surtout pas /api/sante : cette dernière répond 503 dès
+    # qu'une tâche planifiée est en retard — bon pour une alerte, désastreux
+    # pour une sonde, qui redémarrerait un service en parfait état de marche.
+    healthCheckPath: /api/vivant
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Renseignées dans l'interface, jamais ici : ce fichier est versionné.
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: APP_URL
+        value: https://recours-france.onrender.com
+      - key: MAIL_ENABLED
+        value: "true"
+      - key: MAIL_FROM
+        value: contact@recoursfrance.fr
+      # Le bandeau « démonstration — données fictives » doit disparaître.
+      - key: DEMO_BANNER
+        value: "false"
+      # La détection de site interroge des serveurs tiers : à activer une fois
+      # le service stable, pas au premier déploiement.
+      - key: ENRICHISSEMENT_SITE_ACTIF
+        value: "false"
+
+# ── Tâches planifiées ────────────────────────────────────────────────────
+# Elles se surveillent mutuellement : une tâche qui ne s'exécute pas est une
+# anomalie, et /api/sante répond 503 quand une chaîne prend du retard.
+#
+# Les décomptes de l'annuaire balaient treize millions de lignes : une fois par
+# nuit suffit, le répertoire Sirene n'étant publié qu'une fois par mois.
+  - type: cron
+    name: recours-compteurs
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    schedule: "15 3 * * *"
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npm run compteurs
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+  - type: cron
+    name: recours-relances
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    schedule: "30 7 * * *"
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npm run relances
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_ENABLED
+        value: "true"
+
+  - type: cron
+    name: recours-contestations
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    schedule: "45 7 * * *"
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npm run contestations
+    envVars:
+      - key: DATABASE_URL
+        sync: false
