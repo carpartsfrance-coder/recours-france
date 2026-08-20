@@ -4,7 +4,7 @@ import { Page } from "@/components/chrome";
 import { resoudreCible } from "@/lib/cible";
 import { SITUATIONS, situationParCle } from "@/lib/tunnel";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
-import { delaiCourtPourMotif } from "@/lib/droits";
+import { ESCALIER, delaiCourtPourMotif } from "@/lib/droits";
 import { PARCOURS } from "@/components/tunnel/vignettes";
 
 /**
@@ -239,6 +239,41 @@ export default async function EntreeTunnel({
                 <p className="rfx-petit" style={{ marginTop: 8 }}>
                   Nous l’écrivons pour vous : ce que dit la loi, ce que vous demandez, la date
                   limite. Vous n’avez plus qu’à la signer et la poster.
+                </p>
+              </div>
+              {/* L'escalier des recours, avant le dépôt et non après. Il
+                  répond à la seule vraie peur — « et s'ils m'ignorent
+                  encore ? » — et le prix de chaque marche compte autant que la
+                  marche elle-même. */}
+              <div className="rfx-bloc" style={{ marginTop: 16 }}>
+                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
+                  Et s’ils ne répondent pas ?
+                </h3>
+                <p className="rfx-petit" style={{ marginTop: 8 }}>
+                  Il existe une suite, et vous n’êtes pas obligé de la payer.
+                </p>
+                <div className="rfx-lignes" style={{ marginTop: 12 }}>
+                  {ESCALIER.map((e) => (
+                    <div key={e.etape} className="rfx-ligne" style={{ display: "block", padding: "10px 0" }}>
+                      <span style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>{e.etape}</span>
+                        <span
+                          className="rfx-chiffre"
+                          style={{ flex: "none", fontSize: 12.5, color: "var(--x-bleu)", fontWeight: 700 }}
+                        >
+                          {e.cout}
+                        </span>
+                      </span>
+                      <span className="rfx-source" style={{ display: "block", marginTop: 3 }}>
+                        {e.detail}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="rfx-source" style={{ marginTop: 10 }}>
+                  Vous pouvez aussi signaler l’entreprise sur SignalConso, le service public de la
+                  répression des fraudes. Cette démarche alerte l’administration ; elle ne règle pas
+                  votre litige et se mène en parallèle.
                 </p>
               </div>
             </aside>

@@ -148,3 +148,40 @@ const DELAI_PAR_MOTIF: Record<string, string> = {
 export function delaiCourtPourMotif(motif: string): string | null {
   return DELAI_PAR_MOTIF[motif] ?? null;
 }
+
+/**
+ * L'escalier des recours, du plus simple au dernier.
+ *
+ * C'est ce qui répond à la seule vraie peur : « et s'ils m'ignorent encore ? »
+ * Savoir qu'il existe une suite, et qu'elle est gratuite jusqu'au bout ou
+ * presque, change le sentiment d'un dossier. Cet enchaînement figurait déjà
+ * dans le plan d'action — mais après le dépôt, c'est-à-dire trop tard pour
+ * décider quelqu'un.
+ *
+ * SignalConso est délibérément hors de cette liste : il alerte
+ * l'administration et ne règle pas le litige individuel. Le présenter comme
+ * une marche vers le remboursement serait trompeur ; il est mentionné à part,
+ * comme une démarche parallèle.
+ */
+export const ESCALIER = [
+  {
+    etape: "Réclamation écrite",
+    cout: "Gratuit",
+    detail: "Ce que vous préparez ici. Elle ouvre tout le reste.",
+  },
+  {
+    etape: "Médiateur de la consommation",
+    cout: "Gratuit",
+    detail: "Après une réclamation restée sans réponse satisfaisante.",
+  },
+  {
+    etape: "Conciliateur de justice",
+    cout: "Gratuit",
+    detail: "Un auxiliaire de justice bénévole, saisi sans formalité.",
+  },
+  {
+    etape: "Tribunal judiciaire",
+    cout: "Sans avocat sous 5 000 €",
+    detail: "Votre dossier et vos pièces sont réutilisables en l’état.",
+  },
+] as const;
