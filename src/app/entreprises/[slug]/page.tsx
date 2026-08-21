@@ -12,6 +12,7 @@ import {
   organisationJsonLd,
 } from "@/components/donnees-structurees";
 import { mediateurPublie } from "@/lib/mediation";
+import { ficheIndexable } from "@/lib/indexation";
 import { BENEFICES, MOTIFS_FICHE, etapesPlan, faqRefonte } from "@/lib/refonte";
 import { OuEnEtesVous } from "@/components/refonte/ou-en-etes-vous";
 import {
@@ -86,6 +87,11 @@ export async function generateMetadata({
   const nom = base.denomination;
 
   return {
+    // Une société radiée ou une société civile n'a pas à paraître dans les
+    // résultats : la page lui demande de réagir à un litige de consommation,
+    // ce qui n'a pas de sens dans le premier cas et est impossible dans le
+    // second. Le `follow` reste, pour que le maillage traverse la page.
+    ...(ficheIndexable(base) ? {} : { robots: { index: false, follow: true } }),
     title: `${nom} : avis, problèmes, remboursements et litiges`,
     description:
       total > 0

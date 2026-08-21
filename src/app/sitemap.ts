@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { OU_INDEXABLE, ouPlanDeSite } from "@/lib/indexation";
 import { DEPARTEMENTS, SECTEURS, cheminCommune, cheminDepartement, cheminSecteur } from "@/lib/maillage";
 import {
   PAR_FICHIER,
@@ -121,7 +122,7 @@ export default async function sitemap({
   // d'exploration est fini : autant qu'il commence par ce qui a du contenu.
   if (rangDemande === RANG_SIGNAL) {
     const fiches = await prisma.entreprise.findMany({
-      where: { OR: [{ signalements: { some: {} } }, { siteWeb: { not: null } }] },
+      where: { ...OU_INDEXABLE, OR: [{ signalements: { some: {} } }, { siteWeb: { not: null } }] },
       select: { slug: true, majLe: true },
       orderBy: { majLe: "desc" },
       take: PAR_FICHIER,
@@ -158,7 +159,11 @@ export default async function sitemap({
     // Encadrement textuel plutôt que `left(siren,4) = p` : seule cette forme
     // se résout par l'index unique du SIREN.
     const fiches = await prisma.entreprise.findMany({
-      where: { siren: { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") } },
+      // Le palier d'ouverture s'ajoute à l'encadrement par préfixe : le plan
+      // de site ne propose que ce qu'on veut faire explorer maintenant. Les
+      // fiches des paliers suivants restent indexables et atteignables par le
+      // maillage — elles attendent leur tour, elles ne sont pas exclues.
+      where: { siren: { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") }, ...ouPlanDeSite() },
       select: { slug: true, majLe: true },
       take: PAR_FICHIER,
     });

@@ -78,6 +78,12 @@ services:
       # le service stable, pas au premier déploiement.
       - key: ENRICHISSEMENT_SITE_ACTIF
         value: "false"
+      # Palier d'ouverture du plan de site : 1 = les ~86 000 fiches portant un
+      # signal réel, 2 = les ~3,26 M en secteur grand public, 3 = toutes les
+      # actives. On élargit au vu de la Search Console, jamais au calendrier —
+      # d'où une variable, modifiable sans redéployer de code.
+      - key: SEO_PALIER
+        value: "1"
 
       # ── Mentions légales ──────────────────────────────────────────────
       # Obligatoires (LCEN art. 6 III, code de commerce art. R123-237), et
