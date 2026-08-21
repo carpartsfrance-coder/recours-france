@@ -52,12 +52,15 @@ async function main() {
   // « postgresql://user: » qui precede. Prisma ne le dit qu'à la première
   // requête, page par page, en pleine production.
   const urlBase = process.env.DATABASE_URL ?? "";
-  const urlValide = /^postgres(ql)?:\/\/[^:]+:[^@]+@/.test(urlBase);
+  // Le protocole et un hôte suffisent : une URL locale légitime n'a pas de mot
+  // de passe (authentification par confiance), et l'exiger la rejetait à tort.
+  // Ce que le contrôle traque, c'est le collage tronqué qui perd le préfixe.
+  const urlValide = /^postgres(ql)?:\/\/[^@\s]*@?[^@\s]+/.test(urlBase);
   verifier(
     "Forme de DATABASE_URL",
     urlValide,
     urlValide
-      ? "protocole, identifiant et mot de passe présents"
+      ? "protocole et hôte présents"
       : urlBase
         ? `commence par « ${urlBase.slice(0, 24)}… » — il manque le préfixe postgresql://utilisateur:`
         : "absente",
@@ -108,6 +111,21 @@ async function main() {
     // ── Contenu réel ─────────────────────────────────────────────────────
     const entreprises = await prisma.entreprise.count();
     verifier("Annuaire", entreprises > 1_000_000, `${entreprises.toLocaleString("fr-FR")} fiches`);
+
+    // ── Noms de personnes physiques ──────────────────────────────────────
+    // L'import de masse écarte les entrepreneurs individuels : leur identité
+    // est celle d'une personne privée. La création à la volée les laissait
+    // passer, et publiait un nom propre sur une page intitulée « avis,
+    // problèmes, litiges ». Le trou est bouché, restent les fiches créées
+    // avant : elles ne se suppriment pas d'elles-mêmes.
+    const physiques = await prisma.entreprise.count({ where: { categorieJuridique: "1000" } });
+    verifier(
+      "Personnes physiques",
+      physiques === 0,
+      physiques === 0
+        ? "aucune"
+        : `${physiques} fiche(s) portant le nom d'un particulier — à supprimer avant publication`,
+    );
   } catch {
     verifier("Base de données", false, "injoignable — les contrôles de contenu n'ont pas pu s'exécuter");
   }

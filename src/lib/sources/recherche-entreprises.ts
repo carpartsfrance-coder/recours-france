@@ -163,7 +163,13 @@ export function versEntreprise(r: ResultatRecherche) {
 
   return {
     siren: r.siren,
-    denomination: (r.nom_raison_sociale || r.nom_complet || "").trim().toUpperCase(),
+    // Jamais `nom_complet` en repli. Pour un entrepreneur individuel (nature
+    // juridique 1000) l'API ne renvoie que ce champ, et c'est le nom d'une
+    // personne physique. L'import de masse les écarte explicitement
+    // (scripts/import-entreprises.ts:145) ; ce chemin-ci ne le faisait pas et
+    // publiait donc l'identité d'un particulier sur une page indexable
+    // intitulée « avis, problèmes, remboursements et litiges ».
+    denomination: (r.nom_raison_sociale ?? "").trim().toUpperCase(),
     enseigne: enseigne && enseigne !== r.nom_raison_sociale ? enseigne : null,
     sigle: r.sigle,
     siretSiege: siege.siret ?? null,

@@ -93,6 +93,11 @@ export async function synchroniserEntreprise(
   }
 
   const champs = recherche.versEntreprise(base);
+  // Une dénomination vide signe un entrepreneur individuel : l'identité est
+  // celle d'une personne physique, et elle n'a rien à faire sur une fiche
+  // publique intitulée « avis, problèmes, litiges ». Le garde-fou est posé ici,
+  // au point de création, pour qu'aucune source future ne le contourne.
+  if (!champs.denomination) return null;
   if (!champs.formeJuridique) champs.formeJuridique = familleJuridique(champs.categorieJuridique);
 
   const existante = await prisma.entreprise.findUnique({ where: { siren } });
