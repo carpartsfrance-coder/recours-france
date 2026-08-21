@@ -26,7 +26,12 @@ function resoudre(): string {
     return "http://localhost:3200";
   }
 
-  if (process.env.NODE_ENV === "production" && !brut.startsWith("https://")) {
+  // `next build` s'exécute avec NODE_ENV=production, y compris sur un poste de
+  // travail où APP_URL pointe légitimement sur localhost. Refuser cette
+  // adresse-là cassait la compilation locale sans rien protéger : ce que le
+  // contrôle traque, c'est une adresse publique servie en clair.
+  const local = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(brut);
+  if (process.env.NODE_ENV === "production" && !brut.startsWith("https://") && !local) {
     throw new Error(`APP_URL doit commencer par https:// en production, reçu « ${brut} ».`);
   }
 
