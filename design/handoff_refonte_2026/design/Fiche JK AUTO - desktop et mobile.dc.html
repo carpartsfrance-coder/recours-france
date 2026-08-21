@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EDEFF3;font-family:'Public Sans','Helvetica Neue',Helvetica,Arial,sans-serif;color:#253046}
+h1,h2,p{margin:0}
+a{color:#14448C}
+a:hover{color:#0F3572}
+</style>
+</helmet>
+<div style="padding:40px clamp(16px,3vw,48px) 64px">
+  <div style="max-width:1720px;margin:0 auto">
+    <h1 style="font-size:19px;font-weight:800;color:#0E2A56;letter-spacing:-0.01em">Fiche entreprise JK AUTO — nouvelle maquette</h1>
+    <p style="margin-top:6px;font-size:14px;color:#5A6579;max-width:80ch">Même page, deux largeurs. Le contenu est identique : la mise en page est fluide (grille auto-ajustée, hero empilable, navigation de sections défilable horizontalement). Faites défiler chaque cadre indépendamment.</p>
+
+    <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+      <div style="flex:1 1 900px;min-width:min(100%,760px);display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="font:700 11px/1 'Public Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#0E2A56;border-radius:3px;padding:5px 8px">Desktop</span>
+          <span style="font-size:12.5px;color:#5A6579">1280 px de large</span>
+        </div>
+        <div style="background:#fff;border:1px solid #D5DAE3;border-radius:5px;overflow:hidden;box-shadow:0 1px 4px rgba(14,42,86,.07)">
+          <div style="display:flex;align-items:center;gap:7px;padding:9px 12px;background:#F4F6F9;border-bottom:1px solid #E2E6ED">
+            <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+            <span style="margin-left:10px;flex:1;max-width:520px;font-size:11.5px;color:#7A8496;background:#fff;border:1px solid #E2E6ED;border-radius:3px;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">recours-france.fr/entreprises/jk-auto-817383383</span>
+          </div>
+          <div style="height:860px;overflow:auto">
+            <dc-import name="Fiche JK AUTO" hint-size="100%,860px"></dc-import>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="font:700 11px/1 'Public Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#0E2A56;border-radius:3px;padding:5px 8px">Mobile</span>
+          <span style="font-size:12.5px;color:#5A6579">390 px de large</span>
+        </div>
+        <div style="width:412px;background:#12181F;border-radius:34px;padding:11px;box-shadow:0 2px 10px rgba(14,42,86,.14)">
+          <div style="width:390px;height:838px;background:#fff;border-radius:24px;overflow:hidden;position:relative">
+            <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:#12181F;border-radius:12px;z-index:60"></div>
+            <div style="height:100%;overflow:auto">
+              <div style="height:34px;background:#0E2A56"></div>
+              <dc-import name="Fiche JK AUTO" compact="{{ true }}" situation-par-defaut="sans-reponse" hint-size="390px,780px"></dc-import>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#fff;color:#253046;font-family:'Public Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+a{color:#14448C}
+a:hover{color:#0F3572}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+ul,ol{padding:0;list-style:none}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="container-type:inline-size;background:#fff;overflow-x:hidden">
+
+  <div style="background:#0E2A56;color:#C7D6EC;font-size:13px;line-height:1.45;padding:10px 0">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px);display:flex;align-items:center;gap:9px">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#8FB2E0" stroke-width="1.6" style="flex:none"><circle cx="10" cy="10" r="7.5"></circle><path d="M10 6.4v.2"></path><path d="M10 9.4v4.2"></path></svg>
+      <span>Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec l’État.</span>
+    </div>
+  </div>
+
+  <header style="border-bottom:1px solid #E4E9F1;background:#fff">
+    <div style="max-width:1160px;margin:0 auto;padding:14px clamp(16px,2.2cqw,28px);display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="#" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit">
+        <span style="width:38px;height:38px;flex:none;border:1px solid #C9D8EE;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;letter-spacing:.02em;color:#14448C">RF</span>
+        <span style="display:flex;flex-direction:column;line-height:1.15">
+          <span style="font-weight:700;font-size:16px;color:#0E2A56">Recours France</span>
+          <span style="font-size:12.5px;color:#5A6579">Observatoire des problèmes consommateurs</span>
+        </span>
+      </a>
+      <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+        <nav style="display:flex;align-items:center;gap:26px">
+          <a href="#" style="font-size:14px;font-weight:500;color:#253046;text-decoration:none" style-hover="color:#14448C">Annuaire</a>
+          <a href="#" style="font-size:14px;font-weight:500;color:#253046;text-decoration:none" style-hover="color:#14448C">Boutiques en ligne</a>
+          <a href="#" style="font-size:14px;font-weight:500;color:#253046;text-decoration:none" style-hover="color:#14448C">Mon espace</a>
+          <a href="#" style="font-size:14px;font-weight:500;color:#253046;text-decoration:none" style-hover="color:#14448C">Aide</a>
+        </nav>
+      </sc-if>
+      <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
+        <button type="button" aria-label="Ouvrir le menu" style="width:46px;height:46px;flex:none;border:1px solid #D8DFEA;background:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="20" height="20" viewBox="0 0 20 20" stroke="#0E2A56" stroke-width="1.7"><path d="M3 6h14"></path><path d="M3 10h14"></path><path d="M3 14h14"></path></svg>
+        </button>
+      </sc-if>
+    </div>
+  </header>
+
+  <div style="background:#F7F9FC;border-bottom:1px solid #E4E9F1">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px);font-size:13px;color:#5A6579;white-space:nowrap;overflow-x:auto;display:flex;align-items:center;gap:5px">
+      <a href="#" style="color:#5A6579;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding:0 2px">Accueil</a> <span style="color:#8B96A8">›</span>
+      <a href="#" style="color:#5A6579;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding:0 2px">Annuaire</a> <span style="color:#8B96A8">›</span>
+      <a href="#" style="color:#5A6579;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding:0 2px">Automobile</a> <span style="color:#8B96A8">›</span>
+      <a href="#" style="color:#5A6579;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding:0 2px">Bouches-du-Rhône</a> <span style="color:#8B96A8">›</span>
+      <span style="color:#253046;display:inline-flex;align-items:center;min-height:44px">JK AUTO</span>
+    </div>
+  </div>
+
+  <section style="background:#F4F7FC;border-bottom:1px solid #E1E8F3">
+    <div style="max-width:1160px;margin:0 auto;padding:clamp(28px,3.4cqw,52px) clamp(16px,2.2cqw,28px) clamp(30px,3.4cqw,52px);display:flex;flex-wrap:wrap;gap:clamp(24px,3cqw,48px);align-items:flex-start">
+
+      <div style="flex:1 1 460px;min-width:min(100%,300px)">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#14448C;background:#E7EFFA;border:1px solid #CFDFF3;border-radius:2px;padding:4px 9px">Automobile et deux-roues</span>
+          <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5A6579;background:#fff;border:1px solid #DDE3EC;border-radius:2px;padding:4px 9px">Fos-sur-Mer</span>
+          <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5A6579;background:#fff;border:1px solid #DDE3EC;border-radius:2px;padding:4px 9px">Fiche non revendiquée</span>
+        </div>
+
+        <h1 style="font-size:clamp(26px,2.4cqw + 10px,42px);line-height:1.14;letter-spacing:-0.017em;font-weight:800;color:#0E2A56;max-width:16ch">Un problème avec JK AUTO ? Rendez-le visible pour inciter l’entreprise à réagir.</h1>
+
+        <p style="margin-top:16px;font-size:clamp(15.5px,.6cqw + 9px,17.5px);line-height:1.55;color:#3C4759;max-width:52ch">Publiez votre situation sur la fiche de JK AUTO, préparez votre réclamation écrite et suivez les prochaines démarches adaptées à votre litige.</p>
+
+        <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px">
+          <a href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:0 26px;background:#14448C;color:#fff;border:1px solid #14448C;border-radius:3px;font-weight:700;font-size:16px;text-decoration:none" style-hover="background:#0F3572;border-color:#0F3572;color:#fff;text-decoration:none">
+            Rendre mon litige visible
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </a>
+          <a href="{{ secondaryHref }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 22px;background:#fff;color:#14448C;border:1px solid #B9CDEA;border-radius:3px;font-weight:600;font-size:15.5px;text-decoration:none" style-hover="background:#EEF3FA;border-color:#14448C;color:#0F3572;text-decoration:none">{{ secondaryCta }}</a>
+        </div>
+
+        <p style="margin-top:13px;font-size:14px;color:#5A6579">Gratuit · vous relisez tout avant publication · justificatifs facultatifs</p>
+
+      </div>
+
+      <aside style="flex:1 1 300px;min-width:min(100%,280px);background:#fff;border:1px solid #DDE3EC;border-radius:4px">
+        <div style="padding:14px 20px;border-bottom:1px solid #E4E9F1;background:#FBFCFE">
+          <h2 style="font-size:15.5px;font-weight:700;color:#0E2A56">Ce que vous obtenez</h2>
+        </div>
+        <ul style="padding:6px 20px 18px">
+          <li style="display:flex;gap:13px;padding:14px 0;border-bottom:1px solid #EEF1F6">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6" style="flex:none;margin-top:2px"><path d="M1.8 12S5.5 5.5 12 5.5 22.2 12 22.2 12 18.5 18.5 12 18.5 1.8 12 1.8 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <div>
+              <div style="font-weight:600;color:#0E2A56;line-height:1.35">Votre litige visible publiquement</div>
+              <div style="font-size:14px;color:#5A6579;line-height:1.45;margin-top:3px">Consultable sur la fiche de JK AUTO après modération, par les consommateurs recherchant cette entreprise.</div>
+            </div>
+          </li>
+          <li style="display:flex;gap:13px;padding:14px 0;border-bottom:1px solid #EEF1F6">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6" style="flex:none;margin-top:2px"><path d="M5.5 2.8h9L18.5 7v14.2h-13Z"></path><path d="M14.2 2.8V7h4.3"></path><path d="M8.4 12.4h7.2"></path><path d="M8.4 16.2h4.8"></path></svg>
+            <div>
+              <div style="font-weight:600;color:#0E2A56;line-height:1.35">Une réclamation prête à envoyer</div>
+              <div style="font-size:14px;color:#5A6579;line-height:1.45;margin-top:2px">Rédigée selon votre situation. Vous la relisez et restez l’expéditeur.</div>
+            </div>
+          </li>
+          <li style="display:flex;gap:13px;padding:14px 0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 6.8V12l3.4 2.1"></path></svg>
+            <div>
+              <div style="font-weight:600;color:#0E2A56;line-height:1.35">Les prochaines étapes et échéances</div>
+              <div style="font-size:14px;color:#5A6579;line-height:1.45;margin-top:2px">Les démarches sont présentées dans l’ordre selon votre situation.</div>
+            </div>
+          </li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <nav style="position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #E4E9F1;box-shadow:0 1px 3px rgba(14,42,86,.05)">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px);display:flex;align-items:center;gap:6px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">
+      <a href="#probleme" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Mon problème</a>
+      <a href="#signalements" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Signalements</a>
+      <a href="#demarches" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Démarches</a>
+      <a href="#contact" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Contact et médiateur</a>
+      <a href="#informations" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Informations</a>
+      <a href="#faq" style="flex:none;padding:15px 12px;font-size:14px;font-weight:600;color:#3C4759;text-decoration:none;border-bottom:2px solid transparent" style-hover="color:#14448C;border-bottom-color:#B9CDEA;text-decoration:none">Méthodologie et FAQ</a>
+      <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+        <a href="#" style="flex:none;margin-left:auto;padding:9px 16px;font-size:14px;font-weight:600;color:#fff;background:#14448C;border-radius:3px;text-decoration:none" style-hover="background:#0F3572;color:#fff;text-decoration:none">Rendre mon litige visible</a>
+      </sc-if>
+    </div>
+  </nav>
+
+  <section id="probleme" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Quel problème rencontrez-vous ?</h2>
+      <p style="margin-top:9px;color:#5A6579;max-width:62ch">Choisissez la situation la plus proche de la vôtre. Les démarches et la réclamation sont adaptées à votre choix.</p>
+
+      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:14px">
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><rect x="2.6" y="6" width="18.8" height="12" rx="1.6"></rect><circle cx="12" cy="12" r="2.6"></circle></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">Remboursement non reçu</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Rétractation, retour ou annulation : la somme n’a pas été recréditée.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><path d="M3 7.6 12 3l9 4.6v8.8L12 21l-9-4.6Z"></path><path d="M3 7.6 12 12l9-4.4"></path><path d="M12 12v9"></path></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">Commande non reçue</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Colis jamais livré, livraison annoncée mais absente, retard important.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><path d="M3.4 5.4h17.2v11.2H9.2L3.4 20.6Z"></path><path d="M7.6 9.4h8.8"></path><path d="M7.6 12.8h5.6"></path></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">SAV ou service après-vente</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Aucune réponse, prise en charge refusée ou intervention sans suite.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><path d="M12 3.4 21.6 20H2.4Z"></path><path d="M12 9.6v4.4"></path><path d="M12 16.8v.2"></path></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">Produit défectueux ou garantie</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Panne, défaut de conformité ou refus d’appliquer la garantie légale.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><rect x="2.6" y="5" width="18.8" height="14" rx="1.6"></rect><path d="M2.6 9.6h18.8"></path><path d="M6.4 14.6h4"></path></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">Résiliation ou prélèvement</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Résiliation non prise en compte ou prélèvement que vous contestez.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+
+        <a href="#demarches" style="display:flex;flex-direction:column;gap:10px;min-height:150px;padding:20px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;text-decoration:none;color:inherit;transition:border-color .12s,background .12s,transform .12s" style-hover="border-color:#14448C;background:#F7FAFE;transform:translateY(-1px);text-decoration:none;color:inherit" style-focus="outline:2px solid #14448C;outline-offset:2px">
+          <span style="width:38px;height:38px;border:1px solid #D6E2F3;background:#EEF3FA;border-radius:3px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14448C" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"></circle><path d="M9.3 9.4a2.8 2.8 0 1 1 3.4 3.1v1.3"></path><path d="M12 17v.2"></path></svg></span>
+          <span style="font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">Autre problème</span>
+          <span style="font-size:14px;color:#5A6579;line-height:1.45">Votre situation ne correspond à aucune de ces catégories.</span>
+          <span style="margin-top:auto;display:flex;align-items:center;justify-content:flex-end;padding-top:10px;border-top:1px solid #EEF1F6">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="1.9" style="flex:none"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </span>
+        </a>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:15px 18px;background:#F8F5EF;border:1px solid #E7E0D2;border-radius:4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A7A55" stroke-width="1.6" style="flex:none"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 11v5.4"></path><path d="M12 7.6v.2"></path></svg>
+        <span style="font-size:14px;color:#5C5232;line-height:1.45">Vous ne savez pas par où commencer ? Nous vous indiquons la prochaine étape selon votre situation.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="signalements" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0;background:#F7F9FC;border-top:1px solid #E4E9F1;border-bottom:1px solid #E4E9F1">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Signalements publics concernant JK AUTO</h2>
+
+      <sc-if value="{{ hasReports }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px">
+          <div style="display:flex;flex-wrap:wrap;gap:10px 0;background:#fff;border:1px solid #DDE3EC;border-radius:4px;overflow:hidden">
+            <div style="flex:1 1 180px;padding:18px 22px;border-right:1px solid #EEF1F6">
+              <div style="font-size:30px;font-weight:800;color:#0E2A56;line-height:1.1">{{ reportsCount }}</div>
+              <div style="font-size:14px;color:#5A6579;margin-top:2px">signalements publiés</div>
+            </div>
+            <div style="flex:1 1 180px;padding:18px 22px;border-right:1px solid #EEF1F6">
+              <div style="font-size:30px;font-weight:800;color:#1F7A4C;line-height:1.1">{{ resolvedCount }}</div>
+              <div style="font-size:14px;color:#5A6579;margin-top:2px">situations déclarées résolues</div>
+            </div>
+            <div style="flex:1 1 180px;padding:18px 22px">
+              <div style="font-size:30px;font-weight:800;color:#C1121F;line-height:1.1">{{ pendingCount }}</div>
+              <div style="font-size:14px;color:#5A6579;margin-top:2px">sans résolution déclarée</div>
+            </div>
+          </div>
+          <p style="margin-top:12px;padding:10px 14px;background:#FFF6F6;border:1px solid #F0D2D4;border-radius:3px;font-size:13.5px;color:#8A3A3F">Maquette : contenu d’exemple non publié, affiché pour illustrer l’état « avec signalements ».</p>
+          <ul style="margin-top:14px;display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ reportSamples }}" as="r" hint-placeholder-count="2">
+              <li style="background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:18px 20px">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+                  <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#14448C;background:#EEF3FA;border:1px solid #CFDFF3;border-radius:2px;padding:3px 8px">{{ r.category }}</span>
+                  <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5A6579;background:#F4F6FA;border:1px solid #E1E6EE;border-radius:2px;padding:3px 8px">{{ r.status }}</span>
+                  <span style="font-size:13.5px;color:#5F6B7F;margin-left:auto">{{ r.date }}</span>
+                </div>
+                <p style="margin-top:10px;font-size:14.5px;color:#3C4759;line-height:1.5">{{ r.text }}</p>
+              </li>
+            </sc-for>
+          </ul>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ noReports }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:18px;background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:clamp(20px,2cqw,30px);display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+          <div style="flex:1 1 340px;min-width:min(100%,260px)">
+            <p style="font-size:17px;font-weight:700;color:#0E2A56;line-height:1.35">Aucun signalement public concernant JK AUTO pour le moment.</p>
+            <p style="margin-top:8px;font-size:14.5px;color:#5A6579;line-height:1.5;max-width:60ch">Vous avez rencontré un problème ? Votre publication permettra de rendre cette situation visible.</p>
+          </div>
+          <a href="#" style="flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:0 24px;background:#14448C;color:#fff;border:1px solid #14448C;border-radius:3px;font-weight:700;font-size:15.5px;text-decoration:none" style-hover="background:#0F3572;border-color:#0F3572;color:#fff;text-decoration:none">
+            Publier le premier signalement
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+          </a>
+        </div>
+      </sc-if>
+
+      <p style="margin-top:12px;font-size:13.5px;color:#5F6B7F;line-height:1.5;max-width:82ch">Chaque signalement reprend la déclaration de son auteur. Recours France ne vérifie pas le récit des faits, n’intervient pas dans le règlement du litige et ne génère aucun contenu artificiel pour étoffer cette page.</p>
+    </div>
+  </section>
+
+  <section id="demarches" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Votre plan d’action</h2>
+      <p style="margin-top:9px;color:#5A6579;max-width:66ch">Les étapes suivent l’ordre habituellement recommandé en droit de la consommation. Dépliez une étape pour le détail.</p>
+
+      <ol style="margin-top:26px;display:flex;flex-direction:column">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+          <li style="display:flex;gap:16px;align-items:stretch">
+            <div style="flex:none;display:flex;flex-direction:column;align-items:center;width:34px">
+              <span style="width:34px;height:34px;flex:none;border-radius:50%;background:#14448C;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14.5px">{{ s.num }}</span>
+              <sc-if value="{{ s.hasNext }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:1px;background:#D6DEEA;margin:6px 0"></span></sc-if>
+            </div>
+            <div style="flex:1;min-width:0;padding-bottom:16px">
+              <button type="button" onClick="{{ s.toggle }}" style="width:100%;display:flex;gap:14px;align-items:flex-start;justify-content:space-between;text-align:left;background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:14px 16px;cursor:pointer;min-height:52px" style-hover="border-color:#14448C;background:#F7FAFE" style-focus="outline:2px solid #14448C;outline-offset:2px">
+                <span style="min-width:0">
+                  <span style="display:block;font-weight:700;font-size:16px;color:#0E2A56;line-height:1.3">{{ s.title }}</span>
+                  <span style="display:block;margin-top:3px;font-size:14px;color:#5A6579;line-height:1.45">{{ s.sub }}</span>
+                </span>
+                <span style="flex:none;display:flex;align-items:center;gap:8px;padding-top:2px">
+                  <span style="font-size:14px;font-weight:600;color:#14448C">{{ s.label }}</span>
+                  <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2"><path d="M5 12.5 10 7.5l5 5"></path></svg></sc-if>
+                  <sc-if value="{{ s.closed }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2"><path d="M5 7.5 10 12.5l5-5"></path></svg></sc-if>
+                </span>
+              </button>
+              <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:-1px;border:1px solid #DDE3EC;border-top:none;border-radius:0 0 4px 4px;padding:16px;background:#FBFCFE">
+                  <sc-for list="{{ s.paras }}" as="p" hint-placeholder-count="1">
+                    <p style="font-size:14.5px;color:#3C4759;line-height:1.6;margin-bottom:10px">{{ p.t }}</p>
+                  </sc-for>
+                  <sc-if value="{{ s.hasBullets }}" hint-placeholder-val="{{ false }}">
+                    <ul style="display:flex;flex-direction:column;gap:7px;margin-top:4px">
+                      <sc-for list="{{ s.bullets }}" as="b" hint-placeholder-count="3">
+                        <li style="display:flex;gap:9px;font-size:14px;color:#3C4759;line-height:1.5">
+                          <span style="flex:none;width:5px;height:5px;border-radius:50%;background:#14448C;margin-top:8px"></span>
+                          <span>{{ b.t }}</span>
+                        </li>
+                      </sc-for>
+                    </ul>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </li>
+        </sc-for>
+      </ol>
+
+      <div style="margin-top:8px;padding:20px;background:#EEF3FA;border:1px solid #CFDFF3;border-radius:4px">
+        <h3 style="font-size:17px;font-weight:700;color:#0E2A56;line-height:1.3">Où en êtes-vous dans vos démarches ?</h3>
+        <p style="margin-top:6px;font-size:15px;color:#3C4759;line-height:1.5">Avez-vous déjà contacté JK AUTO par écrit ?</p>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:10px">
+          <sc-for list="{{ situationChoices }}" as="c" hint-placeholder-count="3">
+            <div>
+              <sc-if value="{{ c.unselected }}" hint-placeholder-val="{{ true }}">
+                <button type="button" onClick="{{ c.select }}" style="width:100%;height:100%;min-height:56px;display:flex;align-items:center;gap:11px;text-align:left;padding:12px 14px;background:#fff;border:1px solid #C4D6EE;border-radius:3px;cursor:pointer;font-size:14.5px;font-weight:600;color:#0E2A56;line-height:1.35" style-hover="border-color:#14448C;background:#F7FAFE" style-focus="outline:2px solid #14448C;outline-offset:2px">
+                  <span style="width:18px;height:18px;flex:none;border:1px solid #A9C1E3;border-radius:50%;background:#fff"></span>
+                  <span>{{ c.label }}</span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ c.selected }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ c.select }}" style="width:100%;height:100%;min-height:56px;display:flex;align-items:center;gap:11px;text-align:left;padding:12px 14px;background:#14448C;border:1px solid #14448C;border-radius:3px;cursor:pointer;font-size:14.5px;font-weight:700;color:#fff;line-height:1.35" style-focus="outline:2px solid #0E2A56;outline-offset:2px">
+                  <span style="width:18px;height:18px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#14448C" stroke-width="2.2"><path d="M2.4 6.3 4.8 8.7 9.6 3.9"></path></svg></span>
+                  <span>{{ c.label }}</span>
+                </button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasSituation }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;padding:16px 18px;background:#fff;border:1px solid #CFDFF3;border-radius:4px;display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+            <div style="flex:1 1 320px;min-width:min(100%,240px)">
+              <div style="font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#14448C">Votre prochaine étape</div>
+              <div style="margin-top:5px;font-size:14.5px;color:#3C4759;line-height:1.5">{{ situationNote }}</div>
+            </div>
+            <a href="#" style="flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:0 22px;background:#14448C;color:#fff;border:1px solid #14448C;border-radius:3px;font-weight:700;font-size:15px;text-decoration:none" style-hover="background:#0F3572;border-color:#0F3572;color:#fff;text-decoration:none">
+              {{ situationAction }}
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+            </a>
+          </div>
+        </sc-if>
+        <p style="margin-top:12px;font-size:13.5px;color:#5F6B7F;line-height:1.5">Nous préparons le texte adapté à votre situation. L’envoi reste effectué par vos soins.</p>
+      </div>
+
+      <p style="margin-top:14px;font-size:13.5px;color:#5F6B7F;line-height:1.5">Informations générales de droit de la consommation. Elles ne constituent pas un conseil juridique personnalisé.</p>
+    </div>
+  </section>
+
+  <section id="contact" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0;background:#F7F9FC;border-top:1px solid #E4E9F1;border-bottom:1px solid #E4E9F1">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Coordonnées et médiateur</h2>
+      <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px">
+        <div style="background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:20px">
+          <h3 style="font-size:14px;font-weight:700;color:#0E2A56;text-transform:uppercase;letter-spacing:.05em">Adresse du siège</h3>
+          <p style="margin-top:10px;font-size:15.5px;color:#253046;line-height:1.5">13 rue Pierre Gilles de Gennes<br>13270 Fos-sur-Mer</p>
+          <p style="margin-top:12px;font-size:13.5px;color:#5F6B7F;line-height:1.5">Coordonnées issues de sources publiques. Aucun courriel ni téléphone n’est déclaré publiquement à ce jour.</p>
+        </div>
+        <div style="background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:20px">
+          <h3 style="font-size:14px;font-weight:700;color:#0E2A56;text-transform:uppercase;letter-spacing:.05em">Médiateur de la consommation</h3>
+          <p style="margin-top:10px;font-size:15.5px;color:#253046;line-height:1.5">Aucune adhésion déclarée par JK AUTO à ce jour.</p>
+          <p style="margin-top:10px;font-size:14px;color:#5A6579;line-height:1.5">Tout professionnel est tenu de proposer un dispositif de médiation. Demandez-lui par écrit de quel médiateur il relève.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="informations" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Informations légales et financières</h2>
+      <p style="margin-top:9px;color:#5A6579;max-width:70ch">Données issues du répertoire Sirene (Insee), du registre national des entreprises (INPI) et du BODACC.</p>
+
+      <dl style="margin:22px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0 28px;border-top:1px solid #E4E9F1">
+        <sc-for list="{{ legalRows }}" as="row" hint-placeholder-count="8">
+          <div style="display:flex;gap:16px;justify-content:space-between;padding:11px 0;border-bottom:1px solid #EEF1F6">
+            <dt style="font-size:14px;color:#5A6579;flex:none">{{ row.k }}</dt>
+            <dd style="margin:0;font-size:14px;font-weight:600;color:#0E2A56;text-align:right">{{ row.v }}</dd>
+          </div>
+        </sc-for>
+      </dl>
+
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ dataAccordions }}" as="a" hint-placeholder-count="2">
+          <div>
+            <button type="button" onClick="{{ a.toggle }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:14px 16px;cursor:pointer;min-height:52px;font-weight:600;font-size:15.5px;color:#0E2A56" style-hover="border-color:#14448C;background:#F7FAFE" style-focus="outline:2px solid #14448C;outline-offset:2px">
+              <span>{{ a.title }}</span>
+              <sc-if value="{{ a.open }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2" style="flex:none"><path d="M5 12.5 10 7.5l5 5"></path></svg></sc-if>
+              <sc-if value="{{ a.closed }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2" style="flex:none"><path d="M5 7.5 10 12.5l5-5"></path></svg></sc-if>
+            </button>
+            <sc-if value="{{ a.open }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:-1px;border:1px solid #DDE3EC;border-top:none;border-radius:0 0 4px 4px;padding:6px 16px 14px;background:#FBFCFE">
+                <sc-for list="{{ a.rows }}" as="row" hint-placeholder-count="3">
+                  <div style="display:flex;gap:16px;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EEF1F6">
+                    <span style="font-size:14px;color:#5A6579">{{ row.k }}</span>
+                    <span style="font-size:14px;color:#253046;text-align:right">{{ row.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="entreprise" style="scroll-margin-top:70px;padding:clamp(30px,3cqw,48px) 0;background:#F7F9FC;border-top:1px solid #E4E9F1;border-bottom:1px solid #E4E9F1">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:20px 22px">
+        <div style="flex:1 1 400px;min-width:min(100%,260px)">
+          <h2 style="font-size:17px;font-weight:700;color:#0E2A56">Vous représentez JK AUTO ?</h2>
+          <p style="margin-top:8px;font-size:14px;color:#5A6579;line-height:1.55;max-width:70ch">Une entreprise peut revendiquer sa fiche ou contester une déclaration la concernant. La contestation est examinée sur pièces ; un signalement est retiré s’il se révèle infondé ou contraire à la politique de modération. La démarche est gratuite et n’ouvre aucun droit de suppression automatique.</p>
+        </div>
+        <div style="flex:0 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:10px">
+          <a href="#" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;background:#fff;color:#14448C;border:1px solid #B9CDEA;border-radius:3px;font-weight:600;font-size:14.5px;text-decoration:none" style-hover="border-color:#14448C;background:#EEF3FA;text-decoration:none">Contester une déclaration</a>
+          <a href="#" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;background:#fff;color:#14448C;border:1px solid #B9CDEA;border-radius:3px;font-weight:600;font-size:14.5px;text-decoration:none" style-hover="border-color:#14448C;background:#EEF3FA;text-decoration:none">Revendiquer cette fiche</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" style="scroll-margin-top:70px;padding:clamp(34px,3.6cqw,58px) 0">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px);display:flex;flex-wrap:wrap;gap:clamp(24px,3cqw,44px);align-items:flex-start">
+      <div style="flex:1 1 520px;min-width:min(100%,300px)">
+        <h2 style="font-size:clamp(19px,1.5cqw + 7px,26px);line-height:1.22;font-weight:800;color:#0E2A56;letter-spacing:-0.012em">Méthodologie, indépendance et questions fréquentes</h2>
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ faq }}" as="a" hint-placeholder-count="7">
+            <div>
+              <button type="button" onClick="{{ a.toggle }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;background:#fff;border:1px solid #DDE3EC;border-radius:4px;padding:14px 16px;cursor:pointer;min-height:52px;font-weight:600;font-size:15.5px;color:#0E2A56" style-hover="border-color:#14448C;background:#F7FAFE" style-focus="outline:2px solid #14448C;outline-offset:2px">
+                <span>{{ a.title }}</span>
+                <sc-if value="{{ a.open }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2" style="flex:none"><path d="M5 12.5 10 7.5l5 5"></path></svg></sc-if>
+                <sc-if value="{{ a.closed }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#14448C" stroke-width="2" style="flex:none"><path d="M5 7.5 10 12.5l5-5"></path></svg></sc-if>
+              </button>
+              <sc-if value="{{ a.open }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:-1px;border:1px solid #DDE3EC;border-top:none;border-radius:0 0 4px 4px;padding:14px 16px;background:#FBFCFE">
+                  <sc-for list="{{ a.paras }}" as="p" hint-placeholder-count="1">
+                    <p style="font-size:14.5px;color:#3C4759;line-height:1.6;margin-bottom:8px">{{ p.t }}</p>
+                  </sc-for>
+                  <sc-if value="{{ a.hasLinks }}" hint-placeholder-val="{{ false }}">
+                    <ul style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+                      <sc-for list="{{ a.links }}" as="l" hint-placeholder-count="3">
+                        <li><a href="#" style="font-size:14px;font-weight:600;color:#14448C;text-decoration:none" style-hover="text-decoration:underline">{{ l.t }} →</a></li>
+                      </sc-for>
+                    </ul>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <aside style="flex:1 1 280px;min-width:min(100%,260px);background:#F8F5EF;border:1px solid #E7E0D2;border-radius:4px;padding:20px">
+        <h3 style="font-size:15.5px;font-weight:700;color:#4A4128">Recours France est une plateforme indépendante</h3>
+        <p style="margin-top:10px;font-size:14px;color:#5C5232;line-height:1.55">Recours France n’est ni un service de l’État, ni un tribunal, ni un cabinet d’avocats, ni un médiateur de la consommation.</p>
+        <p style="margin-top:10px;font-size:14px;color:#5C5232;line-height:1.55">La plateforme ne transmet pas les réclamations aux professionnels et n’intervient pas dans le règlement des litiges. Un signalement représente la déclaration de son auteur : il ne signifie pas qu’un manquement a été juridiquement établi.</p>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #E7E0D2;display:flex;flex-direction:column">
+          <a href="#" style="display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:600;color:#6E5F30;text-decoration:none" style-hover="text-decoration:underline;color:#5C5232">Notre méthodologie →</a>
+          <a href="#" style="display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:600;color:#6E5F30;text-decoration:none" style-hover="text-decoration:underline;color:#5C5232">Charte de modération →</a>
+          <a href="#" style="display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:600;color:#6E5F30;text-decoration:none" style-hover="text-decoration:underline;color:#5C5232">Origine des données →</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+    <section style="background:#0E2A56;color:#fff;padding:clamp(30px,3cqw,46px) 0">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px);display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between">
+        <div style="flex:1 1 420px;min-width:min(100%,260px)">
+          <h2 style="font-size:clamp(19px,1.2cqw + 8px,24px);font-weight:700;line-height:1.3">Rendez votre litige visible et lancez vos démarches</h2>
+          <p style="margin-top:7px;font-size:14.5px;color:#C7D6EC;line-height:1.5">Gratuit · vous relisez tout avant publication · justificatifs facultatifs</p>
+        </div>
+        <a href="#" style="flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:0 26px;background:#fff;color:#0E2A56;border:1px solid #fff;border-radius:3px;font-weight:700;font-size:16px;text-decoration:none" style-hover="background:#EEF3FA;color:#0E2A56;text-decoration:none">
+          Rendre mon litige visible
+          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+        </a>
+      </div>
+    </section>
+  </sc-if>
+
+  <footer style="background:#0A1F42;color:#A9BDD8;padding:clamp(28px,3cqw,44px) 0 26px;font-size:13.5px">
+    <div style="max-width:1160px;margin:0 auto;padding:0 clamp(16px,2.2cqw,28px)">
+      <div style="display:flex;flex-wrap:wrap;gap:28px 40px">
+        <div style="flex:1 1 300px;min-width:min(100%,240px)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:34px;height:34px;flex:none;border:1px solid #2C4A78;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff">RF</span>
+            <span style="font-weight:700;font-size:15.5px;color:#fff">Recours France</span>
+          </div>
+          <p style="margin-top:12px;line-height:1.55;max-width:46ch">Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec l’État, une administration ou une autorité publique.</p>
+          <p style="margin-top:10px;line-height:1.55;color:#93A8C6;font-size:13px;max-width:50ch">Les fiches d’entreprise combinent des données publiques ouvertes (Sirene, INPI/RNE, BODACC) et des signalements de consommateurs.</p>
+        </div>
+        <div style="flex:0 1 170px">
+          <div style="font-weight:700;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em">Signaler</div>
+          <ul style="margin-top:6px;display:flex;flex-direction:column">
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Signaler un litige</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Annuaire des entreprises</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Boutiques en ligne</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Retrouver mon signalement</a></li>
+          </ul>
+        </div>
+        <div style="flex:0 1 170px">
+          <div style="font-weight:700;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em">Comprendre</div>
+          <ul style="margin-top:6px;display:flex;flex-direction:column">
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Méthodologie</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Origine des données</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Charte de modération</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Quels justificatifs fournir</a></li>
+          </ul>
+        </div>
+        <div style="flex:0 1 170px">
+          <div style="font-weight:700;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em">Le service</div>
+          <ul style="margin-top:6px;display:flex;flex-direction:column">
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">À propos et indépendance</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Nous contacter</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Aide</a></li>
+            <li><a href="#" style="display:flex;align-items:center;min-height:44px;color:#A9BDD8;text-decoration:none" style-hover="color:#fff;text-decoration:underline">Mentions légales</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:26px;padding-top:16px;border-top:1px solid #1C3760;font-size:13px;color:#93A8C6">Recours France — service privé indépendant, sans mission de service public.</div>
+    </div>
+  </footer>
+
+  <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
+    <div style="position:sticky;bottom:0;z-index:40;background:#fff;border-top:1px solid #DDE3EC;box-shadow:0 -2px 10px rgba(14,42,86,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom))">
+      <a href="#" style="display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;background:#14448C;color:#fff;border-radius:3px;font-weight:700;font-size:16px;text-decoration:none" style-hover="background:#0F3572;color:#fff;text-decoration:none">
+        Rendre mon litige visible
+        <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10h11"></path><path d="M10.5 5.5 15 10l-4.5 4.5"></path></svg>
+      </a>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;situationParDefaut&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;aucune&quot;,&quot;pas-encore&quot;,&quot;sans-reponse&quot;,&quot;refus&quot;],&quot;default&quot;:&quot;aucune&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;signalements&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:24,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Contenu&quot;},&quot;resolus&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:24,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Contenu&quot;}}">
+class Component extends DCLogic {
+  state = { open: {}, situation: null };
+
+  toggle(id) {
+    this.setState(s => ({ open: Object.assign({}, s.open, { [id]: !s.open[id] }) }));
+  }
+
+  pick(k) {
+    this.setState({ situation: k });
+  }
+
+  acc(id, title, paras, extra) {
+    const e = extra || {};
+    const open = !!this.state.open[id];
+    return Object.assign({
+      id, title, open, closed: !open,
+      paras: (paras || []).map(t => ({ t })),
+      toggle: () => this.toggle(id)
+    }, e);
+  }
+
+  renderVals() {
+    const n = Math.max(0, Math.round(this.props.signalements ?? 0));
+    const resolved = Math.min(n, Math.max(0, Math.round(this.props.resolus ?? 0)));
+    const compact = !!this.props.compact;
+
+    const sitDefault = this.props.situationParDefaut;
+    const sit = (this.state.situation !== null && this.state.situation !== undefined)
+      ? this.state.situation
+      : ((sitDefault && sitDefault !== 'aucune') ? sitDefault : null);
+    const choiceDefs = [
+      ['pas-encore', 'Non, pas encore', 'Préparer ma première réclamation', 'Commencez par l’étape 1 : une demande écrite au service client, dont vous conservez une copie.'],
+      ['sans-reponse', 'Oui, mais sans réponse satisfaisante', 'Préparer une mise en demeure', 'Passez à l’étape 3 : la mise en demeure rappelle le fondement légal, le montant réclamé et le délai laissé à l’entreprise.'],
+      ['refus', 'Oui, ma réclamation a été refusée', 'Vérifier le médiateur et les recours possibles', 'Passez à l’étape 4 : conservez le refus écrit et sa motivation, ils seront utiles en médiation.']
+    ];
+    const situationChoices = choiceDefs.map(d => ({
+      key: d[0], label: d[1], selected: sit === d[0], unselected: sit !== d[0], select: () => this.pick(d[0])
+    }));
+    const currentSit = choiceDefs.filter(d => d[0] === sit)[0];
+
+    const stepData = [
+      ['s1', 'Envoyer une première demande écrite', 'Contactez le service client par e-mail, formulaire ou espace client et conservez une copie.',
+        ['La réclamation commence par un écrit adressé au service client, en rappelant le numéro de commande et la date des faits. Conservez une copie de chaque échange : c’est cette trace écrite qui conditionne la suite des démarches, notamment la saisine du médiateur.'],
+        ['Numéro de commande, date d’achat et montant concerné', 'Description factuelle du problème, sans appréciation personnelle', 'Demande précise : remboursement, remplacement, réparation, résiliation', 'Délai de réponse souhaité, généralement quinze jours']],
+      ['s2', 'Envoyer une réclamation formelle', 'Adressez une réclamation structurée avec les faits, votre demande et un délai de réponse.',
+        ['Si le service client ne répond pas dans un délai raisonnable, adressez une réclamation écrite au siège. Ce courrier fait courir les délais utiles et constitue la pièce centrale de votre dossier.',
+         'Recours France prépare le texte de cette réclamation à partir de votre situation. L’envoi et le suivi restent effectués par vos soins : la plateforme ne transmet rien à l’entreprise.'], null],
+      ['s3', 'Envoyer une mise en demeure si nécessaire', 'Lettre recommandée avec avis de réception, en l’absence de réponse.',
+        ['La mise en demeure rappelle le fondement légal invoqué, le montant réclamé et le délai laissé à l’entreprise pour y répondre. Envoyée en recommandé avec avis de réception, elle est conservée avec la preuve de dépôt.'], null],
+      ['s4', 'Saisir le médiateur', 'Gratuit, après une réclamation écrite restée sans réponse satisfaisante.',
+        ['La médiation de la consommation est gratuite pour le consommateur et suppose une réclamation écrite préalable restée sans réponse satisfaisante. Le médiateur compétent est celui dont le professionnel a déclaré relever.',
+         'Aucune adhésion à un médiateur n’est déclarée par JK AUTO à ce jour. Tout professionnel est pourtant tenu de proposer un dispositif de médiation : demandez-lui par écrit de quel médiateur il relève.'], null],
+      ['s5', 'Utiliser SignalConso ou un autre recours adapté', 'Signalement à l’administration, ou recours judiciaire selon le montant.',
+        ['SignalConso est le service public de signalement des anomalies constatées chez un professionnel : pratique commerciale trompeuse, produit dangereux, information précontractuelle manquante. La démarche est distincte d’un signalement publié sur Recours France et peut être menée en parallèle.',
+         'Selon le montant en jeu et la nature du litige, une saisine du juge peut être envisagée. Ces informations sont générales et ne constituent pas un conseil juridique personnalisé.'], null]
+    ];
+
+    const steps = stepData.map((d, i) => {
+      const a = this.acc(d[0], d[1], d[3], {
+        sub: d[2],
+        num: i + 1,
+        hasNext: i < stepData.length - 1,
+        bullets: (d[4] || []).map(t => ({ t })),
+        hasBullets: !!(d[4] && d[4].length)
+      });
+      a.label = a.open ? 'Réduire' : 'Détails';
+      return a;
+    });
+
+    const faq = [
+      this.acc('f1', 'Combien coûte la publication d’un signalement ?', ['La publication est gratuite. Le formulaire prend trois à cinq minutes : catégorie du problème, montant, dates et justificatifs facultatifs. La publication intervient après modération, et vous pourrez ensuite indiquer si votre problème a été résolu.']),
+      this.acc('f2', 'Recours France transmet-il ma réclamation à JK AUTO ?', ['Non. La plateforme ne transmet pas les réclamations aux professionnels et n’intervient pas dans le règlement des litiges. Vous restez l’expéditeur de votre réclamation ; Recours France en prépare le texte et rend votre situation visible publiquement.']),
+      this.acc('f3', 'Des justificatifs sont-ils obligatoires ?', ['Non, ils sont facultatifs. Facture, preuve de dépôt du colis, échanges avec le service client : ils renforcent votre dossier et permettent d’afficher un niveau de vérification plus élevé, mais leur absence n’empêche pas la publication.']),
+      this.acc('f4', 'Comment un signalement est-il modéré ou retiré ?', ['Les propos injurieux, les accusations pénales et les données personnelles de tiers sont retirés. Une entreprise peut contester une déclaration la concernant : la contestation est examinée sur pièces, quelle que soit la partie qui le demande.']),
+      this.acc('f5', 'Comment fonctionne Recours France ?', ['Le consommateur décrit son problème : catégorie, montant, dates et description factuelle des faits. Le signalement est publié selon les règles de modération, l’entreprise peut le contester, et le consommateur indique lui-même si sa situation a été résolue — Recours France ne le constate pas à sa place.']),
+      this.acc('f6', 'Guides pouvant vous aider', ['Démarches expliquées pas à pas, applicables à tout professionnel.'], {
+        hasLinks: true,
+        links: ['Un commerçant refuse de me rembourser : que faire ?', 'Commande non reçue : quels recours ?', 'Comment faire une réclamation écrite ?', 'Comment saisir un médiateur de la consommation ?', 'Quels justificatifs conserver en cas de litige ?'].map(t => ({ t }))
+      }),
+      this.acc('f7', 'Entreprises comparables', ['Aucune entreprise comparable n’est actuellement listée pour cette activité et ce territoire. Un rapprochement par activité et par département ne constituerait ni un classement, ni une comparaison de qualité.'])
+    ];
+
+    return {
+      compact,
+      full: !compact,
+      hasReports: n > 0,
+      noReports: n === 0,
+      reportsCount: n,
+      resolvedCount: resolved,
+      pendingCount: n - resolved,
+      secondaryCta: n > 0 ? 'Voir les ' + n + ' signalements' : 'Trouver la démarche adaptée',
+      secondaryHref: n > 0 ? '#signalements' : '#probleme',
+      situationChoices,
+      hasSituation: !!currentSit,
+      situationAction: currentSit ? currentSit[2] : '',
+      situationNote: currentSit ? currentSit[3] : '',
+      reportSamples: n > 0 ? [
+        { category: 'Remboursement', status: 'Déclaré', date: 'Exemple', text: 'Emplacement d’un signalement publié : catégorie, statut de vérification, date et récit factuel de son auteur.' },
+        { category: 'Commande non reçue', status: 'Résolu selon l’auteur', date: 'Exemple', text: 'Emplacement d’un second signalement, avec la mention de résolution renseignée par le consommateur lui-même.' }
+      ] : [],
+      steps,
+      faq,
+      legalRows: [
+        { k: 'Raison sociale', v: 'JK AUTO' },
+        { k: 'SIREN', v: '817 383 383' },
+        { k: 'SIRET du siège', v: '817 383 383 00020' },
+        { k: 'Forme juridique', v: 'SARL' },
+        { k: 'Immatriculation', v: '4 janvier 2016' },
+        { k: 'État administratif', v: 'En activité' },
+        { k: 'Code d’activité', v: '45.20A' },
+        { k: 'Effectif', v: 'Non renseigné (Insee)' }
+      ],
+      dataAccordions: [
+        this.acc('d1', 'Informations financières (4 exercices)', [], {
+          rows: [
+            { k: 'Exercice 2025', v: 'Comptes déposés, détail non publié' },
+            { k: 'Exercice 2024', v: 'Comptes déposés, détail non publié' },
+            { k: 'Exercice 2023', v: 'CA 109 895 € · résultat 1 278 €' },
+            { k: 'Exercice 2022', v: 'Comptes déposés, détail non publié' }
+          ]
+        }),
+        this.acc('d2', 'Événements récents et sources', [], {
+          rows: [
+            { k: '12 juillet 2026', v: 'Dépôt des comptes annuels — BODACC' },
+            { k: '18 août 2025', v: 'Dépôt des comptes annuels — BODACC' },
+            { k: '25 juillet 2024', v: 'Dépôt des comptes annuels — BODACC' },
+            { k: 'Identité', v: 'Répertoire Sirene (Insee)' },
+            { k: 'Registre', v: 'RNE (INPI)' },
+            { k: 'Médiation', v: 'Liste publique des médiateurs' }
+          ]
+        })
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

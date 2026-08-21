@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { nomEditeur } from "@/lib/editeur";
+import { Info } from "@/components/refonte/icones";
 
 /**
  * Logotype fourni. Le verrou complet (pictogramme + nom + signature) sert là où
@@ -47,9 +48,11 @@ export function BandeauIndependance({ habillage = "standard" }: { habillage?: Ha
   return (
     <div className="rf-bandeau-independance">
       <div className={conteneur(habillage)}>
-        <span>
-          Recours France est un service privé indépendant. Il n’est ni un service de l’État, ni une
-          autorité administrative.
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          {/* Formulation imposée par le handoff, au mot près. */}
+          <Info taille={16} style={{ flex: "none", color: "var(--rf-sur-marine-attenue)" }} />
+          Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec
+          l’État.
         </span>
         {DEMO ? (
           <span style={{ color: "var(--rf-sur-nuit-attenue)" }}>Démonstration — données fictives</span>

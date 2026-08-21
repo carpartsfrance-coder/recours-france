@@ -21,3 +21,6 @@ npm-debug.log*
 
 # Maquette de référence servie en local seulement — jamais en production.
 public/_maquette/
+
+# Maquettes servies temporairement pour inspection ; la source est dans design/.
+public/_maquettes/

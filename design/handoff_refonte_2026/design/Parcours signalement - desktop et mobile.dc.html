@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EDEFF3;font-family:'Public Sans','Helvetica Neue',Helvetica,Arial,sans-serif;color:#253046}
+h1,h2,h3,p{margin:0}
+a{color:#14448C}
+</style>
+</helmet>
+<div style="padding:40px clamp(16px,3vw,48px) 72px">
+  <div style="max-width:1560px;margin:0 auto">
+    <h1 style="font-size:19px;font-weight:800;color:#0E2A56;letter-spacing:-0.01em">Publier un litige — tunnel en deux étapes</h1>
+    <p style="margin-top:6px;font-size:14px;color:#5A6579;max-width:86ch">Ouvert depuis « Rendre mon litige visible » sur la fiche JK AUTO. Les trois cadres sont interactifs et partagent le même composant : choisir une famille affiche ses catégories, la description des faits reste confidentielle, et le bouton de publication s’active dès que l’adresse e-mail et la confirmation sont renseignées.</p>
+
+    <div style="margin-top:30px;display:flex;flex-direction:column;gap:34px">
+
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <span style="font:700 11px/1 'Public Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#0E2A56;border-radius:3px;padding:5px 8px">Étape 1</span>
+          <span style="font-size:13.5px;font-weight:700;color:#0E2A56">Décrire la situation</span>
+          <span style="font-size:12.5px;color:#5A6579">arrivée sans présélection — les quatre familles sont proposées</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start">
+          <div style="flex:1 1 720px;min-width:min(100%,640px);background:#fff;border:1px solid #D5DAE3;border-radius:5px;overflow:hidden;box-shadow:0 1px 4px rgba(14,42,86,.07)">
+            <div style="display:flex;align-items:center;gap:7px;padding:9px 12px;background:#F4F6F9;border-bottom:1px solid #E2E6ED">
+              <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+              <span style="margin-left:10px;flex:1;max-width:420px;font-size:11.5px;color:#7A8496;background:#fff;border:1px solid #E2E6ED;border-radius:3px;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">recours-france.fr/signaler/jk-auto-817383383</span>
+            </div>
+            <div style="height:820px;overflow:auto">
+              <dc-import name="Parcours signalement" ecran="1" hint-size="100%,820px"></dc-import>
+            </div>
+          </div>
+          <div style="flex:none;width:412px;background:#12181F;border-radius:34px;padding:11px;box-shadow:0 2px 10px rgba(14,42,86,.14)">
+            <div style="width:390px;height:800px;background:#fff;border-radius:24px;overflow:hidden;position:relative">
+              <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:#12181F;border-radius:12px;z-index:60"></div>
+              <div style="height:100%;overflow:auto"><div style="height:34px;background:#fff;border-bottom:1px solid #F0F3F8"></div>
+                <dc-import name="Parcours signalement" ecran="1" compact="{{ true }}" preselection="travaux-mal-realises" hint-size="390px,760px"></dc-import>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:9px;font-size:12.5px;color:#5A6579">Le cadre mobile illustre l’arrivée depuis une carte de la fiche : la nature du litige est préremplie et n’est plus redemandée.</p>
+      </div>
+
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <span style="font:700 11px/1 'Public Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#0E2A56;border-radius:3px;padding:5px 8px">Étape 2</span>
+          <span style="font-size:13.5px;font-weight:700;color:#0E2A56">Vérifier et publier</span>
+          <span style="font-size:12.5px;color:#5A6579">ce qui est public, ce qui reste confidentiel</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start">
+          <div style="flex:1 1 720px;min-width:min(100%,640px);background:#fff;border:1px solid #D5DAE3;border-radius:5px;overflow:hidden;box-shadow:0 1px 4px rgba(14,42,86,.07)">
+            <div style="display:flex;align-items:center;gap:7px;padding:9px 12px;background:#F4F6F9;border-bottom:1px solid #E2E6ED">
+              <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+              <span style="margin-left:10px;flex:1;max-width:420px;font-size:11.5px;color:#7A8496;background:#fff;border:1px solid #E2E6ED;border-radius:3px;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">recours-france.fr/signaler/jk-auto-817383383/verifier</span>
+            </div>
+            <div style="height:900px;overflow:auto">
+              <dc-import name="Parcours signalement" ecran="2" preselection="travaux-mal-realises" hint-size="100%,900px"></dc-import>
+            </div>
+          </div>
+          <div style="flex:none;width:412px;background:#12181F;border-radius:34px;padding:11px;box-shadow:0 2px 10px rgba(14,42,86,.14)">
+            <div style="width:390px;height:800px;background:#fff;border-radius:24px;overflow:hidden;position:relative">
+              <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:#12181F;border-radius:12px;z-index:60"></div>
+              <div style="height:100%;overflow:auto"><div style="height:34px;background:#fff;border-bottom:1px solid #F0F3F8"></div>
+                <dc-import name="Parcours signalement" ecran="2" compact="{{ true }}" preselection="travaux-mal-realises" hint-size="390px,760px"></dc-import>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:9px;font-size:12.5px;color:#5A6579">Saisissez une adresse e-mail puis cochez la confirmation : le bouton de publication s’active et mène à l’écran de réussite. La description des faits n’apparaît pas sur la carte publique.</p>
+      </div>
+
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <span style="font:700 11px/1 'Public Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#1F7A4C;border-radius:3px;padding:5px 8px">Réussite</span>
+          <span style="font-size:13.5px;font-weight:700;color:#0E2A56">Signalement publié</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start">
+          <div style="flex:1 1 720px;min-width:min(100%,640px);background:#fff;border:1px solid #D5DAE3;border-radius:5px;overflow:hidden;box-shadow:0 1px 4px rgba(14,42,86,.07)">
+            <div style="display:flex;align-items:center;gap:7px;padding:9px 12px;background:#F4F6F9;border-bottom:1px solid #E2E6ED">
+              <span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span><span style="width:9px;height:9px;border-radius:50%;background:#D8DDE5"></span>
+              <span style="margin-left:10px;flex:1;max-width:420px;font-size:11.5px;color:#7A8496;background:#fff;border:1px solid #E2E6ED;border-radius:3px;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">recours-france.fr/signaler/jk-auto-817383383/publie</span>
+            </div>
+            <div style="height:600px;overflow:auto">
+              <dc-import name="Parcours signalement" ecran="3" hint-size="100%,600px"></dc-import>
+            </div>
+          </div>
+          <div style="flex:none;width:412px;background:#12181F;border-radius:34px;padding:11px;box-shadow:0 2px 10px rgba(14,42,86,.14)">
+            <div style="width:390px;height:800px;background:#fff;border-radius:24px;overflow:hidden;position:relative">
+              <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:#12181F;border-radius:12px;z-index:60"></div>
+              <div style="height:100%;overflow:auto"><div style="height:34px;background:#fff;border-bottom:1px solid #F0F3F8"></div>
+                <dc-import name="Parcours signalement" ecran="3" compact="{{ true }}" hint-size="390px,760px"></dc-import>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -21,6 +21,18 @@
         "design/handoff_fiche_entreprise"
       ],
       "port": 4173
+    },
+    {
+      "name": "maquette-refonte",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "-l",
+        "4174",
+        "design/handoff_refonte_2026/design"
+      ],
+      "port": 4174
     }
   ]
 }

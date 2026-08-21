@@ -12,28 +12,29 @@ import {
   organisationJsonLd,
 } from "@/components/donnees-structurees";
 import { mediateurPublie } from "@/lib/mediation";
+import { BENEFICES, MOTIFS_FICHE, etapesPlan, faqRefonte } from "@/lib/refonte";
+import { OuEnEtesVous } from "@/components/refonte/ou-en-etes-vous";
 import {
-  AVERTISSEMENT_DECLARATION,
-  FONCTIONNEMENT,
-  GUIDES,
-  MOTIFS,
-  ORDRE_DEMARCHES,
-  PORTEE_EVOLUTION,
-  PORTEE_STATISTIQUES,
-  declarationPublique,
-  demarches,
-  faq,
-  titreSignalement,
-} from "@/lib/observatoire";
-import { situationPourMotif } from "@/lib/tunnel";
-import { delaiCourtPourMotif } from "@/lib/droits";
+  Alerte,
+  Bulle,
+  Carte,
+  Chevron,
+  Colis,
+  Document,
+  Fleche,
+  Horloge,
+  Info,
+  Oeil,
+  Question,
+  Remboursement,
+} from "@/components/refonte/icones";
+import { declarationPublique } from "@/lib/observatoire";
 import {
   cheminCommune,
   cheminDepartement,
   cheminSecteur,
   libelleSecteur,
   nomDepartement,
-  voisines,
 } from "@/lib/maillage";
 import {
   LIBELLES_DEMANDE,
@@ -48,23 +49,26 @@ import {
 } from "@/lib/format";
 
 /**
- * Fiche entreprise — « observatoire des problèmes consommateurs ».
+ * Fiche entreprise — refonte d'août 2026.
  *
- * L'ordre des sections est celui du handoff, et il n'est pas négociable :
- * problèmes, signalements, statistiques, démarches, informations d'entreprise.
- * Jamais l'inverse. Une page qui ouvrirait sur le SIREN, les dirigeants et le
- * chiffre d'affaires serait un annuaire d'entreprises de plus — il en existe
- * d'excellents, vieux de vingt-cinq ans, et cette page ne cherche pas à les
- * concurrencer. Elle répond à une autre question : « j'ai un problème avec
- * cette entreprise, que puis-je faire ? »
+ * L'ordre des sections vient du handoff et n'est pas négociable : le problème
+ * du visiteur d'abord, l'entreprise ensuite. Une page qui ouvrirait sur le
+ * SIREN, la forme juridique et le chiffre d'affaires serait un annuaire de
+ * plus — il en existe d'excellents, vieux de vingt-cinq ans. Celle-ci répond à
+ * une autre question : « j'ai un problème avec cette entreprise, que puis-je
+ * faire ? »
+ *
+ * Un seul état vide sur toute la page, dans la section des signalements. Les
+ * autres sections disent ce qu'elles savent ou se taisent : rien n'est
+ * inventé pour étoffer la page, et six fiches sur treize millions portent
+ * aujourd'hui un signalement.
  *
  * Mise en cache une journée : rien ici ne dépend du visiteur.
  */
 export const revalidate = 86400;
 
-const CATEGORIES_LIBELLE: Record<string, string> = Object.fromEntries(
-  MOTIFS.map((m) => [m.cle, m.libelle]),
-);
+const ICONES = { remboursement: Remboursement, colis: Colis, bulle: Bulle, alerte: Alerte, carte: Carte, question: Question };
+const ICONES_BENEFICE = { oeil: Oeil, document: Document, horloge: Horloge };
 
 export async function generateMetadata({
   params,
@@ -97,99 +101,41 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   if (!base) notFound();
   if (base.slug !== slug) redirect(`/entreprises/${base.slug}`);
 
-  const { entreprise, etablissements, evenements, comptes } = await detailEntreprise(base.id);
+  const { entreprise, evenements, comptes } = await detailEntreprise(base.id);
   if (!entreprise) notFound();
 
   const nom = entreprise.denomination;
 
-  const [signalements, total, parMotifBrut, resolus] = await Promise.all([
+  const [signalements, total, resolus] = await Promise.all([
     prisma.signalement.findMany({
       where: { entrepriseId: entreprise.id, moderation: "PUBLIE" },
       orderBy: { creeLe: "desc" },
       take: 10,
     }),
     prisma.signalement.count({ where: { entrepriseId: entreprise.id, moderation: "PUBLIE" } }),
-    prisma.signalement.groupBy({
-      by: ["categorie"],
-      _count: { _all: true },
-      where: { entrepriseId: entreprise.id, moderation: "PUBLIE" },
-    }),
     prisma.signalement.count({
       where: { entrepriseId: entreprise.id, moderation: "PUBLIE", resolutionConfirmee: true },
     }),
   ]);
 
-  const parMotif = new Map(parMotifBrut.map((g) => [g.categorie as string, g._count._all]));
-  /** État A du handoff : la fiche porte des signalements publiés. */
-  const aDesSignalements = total > 0;
-  /**
-   * Seuil en deçà duquel l'appareil statistique ne dit rien — et nuit.
-   *
-   * À un signalement, la répartition affiche une barre unique à 100 %,
-   * l'histogramme onze colonnes plates et une douzième à pleine hauteur, et la
-   * page donne à lire un effondrement brutal là où il n'y a qu'une personne
-   * mécontente. C'est faux pour le lecteur, et injuste pour l'entreprise.
-   *
-   * Le signalement lui-même reste affiché : c'est le commentaire chiffré qui
-   * attend d'avoir de quoi commenter.
-   */
-  const statistiquesUtiles = total >= 5;
-
   const mediateurDeclare = mediateurPublie(entreprise);
-  const [boutique, proches] = await Promise.all([
-    prisma.boutique.findFirst({
-      where: { entrepriseId: entreprise.id },
-      select: { slug: true, domaine: true },
-    }),
-    voisines(entreprise),
-  ]);
-
   const secteur = entreprise.secteur ?? "autre";
-  const blocs = demarches(nom, secteur);
-  const questions = faq(nom, mediateurDeclare?.nom ?? null);
+  const etapes = etapesPlan(nom, mediateurDeclare?.nom ?? null);
+  const questions = faqRefonte(nom);
+  const tunnel = `/signaler/${slug}`;
 
-  /** Douze derniers mois, du plus ancien au plus récent. */
-  const serie = (() => {
-    const mois: { cle: string; libelle: string; valeur: number }[] = [];
-    const maintenant = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(maintenant.getFullYear(), maintenant.getMonth() - i, 1);
-      mois.push({
-        cle: `${d.getFullYear()}-${d.getMonth()}`,
-        libelle: d.toLocaleDateString("fr-FR", { month: "short" }),
-        valeur: 0,
-      });
-    }
-    const index = new Map(mois.map((m, i) => [m.cle, i]));
-    for (const s of signalements) {
-      const i = index.get(`${s.creeLe.getFullYear()}-${s.creeLe.getMonth()}`);
-      if (i !== undefined) mois[i].valeur++;
-    }
-    return mois;
-  })();
-  const maxSerie = Math.max(1, ...serie.map((m) => m.valeur));
-
-  const motifsClasses = [...parMotif.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([cle, n]) => ({
-      cle,
-      libelle: CATEGORIES_LIBELLE[cle] ?? cle,
-      n,
-      pct: Math.round((n / Math.max(1, total)) * 100),
-    }));
-
-  const lignesLegales: { k: string; v: string }[] = [
+  const lignesLegales = [
     { k: "Raison sociale", v: nom },
     { k: "SIREN", v: formatSiren(entreprise.siren) },
     entreprise.siretSiege ? { k: "SIRET du siège", v: formatSiret(entreprise.siretSiege) } : null,
     entreprise.formeJuridique ? { k: "Forme juridique", v: entreprise.formeJuridique } : null,
-    { k: "Adresse du siège", v: adressePostale(entreprise) ?? "Non publiée" },
     entreprise.dateImmatriculation
       ? { k: "Immatriculation", v: formatDateLongue(entreprise.dateImmatriculation) }
       : null,
-    entreprise.naf ? { k: "Code d’activité", v: `${entreprise.naf} — ${entreprise.nafLibelle ?? ""}`.trim() } : null,
-    entreprise.trancheEffectif ? { k: "Effectif", v: libelleEffectif(entreprise.trancheEffectif) } : null,
-    entreprise.siteWeb ? { k: "Site officiel", v: entreprise.siteWeb } : null,
+    entreprise.naf ? { k: "Code d’activité", v: entreprise.naf } : null,
+    entreprise.trancheEffectif
+      ? { k: "Effectif", v: libelleEffectif(entreprise.trancheEffectif) }
+      : { k: "Effectif", v: "Non renseigné (Insee)" },
     {
       k: "État administratif",
       v: entreprise.etatAdministratif === "ACTIVE" ? "En activité" : "Cessée",
@@ -205,38 +151,35 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           c.resultatNet ? `résultat ${formatMontant(Number(c.resultatNet))}` : null,
         ]
           .filter(Boolean)
-          .join(" · ") || "Déposés, détail non publié",
+          .join(" · ") || "Comptes déposés, détail non publié",
   }));
 
   const sommaire = [
-    { href: "#problemes", libelle: "Problèmes signalés" },
+    { href: "#probleme", libelle: "Mon problème" },
     { href: "#signalements", libelle: "Signalements" },
-    { href: "#demarches", libelle: "Que faire ?" },
-    { href: "#contact", libelle: `Contacter ${nom}` },
-    ...(statistiquesUtiles ? [{ href: "#evolution", libelle: "Évolution" }] : []),
-    { href: "#informations", libelle: "Informations légales" },
-    { href: "#faq", libelle: "Questions fréquentes" },
+    { href: "#demarches", libelle: "Démarches" },
+    { href: "#contact", libelle: "Contact et médiateur" },
+    { href: "#informations", libelle: "Informations" },
+    { href: "#faq", libelle: "Méthodologie et FAQ" },
   ];
 
+  const commune = entreprise.commune ?? null;
+  const adresse = adressePostale(entreprise);
+
   const fil = [
-        { libelle: "Annuaire", href: "/annuaire" },
-        { libelle: libelleSecteur(secteur), href: cheminSecteur(secteur) },
-        ...(entreprise.departement && nomDepartement(entreprise.departement)
-          ? [
-              {
-                libelle: nomDepartement(entreprise.departement)!,
-                href: cheminDepartement(secteur, entreprise.departement) ?? undefined,
-              },
-            ]
-          : []),
-        ...(entreprise.departement && entreprise.commune
-          ? [
-              {
-                libelle: entreprise.commune,
-                href: cheminCommune(secteur, entreprise.departement, entreprise.commune) ?? undefined,
-              },
-            ]
-          : []),
+    { libelle: "Annuaire", href: "/annuaire" },
+    { libelle: libelleSecteur(secteur), href: cheminSecteur(secteur) },
+    ...(entreprise.departement && nomDepartement(entreprise.departement)
+      ? [
+          {
+            libelle: nomDepartement(entreprise.departement)!,
+            href: cheminDepartement(secteur, entreprise.departement) ?? undefined,
+          },
+        ]
+      : []),
+    ...(entreprise.departement && commune
+      ? [{ libelle: commune, href: cheminCommune(secteur, entreprise.departement, commune) ?? undefined }]
+      : []),
     { libelle: nom },
   ];
 
@@ -246,9 +189,9 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
       fil={fil}
     >
       <CompteurVue siren={entreprise.siren} />
-      {/* Uniquement ce que la page affiche réellement : fil d'Ariane,
-          éditeur, et questions fréquentes dépliées. Ni Review ni
-          AggregateRating — ce ne sont pas des avis notés. */}
+      {/* Uniquement ce que la page affiche réellement : fil d'Ariane, éditeur,
+          questions fréquentes. Ni Review ni AggregateRating — ce ne sont pas
+          des avis notés, et l'étoile serait un mensonge de plus. */}
       <DonneesStructurees donnees={filAlianeJsonLd(fil)} />
       <DonneesStructurees
         donnees={organisationJsonLd({
@@ -263,773 +206,486 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           email: entreprise.emailReclamation,
         })}
       />
-      <DonneesStructurees donnees={faqJsonLd(questions)} />
+      <DonneesStructurees donnees={faqJsonLd(questions.map((q) => ({ q: q.q, a: q.r.join(" ") })))} />
 
-      <div className="rfx">
-        {/* ── Hero ──────────────────────────────────────────────────────── */}
-        <div className="rfx-conteneur" style={{ padding: "40px 32px 44px" }}>
-          <div className="rfx-hero">
-            <div>
-              <div className="rfx-mention" style={{ marginBottom: 10 }}>
-                {[libelleSecteur(secteur), entreprise.commune].filter(Boolean).join(" · ")}
-                {" · "}
-                <span className="rfx-badge rfx-badge--neutre">Fiche non revendiquée</span>
+      <div className="rfn">
+        {/* ── Hero ───────────────────────────────────────────────────────── */}
+        <section className="rfn-hero">
+          <div className="rfn-conteneur rfn-hero__grille">
+            <div className="rfn-hero__gauche">
+              <div className="rfn-chips">
+                {entreprise.secteur ? (
+                  <span className="rfn-chip rfn-chip--bleu">{libelleSecteur(entreprise.secteur)}</span>
+                ) : null}
+                {commune ? <span className="rfn-chip">{commune}</span> : null}
+                <span className="rfn-chip">Fiche non revendiquée</span>
               </div>
-              <h1 className="rfx-h1">{nom} : problèmes et signalements de consommateurs</h1>
-              <p className="rfx-prose" style={{ marginTop: 18 }}>
-                Un remboursement qui n’arrive pas, une commande jamais livrée, un service
-                après-vente qui se dérobe : le professionnel est tenu par des délais précis. Consultez
-                les problèmes signalés concernant {nom}, et préparez gratuitement la réclamation écrite
-                qui fait courir ces délais.
+
+              <h1 className="rfn-h1" style={{ marginTop: 18 }}>
+                Un problème avec {nom} ? Rendez-le visible pour inciter l’entreprise à réagir.
+              </h1>
+
+              <p className="rfn-intro" style={{ marginTop: 16 }}>
+                Publiez votre situation sur la fiche de {nom}, préparez votre réclamation écrite et
+                suivez les prochaines démarches adaptées à votre litige.
               </p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-                <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn">
-                  Signaler un problème avec {nom}
+
+              <div className="rfn-btns" style={{ marginTop: 22 }}>
+                <Link href={tunnel} className="rfn-btn">
+                  Rendre mon litige visible
+                  <Fleche taille={18} />
                 </Link>
-                <a href="#signalements" className="rfx-btn rfx-btn--secondaire">
-                  Voir les signalements
-                </a>
+                <Link href={total > 0 ? "#signalements" : "#probleme"} className="rfn-btn rfn-btn--2">
+                  {total > 0
+                    ? `Voir les ${formatNombre(total)} signalement${total > 1 ? "s" : ""}`
+                    : "Trouver la démarche adaptée"}
+                </Link>
               </div>
-              <p className="rfx-mention" style={{ marginTop: 12 }}>
-                Publication gratuite · quelques minutes
+
+              <p className="rfn-mention" style={{ marginTop: 14 }}>
+                Gratuit · vous relisez tout avant publication · justificatifs facultatifs
               </p>
             </div>
 
-            <aside>
-              {aDesSignalements ? (
-                <>
-                  <div className="rfx-compteur">
-                    <div className="rfx-compteur__nombre">{formatNombre(total)}</div>
-                    <div style={{ fontSize: 14, marginTop: 6 }}>
-                      signalement{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
-                    </div>
-                    <div style={{ fontSize: 12.5, color: "var(--x-sur-bleu-attenue)", marginTop: 8 }}>
-                      12 derniers mois
-                      {resolus > 0
-                        ? ` · dont ${formatNombre(resolus)} signalé${resolus > 1 ? "s" : ""} résolu${resolus > 1 ? "s" : ""}`
-                        : ""}
-                    </div>
-                  </div>
-                  {statistiquesUtiles ? (
-                    <>
-                      <div className="rfx-motifs">
-                        {motifsClasses.slice(0, 4).map((m) => (
-                          <a key={m.cle} href="#signalements">
-                            <span>{m.libelle}</span>
-                            <span className="rfx-chiffre">{formatNombre(m.n)}</span>
-                          </a>
-                        ))}
+            <div className="rfn-hero__droite">
+              <div className="rfn-obtenu">
+                <div className="rfn-obtenu__tete">Ce que vous obtenez</div>
+                {BENEFICES(nom).map((b) => {
+                  const Icone = ICONES_BENEFICE[b.icone];
+                  return (
+                    <div key={b.titre} className="rfn-obtenu__item">
+                      <Icone taille={22} />
+                      <div>
+                        <div className="rfn-obtenu__titre">{b.titre}</div>
+                        <div className="rfn-obtenu__desc">{b.desc}</div>
                       </div>
-                      <p className="rfx-source" style={{ marginTop: 12 }}>
-                        {PORTEE_STATISTIQUES}
-                      </p>
-                    </>
-                  ) : (
-                    /* Une répartition à un seul motif n'apprend rien. Les délais
-                       opposables, eux, valent pour toutes les fiches. */
-                    <div className="rfx-bloc" style={{ borderTop: 0 }}>
-                      <div className="rfx-h4">Ce qu’un professionnel doit tenir</div>
-                      <div className="rfx-lignes" style={{ marginTop: 10 }}>
-                        {[
-                          { k: "14 jours", v: "pour rembourser après rétractation" },
-                          { k: "30 jours", v: "pour livrer, à défaut de date convenue" },
-                          { k: "2 ans", v: "de garantie légale, due par le vendeur" },
-                        ].map((d) => (
-                          <div key={d.k} className="rfx-ligne">
-                            <span className="rfx-ligne__cle rfx-chiffre" style={{ color: "var(--x-bleu)", fontWeight: 700 }}>
-                              {d.k}
-                            </span>
-                            <span className="rfx-ligne__valeur">{d.v}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="rfx-source" style={{ marginTop: 10 }}>
-                        Le délai applicable à votre cas vous sera indiqué avec le texte qui le fonde.
-                      </p>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="rfx-bloc">
-                  <h2 className="rfx-h2 rfx-h2--secondaire">Aucun signalement publié pour le moment</h2>
-                  <p className="rfx-petit" style={{ marginTop: 12 }}>
-                    Aucun consommateur n’a encore publié de signalement concernant {nom} sur Recours
-                    France.
-                  </p>
-                  <Link
-                    href={`/signaler/${entreprise.slug}`}
-                    className="rfx-btn"
-                    style={{ marginTop: 16, width: "100%" }}
-                  >
-                    Signaler le premier problème
-                  </Link>
-                  <p className="rfx-source" style={{ marginTop: 12 }}>
-                    Les informations pratiques de cette page restent disponibles : démarches, médiateur
-                    compétent et informations légales.
-                  </p>
-                </div>
-              )}
-            </aside>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── Sommaire ancré ────────────────────────────────────────────── */}
-        <nav className="rfx-sommaire" aria-label="Sections de la fiche">
-          <div className="rfx-conteneur">
-            <div className="rfx-sommaire__liste">
-              {sommaire.map((s) => (
-                <a key={s.href} href={s.href}>
-                  {s.libelle}
-                </a>
-              ))}
-              <Link href={`/signaler/${entreprise.slug}`} style={{ marginLeft: "auto", fontWeight: 600 }}>
-                Signaler mon problème →
+        {/* ── Nav de sections, collante ──────────────────────────────────── */}
+        <nav className="rfn-nav" aria-label="Sections de la fiche">
+          <div className="rfn-conteneur rfn-nav__piste">
+            {sommaire.map((s) => (
+              <a key={s.href} href={s.href} className="rfn-nav__lien">
+                {s.libelle}
+              </a>
+            ))}
+            <div className="rfn-nav__cta">
+              <Link href={tunnel} className="rfn-btn" style={{ minHeight: 38, fontSize: 14.5, padding: "0 16px" }}>
+                Rendre mon litige visible
               </Link>
             </div>
           </div>
         </nav>
 
-        {/* ── Motifs ────────────────────────────────────────────────────── */}
-        <section id="problemes" className="rfx-conteneur" style={{ padding: "8px 32px 0" }}>
-          <div className="rfx-section">
-            <h2 className="rfx-h2">Quel problème rencontrez-vous avec {nom} ?</h2>
-            <p className="rfx-texte" style={{ marginTop: 10, maxWidth: 820 }}>
-              Choisissez la situation la plus proche de la vôtre pour consulter les démarches
-              correspondantes.
+        {/* ── Quel problème rencontrez-vous ? ────────────────────────────── */}
+        <section id="probleme" className="rfn-section">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Quel problème rencontrez-vous ?</h2>
+            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
+              Choisissez la situation la plus proche de la vôtre. Les démarches et la réclamation
+              sont adaptées à votre choix.
             </p>
-            <ul className="rfx-liste rfx-deux" style={{ marginTop: 20 }}>
-              {MOTIFS.map((m) => (
-                <li key={m.cle}>
-                  <Link href={`/signaler/${entreprise.slug}/situation?s=${situationPourMotif(m.cle)}`}>
-                    <span>{m.libelle}</span>
-                    {/* Le délai plutôt qu'un chevron : le visiteur voit sa
-                        situation et son levier d'un seul coup d'œil, avant même
-                        de cliquer. Le nombre de signalements le complète quand
-                        il y en a. */}
-                    <span className="rfx-liste__compteur">
-                      {delaiCourtPourMotif(m.cle) ? (
-                        <span style={{ color: "var(--x-bleu)", fontWeight: 700 }}>
-                          {delaiCourtPourMotif(m.cle)}
-                        </span>
-                      ) : null}
-                      {aDesSignalements && parMotif.get(m.cle)
-                        ? `${delaiCourtPourMotif(m.cle) ? " · " : ""}${formatNombre(parMotif.get(m.cle)!)} signalement${parMotif.get(m.cle)! > 1 ? "s" : ""}`
-                        : ""}
+
+            <div className="rfn-grille" style={{ marginTop: 22 }}>
+              {MOTIFS_FICHE.map((m) => {
+                const Icone = ICONES[m.icone];
+                return (
+                  <Link
+                    key={m.cle}
+                    href={`${tunnel}?motif=${m.cle}`}
+                    className="rfn-carte rfn-probleme"
+                  >
+                    <span className="rfn-probleme__icone">
+                      <Icone taille={20} />
+                    </span>
+                    <span className="rfn-probleme__titre">{m.libelle}</span>
+                    <span className="rfn-probleme__desc">{m.desc}</span>
+                    <span className="rfn-probleme__pied">
+                      <Fleche taille={18} />
                     </span>
                   </Link>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
+
+            <div className="rfn-beige" style={{ marginTop: 18 }}>
+              <Info taille={18} />
+              <span>
+                Vous ne savez pas par où commencer ? Nous vous indiquons la prochaine étape selon
+                votre situation.
+              </span>
+            </div>
           </div>
         </section>
 
-        {/* ── Problèmes les plus signalés (au-delà du seuil) ────────────── */}
-        {statistiquesUtiles ? (
-          <section className="rfx-conteneur" style={{ padding: "0 32px" }}>
-            <div className="rfx-section rfx-editorial">
-              <div>
-                <h2 className="rfx-h2">Problèmes les plus signalés avec {nom}</h2>
-                <div style={{ marginTop: 22 }}>
-                  {motifsClasses.slice(0, 5).map((m) => (
-                    <div key={m.cle} className="rfx-barre">
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 14.5 }}>
-                        <span>{m.libelle}</span>
-                        <span className="rfx-chiffre" style={{ color: "var(--x-encre-3)", fontSize: 13.5 }}>
-                          {formatNombre(m.n)} signalement{m.n > 1 ? "s" : ""} — {m.pct} %
-                        </span>
-                      </div>
-                      <div className="rfx-barre__piste">
-                        <div className="rfx-barre__part" style={{ width: `${Math.max(2, m.pct)}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="rfx-source" style={{ marginTop: 14 }}>
-                  {PORTEE_STATISTIQUES}
-                </p>
-              </div>
-              <aside className="rfx-bloc rfx-bloc--alt">
-                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Ce que signalent les consommateurs
-                </h3>
-                <div style={{ marginTop: 16 }}>
-                  {motifsClasses.slice(0, 3).map((m) => (
-                    <div key={m.cle} style={{ marginBottom: 14 }}>
-                      <div className="rfx-chiffre" style={{ fontSize: 25, color: "var(--x-bleu)" }}>
-                        {m.pct} %
-                      </div>
-                      <div className="rfx-mention">{m.libelle}</div>
-                    </div>
-                  ))}
-                </div>
-                {resolus > 0 ? (
-                  <p className="rfx-petit" style={{ borderTop: "1px solid var(--x-filet)", paddingTop: 12 }}>
-                    <strong className="rfx-chiffre">
-                      {formatNombre(resolus)} signalement{resolus > 1 ? "s" : ""}
-                    </strong>{" "}
-                    {resolus > 1 ? "ont été mis à jour par leurs auteurs" : "a été mis à jour par son auteur"}{" "}
-                    comme résolu{resolus > 1 ? "s" : ""}.
+        {/* ── Signalements publics ───────────────────────────────────────── */}
+        <section id="signalements" className="rfn-section rfn-section--gris">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Signalements publics concernant {nom}</h2>
+
+            {total === 0 ? (
+              <div
+                className="rfn-carte"
+                style={{
+                  marginTop: 20,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 20,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 22,
+                }}
+              >
+                <div style={{ flex: "1 1 340px", minWidth: 0 }}>
+                  <div className="rfn-h3">Aucun signalement public concernant {nom} pour le moment.</div>
+                  <p className="rfn-second" style={{ marginTop: 8 }}>
+                    Vous avez rencontré un problème ? Votre publication permettra de rendre cette
+                    situation visible.
                   </p>
-                ) : null}
-                <p className="rfx-source">Basé uniquement sur les signalements publiés sur Recours France.</p>
-              </aside>
-            </div>
-          </section>
-        ) : null}
-
-        {/* ── Signalements ──────────────────────────────────────────────── */}
-        <section id="signalements" className="rfx-conteneur" style={{ padding: "0 32px" }}>
-          <div className="rfx-section">
-            <h2 className="rfx-h2">Signalements concernant {nom}</h2>
-            <p className="rfx-texte" style={{ marginTop: 10, maxWidth: 820 }}>
-              Chaque signalement reprend la déclaration de son auteur. Recours France ne vérifie pas le
-              récit des faits et n’intervient pas dans le règlement du litige.
-            </p>
-
-            {aDesSignalements ? (
-              <>
-                <div className="rfx-bloc" style={{ marginTop: 22, padding: "4px 24px" }}>
-                  {signalements.map((s) => {
-                    const titre = titreSignalement(nom, {
-                      categorie: s.categorie,
-                      demande: s.demande,
-                      etatProfessionnel: s.etatProfessionnel,
-                      resolutionConfirmee: s.resolutionConfirmee,
-                      dateFaits: s.dateFaits,
-                    });
-                    return (
-                      <article key={s.id} className="rfx-signalement">
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                          <span className="rfx-badge rfx-badge--categorie">
-                            {CATEGORIES_LIBELLE[s.categorie] ?? s.categorie}
-                          </span>
-                          <span
-                            className={`rfx-badge ${s.resolutionConfirmee ? "rfx-badge--resolu" : "rfx-badge--encours"}`}
-                          >
-                            {s.resolutionConfirmee ? "Résolu selon le consommateur" : "Problème en cours"}
-                          </span>
-                        </div>
-                        <h3 className="rfx-h3">{titre}</h3>
-                        <div className="rfx-mention" style={{ marginTop: 8 }}>
-                          {[
-                            s.montant ? formatMontant(Number(s.montant)) : null,
-                            `Faits : ${formatDateLongue(s.dateFaits)}`,
-                            `Publié : ${formatDateLongue(s.creeLe)}`,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </div>
-                        <div className="rfx-declaration" style={{ marginTop: 14 }}>
-                          {declarationPublique(
-                            s,
-                            (c) => LIBELLES_DEMANDE[c] ?? c,
-                            (c) => LIBELLES_ETAT_PRO[c] ?? c,
-                          )}
-                        </div>
-                        <p className="rfx-source" style={{ marginTop: 8, paddingLeft: 19 }}>
-                          Déclaration du consommateur, publiée le {formatDateLongue(s.creeLe)}. Non
-                          vérifiée par Recours France.
-                        </p>
-                        {s.resolutionConfirmee && s.resolutionConfirmeeLe ? (
-                          <div className="rfx-resolution" style={{ marginTop: 14 }}>
-                            Résolution déclarée par l’auteur le{" "}
-                            {formatDateLongue(s.resolutionConfirmeeLe)}. Recours France n’est pas
-                            intervenu dans ce dossier.
-                          </div>
-                        ) : null}
-                      </article>
-                    );
-                  })}
                 </div>
-                <p className="rfx-source" style={{ marginTop: 14 }}>
-                  Les signalements sont publiés après modération.
-                </p>
-              </>
+                <Link href={tunnel} className="rfn-btn">
+                  Publier le premier signalement
+                  <Fleche taille={18} />
+                </Link>
+              </div>
             ) : (
-              <p className="rfx-texte" style={{ marginTop: 18 }}>
-                Aucun signalement n’a encore été publié concernant {nom}. Aucun contenu n’est généré
-                artificiellement pour étoffer cette page.
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* ── Appel intermédiaire ───────────────────────────────────────── */}
-        <div className="rfx-conteneur" style={{ padding: "0 32px 8px" }}>
-          <div className="rfx-bloc rfx-bloc--accent">
-            <h2 className="rfx-h2 rfx-h2--secondaire">Vous rencontrez une situation similaire ?</h2>
-            <p className="rfx-petit" style={{ marginTop: 8, maxWidth: 700 }}>
-              Publiez votre expérience pour qu’elle soit comptabilisée parmi les problèmes signalés
-              concernant {nom}.
-            </p>
-            <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn" style={{ marginTop: 16 }}>
-              Signaler mon problème
-            </Link>
-            <p className="rfx-mention" style={{ marginTop: 10 }}>
-              Publication gratuite · justificatifs facultatifs
-            </p>
-          </div>
-        </div>
-
-        {/* ── Démarches ─────────────────────────────────────────────────── */}
-        <section id="demarches" className="rfx-conteneur" style={{ padding: "0 32px" }}>
-          <div className="rfx-section rfx-editorial">
-            <div>
-              <h2 className="rfx-h2">Que faire en cas de problème avec {nom} ?</h2>
-              <p className="rfx-texte" style={{ marginTop: 10 }}>
-                Les démarches ci-dessous suivent l’ordre habituellement recommandé en droit de la
-                consommation. Elles sont générales et ne constituent pas un conseil juridique
-                personnalisé.
-              </p>
-
-              {blocs.map((b) => (
-                <div key={b.id} id={b.id} style={{ marginTop: 30 }}>
-                  <h3 className="rfx-h3">{b.titre}</h3>
-                  <div className="rfx-prose" style={{ marginTop: 10 }}>
-                    {b.paragraphes.map((p, i) => (
-                      <p key={i}>{p}</p>
-                    ))}
-                  </div>
-                  {b.puces ? (
-                    <ul style={{ margin: "6px 0 0", paddingLeft: 20 }} className="rfx-texte">
-                      {b.puces.map((p) => (
-                        <li key={p} style={{ marginBottom: 4 }}>
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {b.id === "mediateur" ? (
-                    <div className="rfx-bloc rfx-bloc--alt" style={{ marginTop: 14 }}>
-                      {mediateurDeclare ? (
-                        <>
-                          <div className="rfx-h4">{mediateurDeclare.nom}</div>
-                          <div className="rfx-lignes" style={{ marginTop: 10 }}>
-                            <div className="rfx-ligne">
-                              <span className="rfx-ligne__cle">Adhésion</span>
-                              <span className="rfx-ligne__valeur">Déclarée par l’entreprise</span>
-                            </div>
-                            <div className="rfx-ligne">
-                              <span className="rfx-ligne__cle">Coût</span>
-                              <span className="rfx-ligne__valeur">Gratuit pour le consommateur</span>
-                            </div>
-                            <div className="rfx-ligne">
-                              <span className="rfx-ligne__cle">Condition préalable</span>
-                              <span className="rfx-ligne__valeur">
-                                Réclamation écrite restée sans réponse satisfaisante
-                              </span>
-                            </div>
-                            {mediateurDeclare.siteWeb ? (
-                              <div className="rfx-ligne">
-                                <span className="rfx-ligne__cle">Saisine</span>
-                                <span className="rfx-ligne__valeur">
-                                  <a href={mediateurDeclare.siteWeb} rel="nofollow noopener" target="_blank">
-                                    {mediateurDeclare.siteWeb}
-                                  </a>
-                                </span>
-                              </div>
-                            ) : null}
-                          </div>
-                          <p className="rfx-source" style={{ marginTop: 10 }}>
-                            Information issue de la liste publique des médiateurs de la consommation.
-                          </p>
-                        </>
-                      ) : (
-                        <p className="rfx-petit">
-                          Aucune adhésion à un médiateur n’est déclarée par {nom} à ce jour. Tout
-                          professionnel est pourtant tenu de proposer un dispositif de médiation :
-                          demandez-lui par écrit de quel médiateur il relève.
-                        </p>
-                      )}
+              <>
+                <div className="rfn-compteurs" style={{ marginTop: 20 }}>
+                  <div>
+                    <div className="rfn-compteur__n" style={{ color: "var(--rf-cobalt-fonce)" }}>
+                      {formatNombre(total)}
                     </div>
-                  ) : null}
+                    <div className="rfn-compteur__l">
+                      signalement{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="rfn-compteur__n" style={{ color: "var(--rf-succes)" }}>
+                      {formatNombre(resolus)}
+                    </div>
+                    <div className="rfn-compteur__l">résolu{resolus > 1 ? "s" : ""} selon l’auteur</div>
+                  </div>
+                  <div>
+                    <div className="rfn-compteur__n" style={{ color: "var(--rf-erreur)" }}>
+                      {formatNombre(total - resolus)}
+                    </div>
+                    <div className="rfn-compteur__l">sans résolution déclarée</div>
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            <aside>
-              <div className="rfx-bloc">
-                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  L’ordre des démarches
-                </h3>
-                <ol style={{ listStyle: "none", margin: "16px 0 0", padding: 0 }}>
-                  {ORDRE_DEMARCHES.map((e) => (
-                    <li key={e.n} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                      <span
-                        className="rfx-chiffre"
+                <div style={{ display: "grid", gap: 12, marginTop: 22 }}>
+                  {signalements.map((s) => (
+                    <article key={s.id} className="rfn-carte">
+                      <div
                         style={{
-                          flex: "none",
-                          width: 26,
-                          height: 26,
-                          background: "var(--x-bleu-clair)",
-                          color: "var(--x-bleu)",
-                          display: "grid",
-                          placeItems: "center",
-                          fontSize: 13,
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 8,
+                          alignItems: "center",
+                          justifyContent: "space-between",
                         }}
                       >
-                        {e.n}
-                      </span>
-                      <span>
-                        <span style={{ fontSize: 14.5, fontWeight: 700 }}>{e.titre}</span>
-                        <span className="rfx-mention" style={{ display: "block", marginTop: 2 }}>
-                          {e.desc}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-                <p className="rfx-source" style={{ borderTop: "1px solid var(--x-filet)", paddingTop: 10 }}>
-                  Informations générales. Elles ne constituent pas un conseil juridique personnalisé.
-                </p>
-              </div>
-
-              <div id="contact" className="rfx-bloc" style={{ marginTop: 16 }}>
-                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Contacter {nom}
-                </h3>
-                <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                  {[
-                    entreprise.siteWeb ? { k: "Site", v: entreprise.siteWeb, lien: true } : null,
-                    entreprise.emailReclamation
-                      ? { k: "Réclamation", v: entreprise.emailReclamation, lien: false }
-                      : null,
-                    entreprise.telephoneReclamation
-                      ? { k: "Téléphone", v: entreprise.telephoneReclamation, lien: false }
-                      : null,
-                    { k: "Courrier", v: adressePostale(entreprise) ?? "Adresse non publiée", lien: false },
-                  ]
-                    .filter((l): l is { k: string; v: string; lien: boolean } => l !== null)
-                    .map((l) => (
-                      <div key={l.k} className="rfx-ligne">
-                        <span className="rfx-ligne__cle">{l.k}</span>
-                        <span className="rfx-ligne__valeur">
-                          {l.lien ? (
-                            <a href={l.v} rel="nofollow noopener" target="_blank">
-                              {l.v}
-                            </a>
-                          ) : (
-                            l.v
-                          )}
-                        </span>
+                        <div className="rfn-chips">
+                          <span className="rfn-chip rfn-chip--bleu">
+                            {MOTIFS_FICHE.find((m) => m.cle === s.categorie)?.libelle ?? s.categorie}
+                          </span>
+                          <span className="rfn-chip">
+                            {s.resolutionConfirmee ? "Résolu selon l’auteur" : "Déclaré"}
+                          </span>
+                        </div>
+                        <span className="rfn-mention">{formatDateLongue(s.creeLe)}</span>
                       </div>
-                    ))}
+                      <p className="rfn-texte" style={{ marginTop: 12 }}>
+                        {declarationPublique(s, (c) => LIBELLES_DEMANDE[c] ?? c, (c) => LIBELLES_ETAT_PRO[c] ?? c)}
+                      </p>
+                    </article>
+                  ))}
                 </div>
-                <p className="rfx-source" style={{ marginTop: 10 }}>
-                  Coordonnées issues de sources publiques ou du site de l’entreprise.
-                  {entreprise.siteWebVerifieLe
-                    ? ` Vérifiées le ${formatDateLongue(entreprise.siteWebVerifieLe)}.`
-                    : ""}
+              </>
+            )}
+
+            <p className="rfn-mention" style={{ marginTop: 18, maxWidth: "78ch" }}>
+              Chaque signalement reprend la déclaration de son auteur. Recours France ne vérifie pas
+              le récit des faits, n’intervient pas dans le règlement du litige et ne génère aucun
+              contenu artificiel pour étoffer cette page.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Votre plan d'action ────────────────────────────────────────── */}
+        <section id="demarches" className="rfn-section">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Votre plan d’action</h2>
+            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
+              Les étapes suivent l’ordre habituellement recommandé en droit de la consommation.
+              Dépliez une étape pour le détail.
+            </p>
+
+            <div style={{ marginTop: 22 }}>
+              {etapes.map((e, i) => (
+                <div key={e.cle} className="rfn-etape">
+                  <div className="rfn-etape__rail">
+                    <span className="rfn-etape__pastille">{i + 1}</span>
+                    {i < etapes.length - 1 ? <span className="rfn-etape__filet" /> : null}
+                  </div>
+                  <div className="rfn-etape__corps">
+                    <details className="rfn-accordeon">
+                      <summary className="rfn-accordeon__bouton">
+                        <span style={{ minWidth: 0 }}>
+                          <span className="rfn-accordeon__titre">{e.titre}</span>
+                          <span className="rfn-accordeon__sous" style={{ display: "block" }}>
+                            {e.sous}
+                          </span>
+                        </span>
+                        <span className="rfn-accordeon__marque">
+                          Détails
+                          <Chevron taille={16} className="rfn-accordeon__chevron" />
+                        </span>
+                      </summary>
+                      <div className="rfn-accordeon__panneau">
+                        {e.paragraphes.map((t) => (
+                          <p key={t} className="rfn-second" style={{ marginBottom: 10 }}>
+                            {t}
+                          </p>
+                        ))}
+                        {e.points ? (
+                          <ul style={{ margin: "4px 0 0", paddingLeft: 18, listStyle: "disc" }}>
+                            {e.points.map((p) => (
+                              <li key={p} className="rfn-second" style={{ marginBottom: 5 }}>
+                                {p}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <OuEnEtesVous nom={nom} href={tunnel} />
+
+            <p className="rfn-mention" style={{ marginTop: 18 }}>
+              Informations générales de droit de la consommation. Elles ne constituent pas un conseil
+              juridique personnalisé.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Coordonnées et médiateur ───────────────────────────────────── */}
+        <section id="contact" className="rfn-section rfn-section--gris">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Coordonnées et médiateur</h2>
+            <div className="rfn-grille rfn-grille--2" style={{ marginTop: 20 }}>
+              <div className="rfn-carte">
+                <div className="rfn-eyebrow">Adresse du siège</div>
+                <p className="rfn-texte" style={{ marginTop: 10 }}>
+                  {adresse ?? "Adresse non publiée dans les registres."}
+                </p>
+                <p className="rfn-mention" style={{ marginTop: 12 }}>
+                  Coordonnées issues de sources publiques. Aucun courriel ni téléphone n’est déclaré
+                  publiquement à ce jour.
                 </p>
               </div>
+              <div className="rfn-carte">
+                <div className="rfn-eyebrow">Médiateur de la consommation</div>
+                <p className="rfn-texte" style={{ marginTop: 10 }}>
+                  {mediateurDeclare
+                    ? mediateurDeclare.nom
+                    : `Aucune adhésion déclarée par ${nom} à ce jour.`}
+                </p>
+                <p className="rfn-mention" style={{ marginTop: 12 }}>
+                  Tout professionnel est tenu de proposer un dispositif de médiation. Demandez-lui par
+                  écrit de quel médiateur il relève.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="rfx-bloc" style={{ marginTop: 16 }}>
-                <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                  Sources et vérification
-                </h3>
-                <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                  {[
-                    { k: "Identité", v: "Répertoire Sirene (Insee)" },
-                    { k: "Registre", v: "RNE (INPI)" },
-                    { k: "Annonces", v: "BODACC" },
-                    { k: "Médiation", v: "Liste publique des médiateurs" },
-                  ].map((s) => (
-                    <div key={s.k} className="rfx-ligne">
-                      <span className="rfx-ligne__cle">{s.k}</span>
-                      <span className="rfx-ligne__valeur">{s.v}</span>
+        {/* ── Informations légales et financières ────────────────────────── */}
+        <section id="informations" className="rfn-section">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Informations légales et financières</h2>
+            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
+              Données issues du répertoire Sirene (Insee), du registre national des entreprises
+              (INPI) et du BODACC.
+            </p>
+
+            <div className="rfn-defs" style={{ marginTop: 20 }}>
+              {lignesLegales.map((l) => (
+                <div key={l.k} className="rfn-def">
+                  <span className="rfn-def__k">{l.k}</span>
+                  <span className="rfn-def__v">{l.v}</span>
+                </div>
+              ))}
+            </div>
+
+            {finances.length > 0 ? (
+              <details className="rfn-accordeon" style={{ marginTop: 20 }}>
+                <summary className="rfn-accordeon__bouton">
+                  <span className="rfn-accordeon__titre">
+                    Informations financières ({finances.length} exercice{finances.length > 1 ? "s" : ""})
+                  </span>
+                  <span className="rfn-accordeon__marque">
+                    <Chevron taille={16} className="rfn-accordeon__chevron" />
+                  </span>
+                </summary>
+                <div className="rfn-accordeon__panneau">
+                  {finances.map((f) => (
+                    <div key={f.k} className="rfn-def">
+                      <span className="rfn-def__k">{f.k}</span>
+                      <span className="rfn-def__v">{f.v}</span>
                     </div>
                   ))}
                 </div>
-                <p style={{ marginTop: 10 }}>
-                  <Link href="/methodologie" style={{ fontSize: 13.5 }}>
-                    Voir notre méthodologie
-                  </Link>
-                </p>
-              </div>
-            </aside>
-          </div>
-        </section>
+              </details>
+            ) : null}
 
-        {/* ── Évolution (au-delà du seuil) ──────────────────────────────── */}
-        {statistiquesUtiles ? (
-          <section id="evolution" className="rfx-conteneur" style={{ padding: "0 32px" }}>
-            <div className="rfx-section">
-              <h2 className="rfx-h2">Évolution des signalements concernant {nom}</h2>
-              <p className="rfx-texte" style={{ marginTop: 10 }}>
-                Nombre de signalements publiés par mois sur les douze derniers mois.
-              </p>
-              <div className="rfx-histo" style={{ marginTop: 24 }}>
-                {serie.map((m, i) => (
-                  <div
-                    key={m.cle}
-                    className={`rfx-histo__col${i >= 9 ? " rfx-histo__col--recent" : ""}`}
-                    style={{ height: `${(m.valeur / maxSerie) * 100}%` }}
-                    title={`${m.libelle} : ${m.valeur}`}
-                  />
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                {serie.map((m) => (
-                  <div key={m.cle} className="rfx-source" style={{ flex: 1, textAlign: "center" }}>
-                    {m.libelle}
-                  </div>
-                ))}
-              </div>
-              <p className="rfx-source" style={{ marginTop: 14 }}>
-                {PORTEE_EVOLUTION}
-              </p>
-            </div>
-          </section>
-        ) : null}
-
-        {/* ── Maillage et guides ────────────────────────────────────────── */}
-        <section className="rfx-conteneur" style={{ padding: "0 32px" }}>
-          <div className="rfx-section rfx-editorial">
-            <div>
-              <h2 className="rfx-h2 rfx-h2--secondaire">Entreprises comparables</h2>
-              <p className="rfx-texte" style={{ marginTop: 8 }}>
-                Même activité, même territoire. Ce rapprochement ne constitue ni un classement ni une
-                comparaison de qualité.
-              </p>
-              <ul className="rfx-liste" style={{ marginTop: 14 }}>
-                {[...proches.memeVille, ...proches.memeDepartement, ...proches.memeSecteur]
-                  .slice(0, 10)
-                  .map((v) => (
-                    <li key={v.slug}>
-                      <Link href={`/entreprises/${v.slug}`}>
-                        <span>{v.denomination}</span>
-                        <span className="rfx-liste__compteur">
-                          {v.signalements > 0
-                            ? `${formatNombre(v.signalements)} signalement${v.signalements > 1 ? "s" : ""}`
-                            : (v.commune ?? "")}
-                        </span>
-                      </Link>
-                    </li>
+            {evenements.length > 0 ? (
+              <details className="rfn-accordeon" style={{ marginTop: 12 }}>
+                <summary className="rfn-accordeon__bouton">
+                  <span className="rfn-accordeon__titre">Événements récents et sources</span>
+                  <span className="rfn-accordeon__marque">
+                    <Chevron taille={16} className="rfn-accordeon__chevron" />
+                  </span>
+                </summary>
+                <div className="rfn-accordeon__panneau">
+                  {evenements.slice(0, 8).map((e) => (
+                    <div key={e.id} className="rfn-def">
+                      <span className="rfn-def__k">{formatDateLongue(e.date)}</span>
+                      <span className="rfn-def__v">{e.titre}</span>
+                    </div>
                   ))}
-              </ul>
-              {boutique ? (
-                <p className="rfx-petit" style={{ marginTop: 14 }}>
-                  Cette société exploite la boutique{" "}
-                  <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>.
-                </p>
-              ) : null}
-            </div>
-            <aside>
-              <h2 className="rfx-h2 rfx-h2--secondaire">Guides pouvant vous aider</h2>
-              <p className="rfx-texte" style={{ marginTop: 8 }}>
-                Démarches expliquées pas à pas, applicables à tout professionnel.
-              </p>
-              <ul className="rfx-liste" style={{ marginTop: 14 }}>
-                {GUIDES.map((g) => (
-                  <li key={g.libelle}>
-                    <Link href={g.href}>
-                      <span>{g.libelle}</span>
-                      <span className="rfx-liste__compteur" aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          </div>
-        </section>
-
-        {/* ── Informations légales ──────────────────────────────────────── */}
-        <section id="informations" className="rfx-section rfx-section--alt" style={{ marginTop: 8 }}>
-          <div className="rfx-conteneur">
-            <h2 className="rfx-h2 rfx-h2--secondaire">Informations sur {nom}</h2>
-            <p className="rfx-texte" style={{ marginTop: 8 }}>
-              Données issues de sources publiques : répertoire Sirene (Insee), registre national des
-              entreprises (INPI), BODACC.
-            </p>
-
-            <div className="rfx-deux" style={{ marginTop: 20 }}>
-              <div className="rfx-lignes">
-                {lignesLegales.slice(0, 5).map((l) => (
-                  <div key={l.k} className="rfx-ligne">
-                    <span className="rfx-ligne__cle">{l.k}</span>
-                    <span className="rfx-ligne__valeur">{l.v}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="rfx-lignes">
-                {lignesLegales.slice(5).map((l) => (
-                  <div key={l.k} className="rfx-ligne">
-                    <span className="rfx-ligne__cle">{l.k}</span>
-                    <span className="rfx-ligne__valeur">{l.v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rfx-deux" style={{ marginTop: 30 }}>
-              {finances.length > 0 ? (
-                <div>
-                  <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                    Informations financières
-                  </h3>
-                  <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                    {finances.map((f) => (
-                      <div key={f.k} className="rfx-ligne">
-                        <span className="rfx-ligne__cle">{f.k}</span>
-                        <span className="rfx-ligne__valeur">{f.v}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              ) : null}
-
-              {evenements.length > 0 ? (
-                <div>
-                  <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                    Événements récents
-                  </h3>
-                  <div className="rfx-lignes" style={{ marginTop: 12 }}>
-                    {evenements.slice(0, 4).map((e) => (
-                      <div key={e.id} className="rfx-ligne">
-                        <span className="rfx-ligne__cle">{formatDateLongue(e.date)}</span>
-                        <span className="rfx-ligne__valeur">
-                          {e.titre}
-                          <span className="rfx-source" style={{ display: "block" }}>
-                            {e.source}
-                          </span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            {etablissements.length > 1 ? (
-              <p className="rfx-petit" style={{ marginTop: 20 }}>
-                {formatNombre(etablissements.length)} établissements sont rattachés à cette société.
-              </p>
+              </details>
             ) : null}
           </div>
         </section>
 
-        {/* ── Revendication et fonctionnement ───────────────────────────── */}
-        <section className="rfx-conteneur" style={{ padding: "0 32px" }}>
-          <div className="rfx-section rfx-editorial">
-            <div>
-              <h2 className="rfx-h2 rfx-h2--secondaire">Vous représentez {nom} ?</h2>
-              <p className="rfx-prose" style={{ marginTop: 10 }}>
-                Une entreprise peut contester une déclaration la concernant. La contestation est examinée
-                sur pièces, et le signalement est retiré s’il se révèle infondé ou contraire à la
-                politique de modération.
-              </p>
-              <p className="rfx-prose">
-                La démarche est gratuite et n’ouvre aucun droit de suppression automatique. Seuls les
-                contenus contraires à la politique de modération sont retirés, sur examen et quelle que
-                soit la partie qui le demande.
-              </p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
-                <Link href={`/entreprises/${slug}/contester`} className="rfx-btn rfx-btn--secondaire">
+        {/* ── Vous représentez cette entreprise ? ────────────────────────── */}
+        <section id="entreprise" className="rfn-section rfn-section--gris" style={{ paddingBlock: 30 }}>
+          <div className="rfn-conteneur">
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 16,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div className="rfn-h3">Vous représentez {nom} ?</div>
+                <p className="rfn-second" style={{ marginTop: 6 }}>
+                  Contestez une déclaration vous concernant ou prenez la main sur cette fiche.
+                </p>
+              </div>
+              <div className="rfn-btns">
+                <Link href={`/entreprises/${slug}/contester`} className="rfn-btn rfn-btn--2">
                   Contester une déclaration
                 </Link>
-                <Link href={`/entreprises/${slug}/revendiquer`} className="rfx-btn rfx-btn--secondaire">
+                <Link href={`/entreprises/${slug}/revendiquer`} className="rfn-btn rfn-btn--2">
                   Revendiquer cette fiche
                 </Link>
               </div>
             </div>
-            <aside>
-              <h2 className="rfx-h2 rfx-h2--secondaire">Comment fonctionne Recours France ?</h2>
-              <ol style={{ listStyle: "none", margin: "16px 0 0", padding: 0 }}>
-                {FONCTIONNEMENT.map((e) => (
-                  <li key={e.n} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                    <span
-                      className="rfx-chiffre"
-                      style={{
-                        flex: "none",
-                        width: 26,
-                        height: 26,
-                        background: "var(--x-bleu-clair)",
-                        color: "var(--x-bleu)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 13,
-                      }}
-                    >
-                      {e.n}
-                    </span>
-                    <span>
-                      <span style={{ fontSize: 14.5, fontWeight: 700 }}>{e.titre}</span>
-                      <span className="rfx-mention" style={{ display: "block", marginTop: 2 }}>
-                        {e.desc}
+          </div>
+        </section>
+
+        {/* ── Méthodologie, indépendance et FAQ ──────────────────────────── */}
+        <section id="faq" className="rfn-section">
+          <div className="rfn-conteneur">
+            <h2 className="rfn-h2">Méthodologie, indépendance et questions fréquentes</h2>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "clamp(20px, 3cqw, 40px)",
+                marginTop: 20,
+                alignItems: "flex-start",
+              }}
+            >
+              <div style={{ flex: "1 1 440px", minWidth: 0, display: "grid", gap: 10 }}>
+                {questions.map((q) => (
+                  <details key={q.cle} className="rfn-accordeon">
+                    <summary className="rfn-accordeon__bouton">
+                      <span className="rfn-accordeon__titre">{q.q}</span>
+                      <span className="rfn-accordeon__marque">
+                        <Chevron taille={16} className="rfn-accordeon__chevron" />
                       </span>
-                    </span>
-                  </li>
+                    </summary>
+                    <div className="rfn-accordeon__panneau">
+                      {q.r.map((t) => (
+                        <p key={t} className="rfn-second">
+                          {t}
+                        </p>
+                      ))}
+                    </div>
+                  </details>
                 ))}
-              </ol>
-              <p style={{ marginTop: 10 }}>
-                <Link href="/charte-de-moderation" style={{ fontSize: 13.5 }}>
-                  Consulter notre politique de modération
-                </Link>
-              </p>
-            </aside>
-          </div>
-        </section>
+              </div>
 
-        {/* ── Avertissement ─────────────────────────────────────────────── */}
-        <div className="rfx-conteneur" style={{ padding: "0 32px 8px" }}>
-          <div className="rfx-bloc rfx-bloc--avertissement">
-            <h2 className="rfx-h2 rfx-h2--secondaire" style={{ fontSize: 19 }}>
-              Recours France est une plateforme indépendante
-            </h2>
-            <p className="rfx-petit" style={{ marginTop: 10 }}>
-              Recours France n’est ni un service de l’État, ni un tribunal, ni un cabinet d’avocats, ni
-              un médiateur de la consommation. La plateforme ne transmet pas les réclamations aux
-              professionnels et n’intervient pas dans le règlement des litiges.
-            </p>
-            <p className="rfx-petit" style={{ marginTop: 8 }}>
-              Les signalements publiés représentent les déclarations de leurs auteurs.{" "}
-              {AVERTISSEMENT_DECLARATION}
-            </p>
-          </div>
-        </div>
-
-        {/* ── FAQ ───────────────────────────────────────────────────────── */}
-        <section id="faq" className="rfx-conteneur" style={{ padding: "0 32px" }}>
-          <div className="rfx-section">
-            <h2 className="rfx-h2">Questions fréquentes concernant {nom}</h2>
-            <div className="rfx-deux" style={{ marginTop: 22, gap: "0 48px" }}>
-              {questions.map((f) => (
-                <div key={f.q} style={{ marginBottom: 26 }}>
-                  <h3 className="rfx-h3" style={{ fontSize: 17 }}>
-                    {f.q}
-                  </h3>
-                  <p className="rfx-texte" style={{ marginTop: 8 }}>
-                    {f.a}
+              <aside style={{ flex: "1 1 280px", minWidth: 0 }}>
+                <div className="rfn-beige" style={{ display: "block" }}>
+                  <div className="rfn-h3" style={{ color: "var(--rf-beige-texte)" }}>
+                    Recours France est une plateforme indépendante
+                  </div>
+                  <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5 }}>
+                    Recours France n’est ni un service de l’État, ni un tribunal, ni un cabinet
+                    d’avocats, ni un médiateur de la consommation.
                   </p>
+                  <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5 }}>
+                    La plateforme ne transmet pas les réclamations aux professionnels et n’intervient
+                    pas dans le règlement des litiges. Un signalement représente la déclaration de son
+                    auteur : il ne signifie pas qu’un manquement a été juridiquement établi.
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--rf-beige-bordure)",
+                      display: "grid",
+                      gap: 8,
+                      fontSize: 14,
+                    }}
+                  >
+                    <Link href="/methodologie">Notre méthodologie →</Link>
+                    <Link href="/charte-de-moderation">Charte de modération →</Link>
+                    <Link href="/methodologie#sources">Origine des données →</Link>
+                  </div>
                 </div>
-              ))}
+              </aside>
             </div>
           </div>
         </section>
 
-        {/* ── Appel final ───────────────────────────────────────────────── */}
-        <div className="rfx-final">
-          <div className="rfx-conteneur">
-            <h2 className="rfx-h2">Vous avez rencontré un problème avec {nom} ?</h2>
-            <p style={{ marginTop: 12, fontSize: 15.5, lineHeight: 1.7, maxWidth: 700 }}>
-              Partagez votre situation et contribuez à rendre visibles les problèmes rencontrés par les
-              consommateurs. Votre signalement est publié après modération et vous pourrez indiquer plus
-              tard s’il a été résolu.
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 22 }}>
-              <Link href={`/signaler/${entreprise.slug}`} className="rfx-btn rfx-btn--blanc">
-                Signaler mon problème
-              </Link>
-              <a href="#signalements" style={{ color: "#fff", alignSelf: "center" }}>
-                Consulter les signalements
-              </a>
+        {/* ── Bandeau final, écrans larges ───────────────────────────────── */}
+        <section className="rfn-final">
+          <div className="rfn-conteneur rfn-final__grille">
+            <div style={{ minWidth: 0 }}>
+              <h2>Rendez votre litige visible et lancez vos démarches</h2>
+              <p>Gratuit · vous relisez tout avant publication · justificatifs facultatifs</p>
             </div>
-            <p style={{ marginTop: 14, fontSize: 12.5, color: "var(--x-sur-bleu-attenue)" }}>
-              Publication gratuite
-            </p>
+            <Link href={tunnel} className="rfn-btn">
+              Rendre mon litige visible
+              <Fleche taille={18} />
+            </Link>
           </div>
+        </section>
+
+        {/* ── Barre d'action, écrans étroits ─────────────────────────────── */}
+        <div className="rfn-barre">
+          <Link href={tunnel} className="rfn-btn">
+            Rendre mon litige visible
+          </Link>
         </div>
       </div>
     </Page>

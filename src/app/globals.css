@@ -1,63 +1,91 @@
 /* ==========================================================================
    Recours France — système de design
-   Charte originale : cobalt #1E4BD2, Public Sans. Aucun élément du DSFR,
-   aucune police Marianne, aucun bloc-marque « République Française ».
-   Règle transverse : aucun arrondi (border-radius: 0), sauf pastilles
-   circulaires. Aucun dégradé, aucune ombre portée.
+   Refonte d'août 2026 : bleu institutionnel #0E2A56, bleu d'action #14448C,
+   Public Sans. Aucun élément du DSFR, aucune police Marianne, aucun
+   bloc-marque « République Française » — le service est privé, et rien ne
+   doit laisser croire le contraire.
+
+   Les noms de variables sont conservés : ils irriguent une vingtaine de
+   pages. Seules les valeurs changent, ce qui reskin l'ensemble d'un coup
+   plutôt que de laisser l'annuaire et la fiche diverger.
+
+   Deux règles de la charte précédente tombent. Les rayons passent de zéro à
+   3 px (boutons, champs, chips) et 4 px (cartes) — pas davantage. Une ombre
+   discrète est admise sur la nav collante et la barre d'action mobile,
+   nulle part ailleurs. Aucun dégradé, toujours.
    ========================================================================== */
 
 :root {
   /* Action */
-  --rf-cobalt: #1e4bd2;
-  --rf-cobalt-fonce: #16235c;
-  --rf-nuit: #101528;
+  --rf-cobalt: #14448c;         /* bleu d'action : boutons, liens, accents */
+  --rf-cobalt-survol: #0f3572;
+  --rf-cobalt-fonce: #0e2a56;   /* bleu institutionnel : titres, bandeau */
+  --rf-nuit: #0a1f42;           /* pied de page */
 
   /* Fonds */
   --rf-blanc: #ffffff;
-  --rf-fond-teinte: #f2f5fc;
-  --rf-fond-leger: #f8fafd;
-  --rf-fond-selection: #f7f9fe;
-  --rf-fond-carte-douce: #fcfdfe;
+  --rf-fond-teinte: #f4f7fc;    /* hero, sections alternées */
+  --rf-fond-leger: #f7f9fc;     /* gris de section */
+  --rf-fond-selection: #f7fafe; /* survol de carte cliquable */
+  --rf-fond-carte-douce: #fbfcfe;
+  --rf-fond-aide: #eef3fa;      /* encadrés d'aide, chips bleues */
 
   /* Traits */
-  --rf-separateur: #e4e9f2;
-  --rf-bordure-carte: #d7dce5;
-  --rf-ligne-carte: #eef1f7;
-  --rf-bordure-champ: #b9c1d1;
+  --rf-separateur: #e4e9f1;
+  --rf-bordure-carte: #dde3ec;
+  --rf-ligne-carte: #eef1f6;
+  --rf-bordure-champ: #c4d6ee;
+  --rf-bordure-aide: #cfdff3;
+  --rf-bordure-bouton-2: #b9cdea;
 
-  /* Texte */
-  --rf-encre: #14161c;
-  --rf-texte-2: #4a515f;
-  --rf-texte-3: #5f6673;
-  --rf-texte-desactive: #98a0ae;
+  /* Texte — le gris le plus clair admis sur blanc est #6B7688 (AA à 4.5:1) */
+  --rf-encre: #253046;
+  --rf-texte-2: #3c4759;
+  --rf-texte-3: #5a6579;
+  --rf-mention: #5f6b7f;
+  --rf-texte-desactive: #6b7688;
+  --rf-placeholder: #707b8c;
 
   /* Accents */
-  --rf-sarcelle: #0e7c86;
-  --rf-succes: #0e7a4a;
-  --rf-succes-fond: #dcf0e4;
-  --rf-succes-fonce: #0b5e39;
-  --rf-alerte: #9a5300;
-  --rf-alerte-fond: #fdecdc;
-  --rf-alerte-bordure: #e4c9ae;
-  --rf-erreur: #d0342c;
-  --rf-erreur-fond: #fce6e4;
-  --rf-badge-bleu: #dee6fb;
-  --rf-neutre-fond: #e9edf4;
+  --rf-sarcelle: #14448c;
+  --rf-succes: #1f7a4c;
+  --rf-succes-texte: #1b5e3a;
+  --rf-succes-fond: #f1f8f3;
+  --rf-succes-bordure: #cbe3d3;
+  --rf-succes-fonce: #1b5e3a;
+  --rf-alerte: #8a3a3f;
+  --rf-alerte-fond: #fff6f6;
+  --rf-alerte-bordure: #f0d2d4;
+  --rf-erreur: #c1121f;
+  --rf-erreur-fond: #fff6f6;
+  --rf-badge-bleu: #eef3fa;
+  --rf-neutre-fond: #e7ebf2;
+
+  /* Beige d'accompagnement : la seule couleur chaude, pour les conseils */
+  --rf-beige-fond: #f8f5ef;
+  --rf-beige-bordure: #e7e0d2;
+  --rf-beige-texte: #5c5232;
+  --rf-beige-lien: #6e5f30;
+  --rf-beige-icone: #8a7a55;
 
   /* Sur fond marine / nuit */
-  --rf-sur-marine: #dce4fb;
-  --rf-sur-marine-attenue: #afc2f5;
-  --rf-sur-nuit: #c7cede;
-  --rf-sur-nuit-attenue: #98a3be;
-  --rf-filet-nuit: #2a3150;
-  --rf-filet-marine: #2a3a78;
+  --rf-sur-marine: #c7d6ec;
+  --rf-sur-marine-attenue: #8fb2e0;
+  --rf-sur-nuit: #a9bdd8;
+  --rf-sur-nuit-attenue: #93a8c6;
+  --rf-filet-nuit: #1c3760;
+  --rf-filet-marine: #1c3760;
 
   /* Graphiques */
-  --rf-barre-neutre: #8aa0ee;
+  --rf-barre-neutre: #8fb2e0;
   --rf-violet: #5b3e8e;
   --rf-violet-fond: #ede7fb;
 
-  --rf-conteneur: 1248px;
+  /* Formes */
+  --rf-rayon: 3px;        /* boutons, champs, chips */
+  --rf-rayon-carte: 4px;  /* cartes et blocs */
+
+  --rf-conteneur: 1160px;
   --rf-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -3120,4 +3148,426 @@ button {
 @media (max-width: 560px) {
   .rfx-visibilite { grid-template-columns: 1fr; }
   .rfx-visibilite__col + .rfx-visibilite__col { border-left: 0; border-top: 1px solid var(--x-filet); }
+}
+
+/* ==========================================================================
+   Refonte d'août 2026 — formes
+   La charte précédente proscrivait tout arrondi. La nouvelle en admet deux,
+   et deux seulement : 3 px sur ce qui se clique ou se saisit, 4 px sur ce qui
+   contient. Ces règles arrivent en fin de feuille pour s'appliquer sans
+   toucher aux trois mille lignes qui précèdent.
+   ========================================================================== */
+
+.rf-btn,
+.rf-input,
+.rf-select,
+.rf-badge,
+.rf-puce,
+.rf-etiquette,
+.rf-etiquette-bordee,
+.rfi-bouton,
+.rfi-badge,
+.rfi-etiquette,
+.rfx-btn,
+.rfx-badge,
+textarea {
+  border-radius: var(--rf-rayon);
+}
+
+.rf-carte,
+.rf-radio-carte,
+.rf-liste-carte,
+.rf-accordeon,
+.rfi-bloc,
+.rfx-bloc,
+.rfx-carte {
+  border-radius: var(--rf-rayon-carte);
+}
+
+/* La règle de remise à plat du tunnel annulait tout rayon : elle visait les
+   ombres et les coins hérités, pas la nouvelle charte. */
+.rfx *::after { border-radius: 0; box-shadow: none; }
+
+/* Focus visible partout, à l'identique. Une exigence d'accessibilité du
+   handoff, pas une préférence : toute zone cliquable doit se voir au clavier. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--rf-cobalt);
+  outline-offset: 2px;
+}
+
+html { scroll-behavior: smooth; }
+
+/* ==========================================================================
+   Refonte d'août 2026 — couche « rfn »
+   Le handoff impose une mise en page que la couche historique ne sait pas
+   produire : hero à deux colonnes, nav de sections collante, frise d'étapes,
+   grilles auto-ajustables. Elle vit à côté plutôt que par-dessus, pour que la
+   fiche et le tunnel soient refaits sans casser l'annuaire ni l'espace suivi.
+
+   Les tailles fluides emploient des unités de conteneur : la racine porte
+   container-type, ce qui laisse le même composant se remettre en page dans
+   390 px sans une seule media query.
+   ========================================================================== */
+
+.rfn {
+  container-type: inline-size;
+  overflow-x: hidden;
+  color: var(--rf-encre);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+
+.rfn-conteneur {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-inline: clamp(16px, 2.2cqw, 28px);
+}
+.rfn-conteneur--etroit { max-width: 820px; padding-inline: clamp(16px, 2.4cqw, 28px); }
+
+.rfn-section { padding: clamp(34px, 3.6cqw, 58px) 0; scroll-margin-top: 70px; }
+.rfn-section--gris { background: var(--rf-fond-leger); }
+.rfn-section--teinte { background: var(--rf-fond-teinte); }
+
+/* ── Titres ─────────────────────────────────────────────────────────────── */
+.rfn-h1 {
+  font-size: clamp(26px, 2.4cqw + 10px, 42px);
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.017em;
+  color: var(--rf-cobalt-fonce);
+  max-width: 16ch;
+}
+.rfn-h1--tunnel {
+  font-size: clamp(23px, 1.7cqw + 9px, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  max-width: none;
+}
+.rfn-h2 {
+  font-size: clamp(19px, 1.5cqw + 7px, 26px);
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  color: var(--rf-cobalt-fonce);
+}
+.rfn-h3 { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--rf-cobalt-fonce); }
+
+.rfn-intro {
+  font-size: clamp(15.5px, .6cqw + 9px, 17.5px);
+  line-height: 1.55;
+  color: var(--rf-texte-2);
+  max-width: 52ch;
+}
+.rfn-texte { font-size: 15.5px; line-height: 1.6; color: var(--rf-texte-2); }
+.rfn-second { font-size: 14px; line-height: 1.45; color: var(--rf-texte-3); }
+.rfn-mention { font-size: 13.5px; line-height: 1.5; color: var(--rf-mention); }
+.rfn-eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rf-mention);
+}
+
+/* ── Boutons ────────────────────────────────────────────────────────────── */
+.rfn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 1px solid var(--rf-cobalt);
+  border-radius: var(--rf-rayon);
+  background: var(--rf-cobalt);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
+  transition: background .12s, border-color .12s;
+}
+.rfn a.rfn-btn, .rfn a.rfn-btn:hover { color: #fff; text-decoration: none; }
+.rfn-btn:hover { background: var(--rf-cobalt-survol); border-color: var(--rf-cobalt-survol); }
+
+.rfn-btn--2 {
+  background: #fff;
+  border-color: var(--rf-bordure-bouton-2);
+  color: var(--rf-cobalt);
+  min-height: 48px;
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.rfn a.rfn-btn--2, .rfn a.rfn-btn--2:hover { color: var(--rf-cobalt); }
+.rfn-btn--2:hover { background: var(--rf-fond-aide); border-color: var(--rf-cobalt); }
+
+.rfn-btn[aria-disabled="true"], .rfn-btn:disabled {
+  background: var(--rf-neutre-fond);
+  border-color: var(--rf-bordure-carte);
+  color: var(--rf-texte-desactive);
+  cursor: not-allowed;
+}
+.rfn-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ── Chips ──────────────────────────────────────────────────────────────── */
+.rfn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon);
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rf-texte-3);
+}
+.rfn-chip--bleu {
+  background: var(--rf-fond-aide);
+  border-color: var(--rf-bordure-aide);
+  color: var(--rf-cobalt-fonce);
+}
+.rfn-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── Cartes ─────────────────────────────────────────────────────────────── */
+.rfn-carte {
+  background: #fff;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon-carte);
+  padding: 18px;
+}
+a.rfn-carte, button.rfn-carte {
+  display: block;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, transform .12s;
+}
+a.rfn-carte:hover, button.rfn-carte:hover {
+  border-color: var(--rf-cobalt);
+  background: var(--rf-fond-selection);
+  transform: translateY(-1px);
+}
+.rfn-grille { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); }
+.rfn-grille--2 { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+.rfn-grille--large { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+/* ── Bloc beige : la seule couleur chaude, réservée aux conseils ────────── */
+.rfn-beige {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: var(--rf-beige-fond);
+  border: 1px solid var(--rf-beige-bordure);
+  border-radius: var(--rf-rayon-carte);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--rf-beige-texte);
+}
+.rfn-beige svg { color: var(--rf-beige-icone); flex: none; margin-top: 1px; }
+.rfn .rfn-beige a { color: var(--rf-beige-lien); }
+
+/* ── Bloc d'aide bleu ───────────────────────────────────────────────────── */
+.rfn-aide {
+  background: var(--rf-fond-aide);
+  border: 1px solid var(--rf-bordure-aide);
+  border-radius: var(--rf-rayon-carte);
+  padding: 20px;
+}
+
+/* ── Hero de la fiche ───────────────────────────────────────────────────── */
+.rfn-hero {
+  background: var(--rf-fond-teinte);
+  border-bottom: 1px solid #e1e8f3;
+  padding: clamp(28px, 3.2cqw, 46px) 0;
+}
+.rfn-hero__grille {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(24px, 3cqw, 48px);
+  align-items: flex-start;
+}
+.rfn-hero__gauche { flex: 1 1 460px; min-width: 0; }
+.rfn-hero__droite { flex: 1 1 300px; min-width: 0; }
+
+.rfn-obtenu { background: #fff; border: 1px solid var(--rf-bordure-carte); border-radius: var(--rf-rayon-carte); }
+.rfn-obtenu__tete {
+  padding: 14px 18px;
+  background: var(--rf-fond-carte-douce);
+  border-bottom: 1px solid var(--rf-ligne-carte);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--rf-cobalt-fonce);
+}
+.rfn-obtenu__item { display: flex; gap: 12px; padding: 16px 18px; }
+.rfn-obtenu__item + .rfn-obtenu__item { border-top: 1px solid var(--rf-ligne-carte); }
+.rfn-obtenu__item svg { flex: none; color: var(--rf-cobalt); margin-top: 2px; }
+.rfn-obtenu__titre { font-size: 15.5px; font-weight: 600; color: var(--rf-encre); }
+.rfn-obtenu__desc { font-size: 14px; line-height: 1.45; color: var(--rf-texte-3); margin-top: 3px; }
+
+/* ── Nav de sections collante ───────────────────────────────────────────── */
+.rfn-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #fff;
+  border-bottom: 1px solid var(--rf-bordure-carte);
+  box-shadow: 0 1px 3px rgba(14, 42, 86, .05);
+}
+.rfn-nav__piste {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rfn-nav__piste::-webkit-scrollbar { display: none; }
+.rfn-nav__lien {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+  color: var(--rf-texte-2);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rfn .rfn-nav__lien:hover { border-bottom-color: var(--rf-bordure-bouton-2); color: var(--rf-cobalt); }
+.rfn-nav__cta { margin-left: auto; padding-left: 16px; flex: none; }
+
+/* ── Carte de problème ──────────────────────────────────────────────────── */
+/* Le sélecteur porte les deux classes à dessein : `a.rfn-carte` pèse 0,1,1 et
+   écraserait un simple `.rfn-probleme` à 0,1,0 — la carte redeviendrait un
+   bloc, et titre, description et flèche se colleraient sur une seule ligne. */
+.rfn-carte.rfn-probleme {
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+}
+.rfn-probleme__icone {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: var(--rf-fond-aide);
+  border: 1px solid #d6e2f3;
+  border-radius: var(--rf-rayon);
+  color: var(--rf-cobalt);
+  margin-bottom: 12px;
+}
+.rfn-probleme__titre { font-size: 16px; font-weight: 700; color: var(--rf-cobalt-fonce); }
+.rfn-probleme__desc { font-size: 14px; line-height: 1.45; color: var(--rf-texte-3); margin-top: 5px; }
+.rfn-probleme__pied {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--rf-ligne-carte);
+  display: flex;
+  justify-content: flex-end;
+  color: var(--rf-cobalt);
+}
+
+/* ── Compteurs de signalements ──────────────────────────────────────────── */
+.rfn-compteurs { display: flex; flex-wrap: wrap; gap: clamp(24px, 4cqw, 56px); }
+.rfn-compteur__n { font-size: 30px; font-weight: 800; line-height: 1.1; }
+.rfn-compteur__l { font-size: 14px; color: var(--rf-texte-3); margin-top: 2px; }
+
+/* ── Frise du plan d'action ─────────────────────────────────────────────── */
+.rfn-etape { display: flex; gap: 14px; }
+.rfn-etape__rail { width: 34px; flex: none; display: flex; flex-direction: column; align-items: center; }
+.rfn-etape__pastille {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--rf-cobalt);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+}
+.rfn-etape__filet { width: 1px; flex: 1; background: #d6deea; margin: 6px 0; }
+.rfn-etape__corps { flex: 1; min-width: 0; padding-bottom: 12px; }
+
+.rfn-accordeon { border: 1px solid var(--rf-bordure-carte); border-radius: var(--rf-rayon-carte); background: #fff; }
+.rfn-accordeon__bouton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 13px 16px;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.rfn-accordeon__titre { font-size: 16px; font-weight: 700; color: var(--rf-cobalt-fonce); }
+.rfn-accordeon__sous { font-size: 14px; line-height: 1.45; color: var(--rf-texte-3); margin-top: 3px; }
+.rfn-accordeon__marque { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--rf-cobalt); font-size: 14px; font-weight: 600; flex: none; }
+.rfn-accordeon__panneau {
+  border: 1px solid var(--rf-bordure-carte);
+  border-top: 0;
+  border-radius: 0 0 var(--rf-rayon-carte) var(--rf-rayon-carte);
+  background: var(--rf-fond-carte-douce);
+  padding: 16px;
+  margin-top: -1px;
+}
+details.rfn-accordeon > summary { list-style: none; }
+details.rfn-accordeon > summary::-webkit-details-marker { display: none; }
+details.rfn-accordeon[open] { border-radius: var(--rf-rayon-carte) var(--rf-rayon-carte) 0 0; }
+details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg); }
+.rfn-accordeon__chevron { transition: transform .12s; }
+
+/* ── Grille de définitions (informations légales) ───────────────────────── */
+.rfn-defs { display: grid; gap: 0 clamp(20px, 3cqw, 44px); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.rfn-def {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rf-ligne-carte);
+  font-size: 14px;
+}
+.rfn-def__k { color: var(--rf-texte-3); }
+.rfn-def__v { font-weight: 600; color: var(--rf-cobalt-fonce); text-align: right; }
+
+/* ── Bandeau CTA final et barre mobile ──────────────────────────────────── */
+.rfn-final { background: var(--rf-cobalt-fonce); color: #fff; padding: clamp(26px, 2.6cqw, 40px) 0; }
+.rfn-final__grille { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
+.rfn-final h2 { color: #fff; font-size: clamp(19px, 1.3cqw + 8px, 24px); font-weight: 800; }
+.rfn-final p { color: var(--rf-sur-marine); font-size: 14px; margin-top: 6px; }
+.rfn-final .rfn-btn { background: #fff; border-color: #fff; color: var(--rf-cobalt-fonce); }
+.rfn-final .rfn-btn:hover { background: var(--rf-fond-aide); border-color: var(--rf-fond-aide); }
+
+.rfn-barre {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: #fff;
+  border-top: 1px solid var(--rf-bordure-carte);
+  box-shadow: 0 -2px 10px rgba(14, 42, 86, .08);
+  padding: 10px clamp(16px, 2.2cqw, 28px);
+}
+.rfn-barre .rfn-btn { width: 100%; }
+
+/* Le compact n'est pas un booléen serveur : c'est une largeur.
+   Sous 760 px la nav perd son action de droite et le bandeau final s'efface,
+   remplacés par la barre collante du bas. Au-dessus, l'inverse. */
+.rfn-barre { display: none; }
+@container (max-width: 760px) {
+  .rfn-nav__cta { display: none; }
+  .rfn-final { display: none; }
+  .rfn-barre { display: block; }
 }
