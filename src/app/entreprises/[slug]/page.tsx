@@ -35,6 +35,7 @@ import {
   cheminSecteur,
   libelleSecteur,
   nomDepartement,
+  voisines,
 } from "@/lib/maillage";
 import {
   LIBELLES_DEMANDE,
@@ -119,6 +120,18 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   ]);
 
   const mediateurDeclare = mediateurPublie(entreprise);
+  const [boutique, proches] = await Promise.all([
+    prisma.boutique.findFirst({
+      where: { entrepriseId: entreprise.id },
+      select: { slug: true, domaine: true },
+    }),
+    voisines(entreprise),
+  ]);
+  // Toutes les voisines trouvées, pas une sélection de dix. C'est le maillage
+  // interne qui fait explorer un annuaire de cette taille, pas le plan de site :
+  // societe.com pose près de cent liens fiche→fiche par page. La refonte les
+  // avait fait disparaître, et chaque fiche se retrouvait sans issue.
+  const comparables = [...proches.memeVille, ...proches.memeDepartement, ...proches.memeSecteur];
   const secteur = entreprise.secteur ?? "autre";
   const etapes = etapesPlan(nom, mediateurDeclare?.nom ?? null);
   const questions = faqRefonte(nom);
@@ -160,6 +173,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     { href: "#demarches", libelle: "Démarches" },
     { href: "#contact", libelle: "Contact et médiateur" },
     { href: "#informations", libelle: "Informations" },
+    { href: "#comparables", libelle: "Comparables" },
     { href: "#faq", libelle: "Méthodologie et FAQ" },
   ];
 
@@ -628,6 +642,37 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             </div>
           </div>
         </section>
+
+        {/* ── Entreprises comparables : le maillage interne ──────────────── */}
+        {comparables.length > 0 ? (
+          <section id="comparables" className="rfn-section">
+            <div className="rfn-conteneur">
+              <h2 className="rfn-h2">Entreprises comparables</h2>
+              <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "62ch" }}>
+                Même activité, même territoire. Ce rapprochement ne constitue ni un classement, ni
+                une comparaison de qualité.
+              </p>
+              <div className="rfn-comparables">
+                {comparables.map((v) => (
+                  <Link key={v.slug} href={`/entreprises/${v.slug}`} className="rfn-comparable">
+                    <span className="rfn-comparable__nom">{v.denomination}</span>
+                    <span className="rfn-comparable__lieu">
+                      {v.signalements > 0
+                        ? `${formatNombre(v.signalements)} signalement${v.signalements > 1 ? "s" : ""}`
+                        : (v.commune ?? "")}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              {boutique ? (
+                <p className="rfn-mention" style={{ marginTop: 16 }}>
+                  Cette société exploite la boutique{" "}
+                  <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>.
+                </p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
         {/* ── Méthodologie, indépendance et FAQ ──────────────────────────── */}
         <section id="faq" className="rfn-section">

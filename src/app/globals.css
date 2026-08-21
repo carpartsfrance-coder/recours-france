@@ -3715,3 +3715,31 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 .rfn-action { min-height: 66px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; }
 .rfn a.rfn-btn.rfn-action { color: #fff; }
+
+/* Entreprises comparables : le maillage interne, en grille dense.
+   Ce ne sont pas des cartes à mettre en valeur mais des liens à offrir à
+   l'exploration — d'où la forme sobre et le nombre, qui prime ici. */
+.rfn-comparables {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top: 18px;
+}
+.rfn .rfn-comparable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon-carte);
+  background: #fff;
+  color: var(--rf-encre);
+  text-decoration: none;
+  font-size: 14.5px;
+  transition: border-color .12s, background .12s;
+}
+.rfn .rfn-comparable:hover { border-color: var(--rf-cobalt); background: var(--rf-fond-selection); }
+.rfn-comparable__nom { font-weight: 600; color: var(--rf-cobalt-fonce); min-width: 0; overflow-wrap: anywhere; }
+.rfn-comparable__lieu { font-size: 13px; color: var(--rf-texte-3); flex: none; }
