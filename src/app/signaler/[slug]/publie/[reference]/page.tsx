@@ -86,7 +86,7 @@ export default async function Publie({
 
   const guide = construireGuide({
     categorie: signalement.categorie,
-    contactPrealable: signalement.contactPrealable,
+    contactPrealable: signalement.contactPrealable ?? "AUCUN",
     dateSignalement: signalement.creeLe,
     reference: signalement.reference,
     verifie: false,

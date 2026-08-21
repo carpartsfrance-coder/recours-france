@@ -236,9 +236,11 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   <Fleche taille={18} />
                 </Link>
                 <Link href={total > 0 ? "#signalements" : "#probleme"} className="rfn-btn rfn-btn--2">
-                  {total > 0
-                    ? `Voir les ${formatNombre(total)} signalement${total > 1 ? "s" : ""}`
-                    : "Trouver la démarche adaptée"}
+                  {total === 0
+                    ? "Trouver la démarche adaptée"
+                    : total === 1
+                      ? "Voir le signalement"
+                      : `Voir les ${formatNombre(total)} signalements`}
                 </Link>
               </div>
 
@@ -392,8 +394,15 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                         }}
                       >
                         <div className="rfn-chips">
+                          {/* La catégorie précise d'abord : c'est le libellé que
+                              l'auteur a choisi. L'énumération ne sert qu'à
+                              agréger, et publier « Garantie » là où il a coché
+                              « Refus de reprendre ou corriger le travail » lui
+                              ferait dire autre chose. */}
                           <span className="rfn-chip rfn-chip--bleu">
-                            {MOTIFS_FICHE.find((m) => m.cle === s.categorie)?.libelle ?? s.categorie}
+                            {s.sousCategorie ??
+                              MOTIFS_FICHE.find((m) => m.cle === s.categorie)?.libelle ??
+                              s.categorie}
                           </span>
                           <span className="rfn-chip">
                             {s.resolutionConfirmee ? "Résolu selon l’auteur" : "Déclaré"}
@@ -401,9 +410,29 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                         </div>
                         <span className="rfn-mention">{formatDateLongue(s.creeLe)}</span>
                       </div>
-                      <p className="rfn-texte" style={{ marginTop: 12 }}>
-                        {declarationPublique(s, (c) => LIBELLES_DEMANDE[c] ?? c, (c) => LIBELLES_ETAT_PRO[c] ?? c)}
-                      </p>
+                      <div style={{ marginTop: 12 }}>
+                        {s.solutionLibelle ? (
+                          <div className="rfn-def">
+                            <span className="rfn-def__k">Solution demandée</span>
+                            <span className="rfn-def__v">{s.solutionLibelle}</span>
+                          </div>
+                        ) : null}
+                        <div className="rfn-def">
+                          <span className="rfn-def__k">Statut</span>
+                          <span className="rfn-def__v">
+                            {s.resolutionConfirmee ? "Résolu selon l’auteur" : "En attente de solution"}
+                          </span>
+                        </div>
+                        {!s.solutionLibelle ? (
+                          <p className="rfn-second" style={{ marginTop: 10 }}>
+                            {declarationPublique(
+                              s,
+                              (c) => LIBELLES_DEMANDE[c] ?? c,
+                              (c) => LIBELLES_ETAT_PRO[c] ?? c,
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
                     </article>
                   ))}
                 </div>

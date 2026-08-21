@@ -32,7 +32,7 @@ export type Rappel = {
 };
 
 /** Échéances du dossier, alignées sur construireGuide(). */
-export function echeances(dateSignalement: Date, contactPrealable: string) {
+export function echeances(dateSignalement: Date, contactPrealable: string | null) {
   const ecritDejaFait = contactPrealable === "ECRIT";
   const departMediation = new Date(dateSignalement.getTime() + (ecritDejaFait ? 0 : 7 * JOUR));
   return {
@@ -50,7 +50,7 @@ export function echeances(dateSignalement: Date, contactPrealable: string) {
 export function rappelDuJour(
   signalement: {
     creeLe: Date;
-    contactPrealable: string;
+    contactPrealable: string | null;
     relancesEnvoyees: string[];
     relancesActives: boolean;
     statut: string;

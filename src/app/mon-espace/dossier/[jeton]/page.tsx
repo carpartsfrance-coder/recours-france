@@ -104,7 +104,7 @@ export default async function Dossier({
 
   const guide = construireGuide({
     categorie: signalement.categorie,
-    contactPrealable: signalement.contactPrealable,
+    contactPrealable: signalement.contactPrealable ?? "AUCUN",
     dateSignalement: signalement.creeLe,
     reference: signalement.reference,
     verifie: signalement.justificatifs.length > 0,

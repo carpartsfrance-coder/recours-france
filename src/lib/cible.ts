@@ -25,6 +25,10 @@ export type Cible = {
   site: string | null;
   secteur: string | null;
   commune: string | null;
+  /** Le SIREN et le code d'activité : l'en-tête du tunnel affiche le premier,
+   *  et le second décide de l'ordre des familles de litige. */
+  siren: string | null;
+  naf: string | null;
 };
 
 export async function resoudreCible(slug: string): Promise<Cible | null> {
@@ -39,6 +43,8 @@ export async function resoudreCible(slug: string): Promise<Cible | null> {
       site: brouillon.libreSite ?? null,
       secteur: null,
       commune: null,
+      siren: null,
+      naf: null,
     };
   }
 
@@ -52,5 +58,7 @@ export async function resoudreCible(slug: string): Promise<Cible | null> {
     site: base.siteWeb,
     secteur: base.secteur,
     commune: base.commune,
+    siren: base.siren,
+    naf: base.naf,
   };
 }

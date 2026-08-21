@@ -381,12 +381,22 @@ model Signalement {
   /// six catégories : celui qui cherche ne formule pas son problème avec le
   /// vocabulaire d'une nomenclature.
   sousCategorie String?
+  /// La famille de litige : prestation, achat, contrat, autre. Elle décide de
+  /// l'exemple proposé dans le champ de récit et de l'ordre d'affichage.
+  famille       String?
+  /// La solution demandée, dans les termes du consommateur — « L'arrêt des
+  /// prélèvements ». `demande` ci-dessous reste l'énumération, pour les
+  /// agrégations ; ce libellé est ce que lit le visiteur de la fiche.
+  solutionLibelle String?
   montant     Decimal? @db.Decimal(12, 2)
   /// Le montant est toujours compté dans les statistiques ; c'est son affichage
   /// public que l'auteur accepte ou refuse.
   montantPublic Boolean @default(true)
   dateFaits   DateTime
-  contactPrealable ContactPrealable
+  /// Facultatif depuis la refonte : le tunnel en deux étapes ne pose plus la
+  /// question avant publication. Elle est demandée après, au moment de
+  /// préparer le courrier, quand elle sert enfin à quelque chose.
+  contactPrealable ContactPrealable?
 
   /// Expression structurée du litige.
   ///

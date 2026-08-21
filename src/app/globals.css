@@ -3571,3 +3571,147 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   .rfn-final { display: none; }
   .rfn-barre { display: block; }
 }
+
+/* ── Tunnel de signalement ──────────────────────────────────────────────── */
+.rfn-tunnel__tete {
+  background: #fff;
+  border-bottom: 1px solid var(--rf-bordure-carte);
+  padding: 16px 0 14px;
+}
+.rfn-tunnel__marque { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rfn .rfn-tunnel__quitter { font-size: 14.5px; font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; }
+
+.rfn-progression { display: flex; gap: 12px; margin-top: 16px; }
+.rfn-progression__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 3px solid var(--rf-bordure-carte);
+  padding-top: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rf-texte-desactive);
+}
+.rfn-progression__seg--actif { border-top-color: var(--rf-cobalt); color: var(--rf-cobalt-fonce); font-weight: 700; }
+.rfn-progression__seg--franchi { border-top-color: var(--rf-cobalt); color: var(--rf-texte-3); }
+
+.rfn-tunnel__gage {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--rf-mention);
+}
+.rfn-tunnel__gage svg { flex: none; color: var(--rf-cobalt); margin-top: 1px; }
+
+.rfn-familles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 14px; }
+.rfn-famille {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 13px 14px;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon-carte);
+  transition: border-color .12s, background .12s, transform .12s;
+}
+.rfn-famille:hover { border-color: var(--rf-cobalt); background: var(--rf-fond-selection); transform: translateY(-1px); }
+.rfn-famille--active { border-color: var(--rf-cobalt); background: var(--rf-fond-aide); }
+.rfn-famille__titre { font-size: 15px; font-weight: 700; color: var(--rf-cobalt-fonce); }
+.rfn-famille__desc { font-size: 13.5px; line-height: 1.4; color: var(--rf-texte-3); }
+
+/* Chip d'option : repos bordé, sélection en aplat plein avec la coche. */
+.rfn-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--rf-bordure-champ);
+  border-radius: var(--rf-rayon);
+  color: var(--rf-cobalt-fonce);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+}
+.rfn-option:hover { border-color: var(--rf-cobalt); }
+.rfn-option--active { background: var(--rf-cobalt); border-color: var(--rf-cobalt); color: #fff; font-weight: 700; }
+
+.rfn-repris {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--rf-fond-aide);
+  border: 1px solid var(--rf-bordure-aide);
+  border-radius: var(--rf-rayon-carte);
+}
+
+.rfn-input {
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid var(--rf-bordure-champ);
+  border-radius: var(--rf-rayon);
+  background: #fff;
+  color: var(--rf-encre);
+  font: inherit;
+  font-size: 15px;
+}
+.rfn-input::placeholder { color: var(--rf-placeholder); }
+
+/* La ligne entière est cliquable : une case de 13 px seule n'est pas une cible. */
+.rfn-accord {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 13px 14px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon-carte);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.rfn-accord input { margin-top: 2px; width: 18px; height: 18px; flex: none; accent-color: var(--rf-cobalt); }
+
+.rfn-tunnel__pied { margin-top: 24px; }
+.rfn-lien-nu {
+  background: none;
+  border: 0;
+  padding: 0 6px;
+  cursor: pointer;
+  color: var(--rf-cobalt);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+}
+
+.rfn-pastille-succes {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--rf-succes-fond);
+  border: 1px solid var(--rf-succes-bordure);
+  color: var(--rf-succes);
+}
+
+.rfn-action { min-height: 66px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; }
+.rfn a.rfn-btn.rfn-action { color: #fff; }

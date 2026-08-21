@@ -88,3 +88,76 @@ export async function deposerDepuisBrouillon(
     return null;
   }
 }
+
+/**
+ * Dépôt depuis le tunnel en deux étapes de la refonte.
+ *
+ * Rien n'est écrit avant cet appel : quelqu'un qui abandonne à l'étape deux ne
+ * laisse aucune ligne derrière lui, et l'adresse électronique n'est demandée
+ * qu'au dernier écran.
+ *
+ * Le récit va dans `resume`, qui n'est jamais publié — il alimente le courrier
+ * de réclamation et le traitement d'une éventuelle contestation. Ce qui paraît
+ * sur la fiche est composé des seuls champs fermés : catégorie, date, solution
+ * demandée, statut.
+ */
+export async function publierSignalement(entree: {
+  slug: string;
+  famille: string;
+  categorie: string;
+  dateFaits: string;
+  recit: string;
+  solution: string;
+  email: string;
+}): Promise<{ reference: string } | { erreur: string }> {
+  const { categorieEnum, demandeEnum } = await import("@/lib/tunnel-refonte");
+
+  if (!entree.categorie || !entree.solution || !entree.recit.trim()) {
+    return { erreur: "Il manque une réponse." };
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(entree.email)) {
+    return { erreur: "Cette adresse électronique ne semble pas valide." };
+  }
+
+  const cible = await resoudreCible(entree.slug);
+  if (!cible) return { erreur: "Entreprise introuvable." };
+
+  const boutique = cible.entrepriseId === null && cible.site ? await boutiquePour(cible.site) : null;
+  const reference = await genererReference();
+  const enTetes = await headers();
+
+  try {
+    const signalement = await prisma.signalement.create({
+      data: {
+        reference,
+        entrepriseId: cible.entrepriseId,
+        boutiqueId: boutique?.id ?? null,
+        entrepriseLibreNom: cible.entrepriseId === null ? cible.nom : null,
+        entrepriseLibreSite: cible.entrepriseId === null ? cible.site : null,
+        // Une saisie libre attend son rapprochement : publier sur la seule foi
+        // d'un nom exposerait à l'attribuer à un homonyme.
+        moderation: cible.entrepriseId === null ? "EN_ATTENTE" : "PUBLIE",
+        categorie: categorieEnum(entree.categorie),
+        sousCategorie: entree.categorie,
+        famille: entree.famille,
+        solutionLibelle: entree.solution,
+        demande: demandeEnum(entree.solution),
+        dateFaits: new Date(entree.dateFaits),
+        resume: entree.recit.trim(),
+        email: entree.email.trim().toLowerCase(),
+        certifie: true,
+        consentement: true,
+        ipHash: empreinteIp(enTetes.get("x-forwarded-for") ?? ""),
+        userAgent: enTetes.get("user-agent")?.slice(0, 300) ?? null,
+      },
+    });
+
+    await creerJetonSuivi(signalement.id, entree.email);
+    if (cible.entrepriseId) await recalculerIndices(cible.entrepriseId).catch(() => undefined);
+
+    return { reference };
+  } catch (e) {
+    console.error("[tunnel] dépôt impossible", e);
+    return { erreur: "La publication a échoué. Réessayez dans un instant." };
+  }
+}
