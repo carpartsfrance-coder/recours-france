@@ -3743,3 +3743,44 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfn .rfn-comparable:hover { border-color: var(--rf-cobalt); background: var(--rf-fond-selection); }
 .rfn-comparable__nom { font-weight: 600; color: var(--rf-cobalt-fonce); min-width: 0; overflow-wrap: anywhere; }
 .rfn-comparable__lieu { font-size: 13px; color: var(--rf-texte-3); flex: none; }
+
+/* ── Modèle de courrier, dans les guides ───────────────────────────────────
+   Le texte est en clair, jamais dans une image : il doit rester copiable,
+   lisible par un lecteur d'écran, et indexable. */
+.rf-modele {
+  margin: 16px 0 0;
+  border: 1px solid var(--rf-bordure-carte);
+  border-radius: var(--rf-rayon-carte);
+  background: var(--rf-fond-carte-douce);
+  overflow: hidden;
+}
+.rf-modele__tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--rf-fond-leger);
+  border-bottom: 1px solid var(--rf-ligne-carte);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rf-cobalt-fonce);
+}
+.rf-modele__corps {
+  margin: 0;
+  padding: 16px 18px;
+  font-family: var(--rf-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--rf-texte-2);
+}
+.rf-modele__note {
+  margin: 0;
+  padding: 11px 18px;
+  border-top: 1px solid var(--rf-ligne-carte);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rf-mention);
+}

@@ -29,7 +29,7 @@ import {
   Question,
   Remboursement,
 } from "@/components/refonte/icones";
-import { declarationPublique } from "@/lib/observatoire";
+import { GUIDES, declarationPublique } from "@/lib/observatoire";
 import {
   cheminCommune,
   cheminDepartement,
@@ -727,6 +727,25 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     pas dans le règlement des litiges. Un signalement représente la déclaration de son
                     auteur : il ne signifie pas qu’un manquement a été juridiquement établi.
                   </p>
+                    {/* Les guides de démarche : c'est ici que le maillage sert
+                      vraiment, une fiche renvoyant vers des pages qui, elles,
+                      peuvent se référencer sur des requêtes de démarche. */}
+                  <div
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--rf-beige-bordure)",
+                      display: "grid",
+                      gap: 8,
+                      fontSize: 14,
+                    }}
+                  >
+                    {GUIDES.slice(0, 4).map((g) => (
+                      <Link key={g.href} href={g.href}>
+                        {g.libelle}
+                      </Link>
+                    ))}
+                  </div>
                   <div
                     style={{
                       marginTop: 14,

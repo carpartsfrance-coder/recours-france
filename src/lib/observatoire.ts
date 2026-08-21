@@ -123,12 +123,21 @@ export const FONCTIONNEMENT = [
   { n: "4", titre: "Le consommateur peut mettre à jour sa situation", desc: "Il indique lui-même si le problème a été résolu ; Recours France ne le constate pas à sa place." },
 ] as const;
 
+/**
+ * Les guides de démarche.
+ *
+ * Ils ne dépendent d'aucune donnée : ce sont les seules pages du site capables
+ * de capter du trafic avant que les fiches d'entreprise n'existent. Ils
+ * pointaient jusqu'ici sur trois pages génériques, et la constante n'était
+ * utilisée nulle part — un maillage écrit puis oublié.
+ */
 export const GUIDES = [
-  { libelle: "Un commerçant refuse de me rembourser : que faire ?", href: "/aide/droits" },
-  { libelle: "Commande non reçue : quels recours ?", href: "/aide/droits" },
-  { libelle: "Comment faire une réclamation écrite ?", href: "/aide" },
-  { libelle: "Comment saisir un médiateur de la consommation ?", href: "/demarches-officielles" },
-  { libelle: "Comment utiliser SignalConso ?", href: "/demarches-officielles" },
+  { libelle: "Un commerçant refuse de me rembourser : que faire ?", href: "/aide/remboursement-refuse" },
+  { libelle: "Commande non reçue : quels recours ?", href: "/aide/commande-non-recue" },
+  { libelle: "Produit en panne, garantie refusée : vos droits", href: "/aide/garantie-refusee" },
+  { libelle: "Résiliation ignorée, prélèvement contesté", href: "/aide/resiliation-prelevement" },
+  { libelle: "Comment faire une réclamation écrite qui aboutit", href: "/aide/reclamation-ecrite" },
+  { libelle: "Comment saisir un médiateur de la consommation", href: "/aide/mediateur" },
   { libelle: "Quels justificatifs conserver en cas de litige ?", href: "/aide/justificatifs" },
 ] as const;
 

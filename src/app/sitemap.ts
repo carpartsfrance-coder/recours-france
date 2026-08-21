@@ -84,6 +84,11 @@ export default async function sitemap({
     const chemins = [
       "", "/entreprises", "/boutiques", "/annuaire", "/signaler", "/methodologie",
       "/aide", "/aide/justificatifs", "/aide/droits", "/demarches-officielles",
+      // Les guides de démarche : les seules pages indexables qui ne dépendent
+      // d'aucune donnée, donc les seules à pouvoir capter du trafic avant que
+      // les fiches d'entreprise n'existent.
+      "/aide/remboursement-refuse", "/aide/commande-non-recue", "/aide/garantie-refusee",
+      "/aide/resiliation-prelevement", "/aide/reclamation-ecrite", "/aide/mediateur",
       "/a-propos", "/contact", "/mentions-legales", "/conditions-generales",
       "/donnees-personnelles", "/accessibilite", "/cookies", "/charte-de-moderation",
     ];

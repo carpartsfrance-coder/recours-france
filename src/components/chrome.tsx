@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { nomEditeur } from "@/lib/editeur";
 import { Info } from "@/components/refonte/icones";
+import { GUIDES } from "@/lib/observatoire";
 
 /**
  * Logotype fourni. Le verrou complet (pictogramme + nom + signature) sert là où
@@ -244,10 +245,24 @@ export function PiedDePage({
               </div>
             </div>
             <div>
+              {/* Les guides de démarche, plutôt que trois liens vers la même
+                  page de méthodologie. Ce sont les pages d'acquisition du
+                  site — les seules qui ne dépendent d'aucune donnée, donc les
+                  seules à pouvoir capter du trafic avant que les fiches
+                  n'existent — et elles étaient orphelines. */}
+              <div className="rf-pied__titre">Vos démarches</div>
+              <div className="rf-pied__liens">
+                {GUIDES.slice(0, 6).map((g) => (
+                  <Link key={g.href} href={g.href}>
+                    {g.libelle}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
               <div className="rf-pied__titre">Comprendre</div>
               <div className="rf-pied__liens">
                 <Link href="/methodologie">Méthodologie</Link>
-                <Link href="/methodologie#m2">Dossier déclaré ou vérifié</Link>
                 <Link href="/methodologie#m1">Origine des données</Link>
                 <Link href="/charte-de-moderation">Charte de modération</Link>
               </div>
