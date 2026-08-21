@@ -24,3 +24,6 @@ public/_maquette/
 
 # Maquettes servies temporairement pour inspection ; la source est dans design/.
 public/_maquettes/
+
+# État de reprise du transfert vers la production.
+.transfert-etat
