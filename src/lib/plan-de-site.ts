@@ -10,6 +10,7 @@
 
 import { prisma } from "@/lib/db";
 import { DEPARTEMENTS } from "@/lib/referentiels/naf";
+import { ADRESSE } from "./adresse";
 
 export const PAR_FICHIER = 50_000;
 export const LONGUEUR_PREFIXE = 4;
@@ -23,7 +24,7 @@ export const RANG_SIGNAL = RANG_COMMUNES + DEPARTEMENTS.length;
 export const RANG_ENTREPRISES = RANG_SIGNAL + 1;
 
 export function base(): string {
-  return process.env.APP_URL ?? "http://localhost:3200";
+  return ADRESSE;
 }
 
 /**

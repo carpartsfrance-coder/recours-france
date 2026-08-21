@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { ADRESSE, absolu } from "@/lib/adresse";
 
 /**
  * Balisage JSON-LD.
@@ -45,7 +46,7 @@ export function organisationJsonLd(params: {
     // URL absolue : une adresse relative n'est pas exploitable dans du JSON-LD.
     mainEntityOfPage: params.url.startsWith("http")
       ? params.url
-      : `${process.env.APP_URL ?? "http://localhost:3200"}${params.url}`,
+      : absolu(params.url),
   };
   if (params.siteWeb) donnees.url = params.siteWeb;
   if (params.adresse || params.commune) {
@@ -98,7 +99,7 @@ export function faqJsonLd(questions: { q: string; a: string }[]): Record<string,
 
 /** Fil d'Ariane, en `BreadcrumbList`. */
 export function filAlianeJsonLd(items: { libelle: string; href?: string }[]): Record<string, unknown> {
-  const base = process.env.APP_URL ?? "http://localhost:3200";
+  const base = ADRESSE;
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

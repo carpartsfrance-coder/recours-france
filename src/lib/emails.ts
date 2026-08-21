@@ -1,9 +1,10 @@
 import { bouton, echapper, envoyer, gabarit, versTexte } from "./mailer";
 import { construireGuide, modeleRelance, type Categorie, type ContactPrealable } from "./demarches";
 import { formatDateLongue, formatMontant, LIBELLES_CATEGORIE } from "./format";
+import { ADRESSE } from "./adresse";
 
 function base(): string {
-  return process.env.APP_URL ?? "http://localhost:3200";
+  return ADRESSE;
 }
 
 type ContexteSignalement = {

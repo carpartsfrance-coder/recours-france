@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { ADRESSE } from "@/lib/adresse";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.APP_URL ?? "http://localhost:3200";
+  const base = ADRESSE;
   return {
     rules: [
       {

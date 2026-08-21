@@ -58,12 +58,15 @@ services:
         sync: false
       - key: SMTP_PASSWORD
         sync: false
+      # Le domaine définitif. Elle gouverne les canoniques, le robots.txt, les
+      # tranches du plan de site et les liens de suivi des courriels : la
+      # changer après une indexation coûterait des mois de reconsolidation.
       - key: APP_URL
-        value: https://recours-france.onrender.com
+        value: https://recours-france.fr
       - key: MAIL_ENABLED
         value: "true"
       - key: MAIL_FROM
-        value: contact@recoursfrance.fr
+        value: contact@recours-france.fr
       # Adresse de réponse, et destinataire des alertes de tâches en échec.
       # Le code les lit (lib/taches.ts, lib/mailer.ts) mais elles manquaient
       # ici : sans elles, une chaîne planifiée qui tombe n'alerte personne.

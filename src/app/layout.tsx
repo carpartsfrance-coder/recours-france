@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Public_Sans } from "next/font/google";
 import "./globals.css";
+import { ADRESSE } from "@/lib/adresse";
 
 // Police chargée localement (auto-hébergée par Next au build), pas depuis Google Fonts.
 const publicSans = Public_Sans({
@@ -11,7 +12,7 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3200"),
+  metadataBase: new URL(ADRESSE),
   title: {
     default: "Recours France — signaler gratuitement un litige de consommation",
     template: "%s — Recours France",
