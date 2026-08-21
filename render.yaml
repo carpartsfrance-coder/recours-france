@@ -34,20 +34,14 @@ services:
     # qu'une tâche planifiée est en retard — bon pour une alerte, désastreux
     # pour une sonde, qui redémarrerait un service en parfait état de marche.
     healthCheckPath: /api/vivant
-    # Les justificatifs sont écrits sur le disque, sous storage/justificatifs.
-    # Sans disque déclaré, le système de fichiers de Render est éphémère : les
-    # pièces envoyées par les consommateurs disparaîtraient à chaque
-    # déploiement et à chaque redémarrage, sans erreur ni trace — la base
-    # garderait la ligne, le fichier ne serait plus là.
+    # Aucun disque. Les justificatifs vivent en base, dans la table
+    # ContenuJustificatif : la ligne et les octets sont écrits, sauvegardés et
+    # restaurés ensemble. Sur un disque d'hébergeur, éphémère, les pièces
+    # disparaissaient à chaque déploiement tandis que leur ligne subsistait —
+    # un justificatif introuvable que le déposant croyait versé.
     #
-    # Un disque attache le service à une seule instance : pas de mise à
-    # l'échelle horizontale tant qu'il est là. C'est sans conséquence au
-    # lancement, et le jour où ça compte, ces fichiers iront sur un stockage
-    # objet plutôt que sur un disque.
-    disk:
-      name: justificatifs
-      mountPath: /opt/render/project/src/storage
-      sizeGB: 10
+    # Le service n'est plus attaché à une machine : la mise à l'échelle
+    # horizontale redevient possible le jour où elle servira.
     envVars:
       - key: NODE_VERSION
         value: "22"

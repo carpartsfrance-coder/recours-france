@@ -1,24 +1,46 @@
 /**
  * Stockage des justificatifs.
  *
- * Les pièces ne sont JAMAIS publiées : elles sont écrites hors du répertoire
- * public et ne sont lisibles que par une route d'administration authentifiée.
+ * Les pièces ne sont JAMAIS publiées : elles ne sont lisibles que par une
+ * route d'administration authentifiée, qui trace chaque consultation.
+ *
+ * Elles vivent en base, pas sur disque. Ce service repose entièrement sur la
+ * preuve, et un système de fichiers d'hébergeur est éphémère : à chaque
+ * déploiement, les pièces disparaissaient tandis que leur ligne subsistait.
+ * Un justificatif dont la ligne existe mais dont le fichier a disparu est pire
+ * qu'un justificatif absent — le déposant croit sa preuve versée, et ne
+ * l'apprend qu'au moment où elle compte.
+ *
+ * En base, la ligne et les octets sont écrits dans la même transaction,
+ * sauvegardés par la même sauvegarde, restaurés au même instant. Le service
+ * cesse par ailleurs d'être attaché à une machine, ce qu'un disque imposait.
+ *
+ * Les octets sont dans une table à part, ContenuJustificatif : voir le schéma.
  */
-import { createHash, randomBytes } from "node:crypto";
-import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, unlink } from "node:fs/promises";
 import path from "node:path";
+import { prisma } from "./db";
 import { EXTENSIONS, NOMBRE_MAX, TAILLE_MAX, TYPES_ACCEPTES } from "./upload-constantes";
 
 export { EXTENSIONS, NOMBRE_MAX, TAILLE_MAX, TYPES_ACCEPTES, formatTaille } from "./upload-constantes";
 
-const RACINE = path.join(process.cwd(), "storage", "justificatifs");
+/** Emplacement des pièces déposées avant le passage en base. Lecture seule. */
+const ANCIENNE_RACINE = path.join(process.cwd(), "storage", "justificatifs");
 
 export type PieceEnregistree = {
   nomOrigine: string;
   typeMime: string;
   taille: number;
-  cheminStockage: string;
   sommeControle: string;
+  /**
+   * À écrire dans ContenuJustificatif, jamais dans Justificatif.
+   *
+   * Le paramètre de type est explicite : `Uint8Array` seul se résout en
+   * `Uint8Array<ArrayBufferLike>`, quand Prisma exige `Uint8Array<ArrayBuffer>`.
+   * Buffer, qui l'étend, souffre du même écart.
+   */
+  octets: Uint8Array<ArrayBuffer>;
 };
 
 export function validerPiece(fichier: File): string | null {
@@ -28,46 +50,53 @@ export function validerPiece(fichier: File): string | null {
   return null;
 }
 
-export async function enregistrerPiece(fichier: File, referenceDossier: string): Promise<PieceEnregistree> {
+export async function enregistrerPiece(fichier: File): Promise<PieceEnregistree> {
   const erreur = validerPiece(fichier);
   if (erreur) throw new Error(erreur);
 
-  const octets = Buffer.from(await fichier.arrayBuffer());
-  const somme = createHash("sha256").update(octets).digest("hex");
-
-  const dossier = path.join(RACINE, referenceDossier);
-  await mkdir(dossier, { recursive: true });
-
-  const extension = EXTENSIONS[fichier.type] ?? "bin";
-  const nom = `${randomBytes(8).toString("hex")}.${extension}`;
-  const chemin = path.join(dossier, nom);
-  await writeFile(chemin, octets, { mode: 0o600 });
-
+  // `new Uint8Array` et non `Buffer.from` : ce dernier produit un
+  // Buffer<ArrayBufferLike>, quand Prisma exige un Uint8Array<ArrayBuffer>.
+  const octets = new Uint8Array(await fichier.arrayBuffer());
   return {
     nomOrigine: nettoyerNom(fichier.name),
     typeMime: fichier.type,
     taille: fichier.size,
-    // Une simple concaténation, pas `path.join` : ce chemin relatif n'est
-    // jamais ouvert ici, il est seulement rangé en base. Turbopack, lui,
-    // voyait un accès disque construit dynamiquement et en concluait qu'il
-    // fallait embarquer tout le projet — sources et dossier public compris —
-    // dans le paquet serveur. Les deux fragments sont produits juste au-dessus
-    // et ne contiennent pas de séparateur.
-    cheminStockage: `${referenceDossier}/${nom}`,
-    sommeControle: somme,
+    sommeControle: createHash("sha256").update(octets).digest("hex"),
+    octets,
   };
 }
 
-export async function lirePiece(cheminRelatif: string): Promise<Buffer> {
-  const complet = path.join(RACINE, cheminRelatif);
+/**
+ * Lit les octets d'une pièce. C'est le seul endroit qui les charge.
+ *
+ * Le repli sur disque ne sert qu'aux pièces déposées avant la bascule ; il
+ * disparaîtra le jour où il n'en restera plus.
+ */
+export async function lirePiece(justificatifId: string, cheminHerite?: string | null): Promise<Buffer> {
+  const contenu = await prisma.contenuJustificatif.findUnique({
+    where: { justificatifId },
+    select: { octets: true },
+  });
+  if (contenu) return Buffer.from(contenu.octets);
+
+  if (!cheminHerite) throw new Error("Contenu introuvable");
+  const complet = path.join(ANCIENNE_RACINE, cheminHerite);
   // Empêche toute remontée hors du répertoire de stockage.
-  if (!path.resolve(complet).startsWith(path.resolve(RACINE))) throw new Error("Chemin invalide");
+  if (!path.resolve(complet).startsWith(path.resolve(ANCIENNE_RACINE))) throw new Error("Chemin invalide");
   return readFile(complet);
 }
 
-export async function supprimerPiece(cheminRelatif: string): Promise<void> {
-  const complet = path.join(RACINE, cheminRelatif);
-  if (!path.resolve(complet).startsWith(path.resolve(RACINE))) return;
+/**
+ * Efface le fichier d'une pièce héritée du stockage disque.
+ *
+ * Les octets en base, eux, partent avec la ligne : ContenuJustificatif est en
+ * cascade sur Justificatif. Cette fonction ne subsiste que pour les anciennes
+ * pièces, et ne fait rien quand il n'y a pas de chemin.
+ */
+export async function supprimerPiece(cheminHerite?: string | null): Promise<void> {
+  if (!cheminHerite) return;
+  const complet = path.join(ANCIENNE_RACINE, cheminHerite);
+  if (!path.resolve(complet).startsWith(path.resolve(ANCIENNE_RACINE))) return;
   await unlink(complet).catch(() => undefined);
 }
 

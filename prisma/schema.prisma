@@ -473,8 +473,11 @@ model Justificatif {
   nomOrigine  String
   typeMime    String
   taille      Int
-  /// Chemin relatif dans storage/justificatifs — jamais servi publiquement.
-  cheminStockage String
+  /// Ancien emplacement disque, conservé pour les pièces déposées avant que
+  /// le contenu ne passe en base. Plus jamais renseigné.
+  cheminStockage String?
+  /// Les octets, dans une table à part : voir ContenuJustificatif.
+  contenu        ContenuJustificatif?
   sommeControle  String?
 
   etat       EtatJustificatif @default(EN_ATTENTE)
@@ -493,6 +496,24 @@ model Justificatif {
 
   @@index([signalementId])
   @@index([etat])
+}
+
+/// Les octets d'une pièce justificative.
+///
+/// Séparés de Justificatif à dessein. Une colonne `Bytes` sur la table
+/// principale serait chargée par toute requête sans `select` explicite — et il
+/// y en a six : la liste d'administration tirerait cinquante mégaoctets pour
+/// afficher des noms de fichiers. Ici, seule la route de lecture la joint.
+///
+/// En base plutôt que sur disque, parce que ce service vit de la preuve. Un
+/// justificatif dont la ligne existe mais dont le fichier a disparu est pire
+/// que pas de justificatif : le déposant croit sa preuve versée. La ligne et
+/// les octets sont validés ensemble, sauvegardés ensemble, restaurés ensemble.
+model ContenuJustificatif {
+  justificatif   Justificatif @relation(fields: [justificatifId], references: [id], onDelete: Cascade)
+  justificatifId String       @id
+
+  octets Bytes
 }
 
 /// Journal horodaté du signalement, alimenté par le consommateur et par l'administration.

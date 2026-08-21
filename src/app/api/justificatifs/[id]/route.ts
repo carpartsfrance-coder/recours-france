@@ -22,7 +22,7 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ id:
 
   let contenu: Buffer;
   try {
-    contenu = await lirePiece(piece.cheminStockage);
+    contenu = await lirePiece(piece.id, piece.cheminStockage);
   } catch {
     return new Response("Fichier indisponible", { status: 410 });
   }

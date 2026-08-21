@@ -247,7 +247,7 @@ export async function ajouterJustificatif(_precedent: EtatDossier, donnees: Form
 
     const conseils: string[] = [];
     for (const f of fichiers) {
-      const piece = await enregistrerPiece(f, signalement.reference);
+      const piece = await enregistrerPiece(f);
       const controle = controlesParFichier.get(f);
       const anomalies = [...(controle?.anomalies ?? [])];
       const coherence = controle
@@ -265,13 +265,16 @@ export async function ajouterJustificatif(_precedent: EtatDossier, donnees: Form
         select: { id: true },
       });
       if (dejaVu) anomalies.push("fichier déjà déposé sous une autre identité");
+      const { octets, ...metadonnees } = piece;
       await prisma.justificatif.create({
         data: {
-          ...piece,
+          ...metadonnees,
           signalementId: signalement.id,
           anomalies,
           observations: coherence?.observations ?? [],
           conseil: coherence?.conseil ?? null,
+          // Même transaction que la ligne : jamais l'une sans les autres.
+          contenu: { create: { octets } },
         },
       });
     }
@@ -303,7 +306,11 @@ export async function supprimerSignalement(_precedent: EtatDossier, donnees: For
   const jeton = String(donnees.get("jeton") ?? "");
   try {
     const signalement = await ouvrir(jeton);
-    const pieces = await prisma.justificatif.findMany({ where: { signalementId: signalement.id } });
+    // Seul le chemin hérité est utile ici : les octets partent en cascade.
+    const pieces = await prisma.justificatif.findMany({
+      where: { signalementId: signalement.id },
+      select: { cheminStockage: true },
+    });
     for (const p of pieces) await supprimerPiece(p.cheminStockage);
     await prisma.justificatif.deleteMany({ where: { signalementId: signalement.id } });
     await prisma.signalement.update({

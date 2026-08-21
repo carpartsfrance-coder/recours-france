@@ -330,7 +330,10 @@ export async function traiterRevendication(_precedent: EtatAdmin, donnees: FormD
 export async function purgerJustificatif(_precedent: EtatAdmin, donnees: FormData): Promise<EtatAdmin> {
   const admin = await exigerAdmin();
   const id = String(donnees.get("id") ?? "");
-  const piece = await prisma.justificatif.findUnique({ where: { id } });
+  const piece = await prisma.justificatif.findUnique({
+    where: { id },
+    select: { cheminStockage: true },
+  });
   if (!piece) return { erreur: "Pièce introuvable." };
 
   await supprimerPiece(piece.cheminStockage);
