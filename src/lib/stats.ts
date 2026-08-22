@@ -278,9 +278,33 @@ export async function compteursAnnuaire(entrepriseIds: string[]) {
 }
 
 /** Chiffres de la page d'accueil et de l'annuaire. */
+/**
+ * Nombre approché de fiches.
+ *
+ * `count(*)` sans filtre parcourt les treize millions de lignes : PostgreSQL
+ * ne peut pas tenir de compteur, son modèle de concurrence lui interdisant de
+ * savoir sans regarder combien de lignes sont visibles pour la transaction en
+ * cours. Mesuré à 9,3 s en local et 49 s en production — sur la page
+ * d'accueil, à chaque visite.
+ *
+ * `reltuples` est l'estimation entretenue par ANALYZE. Elle coûte une lecture
+ * de catalogue, et pour un ordre de grandeur affiché en pied de page c'est
+ * exactement ce qu'il faut : personne n'a besoin du chiffre à l'unité, et il
+ * change de toute façon à chaque publication mensuelle du répertoire.
+ */
+async function nombreApprocheDeFiches(): Promise<number> {
+  const [ligne] = await prisma.$queryRaw<{ n: bigint | null }[]>`
+    SELECT reltuples::bigint AS n FROM pg_class WHERE relname = 'Entreprise'
+  `;
+  const n = Number(ligne?.n ?? 0);
+  // Une table jamais analysée renvoie -1 ; le comptage exact reste alors le
+  // seul recours, et il est rapide sur une table vide ou presque.
+  return n > 0 ? n : prisma.entreprise.count();
+}
+
 export async function statistiquesPlateforme() {
   const [entreprises, signalements, verifies, avis] = await Promise.all([
-    prisma.entreprise.count(),
+    nombreApprocheDeFiches(),
     prisma.signalement.count({ where: { moderation: "PUBLIE" } }),
     prisma.signalement.count({
       where: { moderation: "PUBLIE", niveauVerification: { in: ["PIECE_DEPOSEE", "PIECE_EXAMINEE"] } },

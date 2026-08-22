@@ -27,7 +27,12 @@ export default async function TableauDeBord() {
     derniers,
     parCategorie,
   ] = await Promise.all([
-    prisma.entreprise.count(),
+    // Estimation plutôt que comptage exact : voir nombreApprocheDeFiches
+    // dans lib/stats.ts. Neuf secondes gagnées à chaque ouverture du tableau
+    // de bord, pour un chiffre qui n'a jamais besoin d'être à l'unité.
+    prisma.$queryRaw<{ n: bigint | null }[]>`
+      SELECT reltuples::bigint AS n FROM pg_class WHERE relname = 'Entreprise'
+    `.then((r) => Number(r[0]?.n ?? 0)),
     prisma.signalement.count({ where: { moderation: "PUBLIE" } }),
     prisma.signalement.count({
       where: { moderation: "PUBLIE", niveauVerification: { in: ["PIECE_DEPOSEE", "PIECE_EXAMINEE"] } },

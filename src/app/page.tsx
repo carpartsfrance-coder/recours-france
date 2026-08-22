@@ -162,8 +162,12 @@ export default async function Accueil() {
               </Link>
             </p>
             <p className="rf-legende rf-mt-14">
-              {formatNombre(stats.entreprises)} fiche{stats.entreprises > 1 ? "s" : ""} constituée
-              {stats.entreprises > 1 ? "s" : ""} · {formatNombre(stats.signalements)} signalement
+              {/* « Plus de 12 millions » plutôt qu'un chiffre à l'unité : la
+                  valeur est une estimation, et l'annoncer comme exacte serait
+                  se tromper deux fois — sur la précision, et sur ce que le
+                  lecteur a besoin de savoir. */}
+              Plus de {formatNombre(Math.floor(stats.entreprises / 1_000_000))} millions de fiches
+              constituées · {formatNombre(stats.signalements)} signalement
               {stats.signalements > 1 ? "s" : ""} publié{stats.signalements > 1 ? "s" : ""}, dont{" "}
               {formatNombre(stats.verifies)} accompagné{stats.verifies > 1 ? "s" : ""} d’un justificatif.
             </p>
