@@ -469,13 +469,30 @@ async function collecter({
         departement ? { departement } : {},
       ],
     },
-    orderBy: [{ indiceTransparence: "desc" }, { denomination: "asc" }],
+    // Trié sur un ordre qu'un index couvre.
+    //
+    // Le tri précédent — indiceTransparence décroissant — lisait 934 196 blocs,
+    // soit 7,3 Go, pour rendre vingt-cinq lignes : dix-neuf secondes. La
+    // colonne est renseignée sur dix lignes sur treize millions, et un tri
+    // décroissant place les valeurs nulles en tête ; la base parcourait donc
+    // tout pour produire une liste en réalité alphabétique. Autant l'assumer et
+    // la faire servir par l'index.
+    orderBy: [{ denomination: "asc" }],
     take: 25,
   });
 
-  // Nombre réel de fiches correspondant au filtre, indépendant de la page
-  // affichée : sans lui, l'annuaire ne dit jamais ce qu'il contient.
-  const totalLocal = await prisma.entreprise.count({
+  // Nombre de fiches correspondant au filtre, indépendant de la page affichée :
+  // sans lui, l'annuaire ne dit jamais ce qu'il contient.
+  //
+  // Sans filtre, ce comptage porte sur treize millions de lignes et n'apprend
+  // rien de plus que le pied de page. On prend alors l'estimation entretenue
+  // par le catalogue : une lecture, au lieu de plusieurs secondes.
+  const sansFiltre = !requete && !secteur && !departement;
+  const totalLocal = sansFiltre
+    ? await prisma.$queryRaw<{ n: bigint | null }[]>`
+        SELECT reltuples::bigint AS n FROM pg_class WHERE relname = 'Entreprise'
+      `.then((r) => Number(r[0]?.n ?? 0))
+    : await prisma.entreprise.count({
     where: {
       AND: [
         requete

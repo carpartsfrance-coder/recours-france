@@ -144,6 +144,14 @@ for p in $TRANCHES; do
   fi
 done
 
+# ── Horodatage de la synchronisation ───────────────────────────────────────
+# Les données viennent d'être chargées depuis les registres : les laisser sans
+# date de synchronisation reviendrait à les déclarer périmées, ce qu'elles ne
+# sont pas. Une tâche planifiée les rafraîchira ensuite par lots.
+titre "Fraîcheur"
+psql "$PROD" -q -c 'UPDATE "Entreprise" SET "syncSirene" = now() WHERE "syncSirene" IS NULL;' \
+  && vert "  date de synchronisation posée" || rouge "  échec de l'horodatage"
+
 # ── Les tables qui dépendent d'Entreprise ──────────────────────────────────
 titre "Tables rattachées aux entreprises"
 for t in "${APRES[@]}"; do transferer "$t"; done
