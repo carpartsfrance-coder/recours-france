@@ -245,7 +245,10 @@ export default async function Annuaire({
           >
             <div style={{ fontSize: 13.5 }}>
               <strong>
-                {formatNombre(total)} fiche{total > 1 ? "s" : ""}
+                {/* 1 001 est la sentinelle du décompte plafonné : afficher ce
+                    chiffre-là serait faux, il signifie « plus de 1 000 ». */}
+                {requete && total > 1000 ? "Plus de 1 000" : formatNombre(total)} fiche
+                {total > 1 ? "s" : ""}
               </strong>{" "}
               {requete
                 ? total > 1
@@ -498,9 +501,19 @@ async function collecter({
     // décroissant place les valeurs nulles en tête ; la base parcourait donc
     // tout pour produire une liste en réalité alphabétique. Autant l'assumer et
     // la faire servir par l'index.
-    orderBy: [{ denomination: "asc" }],
+    // …sauf quand on cherche — et c'est le point décisif. Avec
+    // « ORDER BY denomination LIMIT 25 », le planificateur préfère remonter
+    // l'index alphabétique entier en testant chaque ligne au filtre, plutôt que
+    // d'interroger les index trigrammes puis trier. Mesuré en production sur
+    // « boulangerie » : 106 033 lignes écartées une à une, 41 secondes, index
+    // trigrammes présents et valides. Sans tri, il bascule sur les trigrammes
+    // et s'arrête aux vingt-cinq premières correspondances. Les vingt-cinq
+    // lignes sont ensuite triées en mémoire : l'affichage ne change pas, seul
+    // le chemin d'accès change.
+    ...(requete ? {} : { orderBy: [{ denomination: "asc" as const }] }),
     take: 25,
   });
+  if (requete) locales.sort((a, b) => a.denomination.localeCompare(b.denomination, "fr"));
 
   // Nombre de fiches correspondant au filtre, indépendant de la page affichée :
   // sans lui, l'annuaire ne dit jamais ce qu'il contient.
@@ -513,17 +526,28 @@ async function collecter({
     ? await prisma.$queryRaw<{ n: bigint | null }[]>`
         SELECT reltuples::bigint AS n FROM pg_class WHERE relname = 'Entreprise'
       `.then((r) => Number(r[0]?.n ?? 0))
-    : await prisma.entreprise.count({
-    where: {
-      AND: [
-        requete
-          ? { OR: clausesRecherche(requete) }
-          : {},
-        secteur ? { secteur } : {},
-        departement ? { departement } : {},
-      ],
-    },
-  });
+    : requete
+      ? // Plafonné au millier : compter exactement les 12 892 « boulangerie »
+        // relit autant de pages éparses que la recherche elle-même, pour un
+        // chiffre dont personne n'a l'usage exact. Au-delà, « plus de 1 000 ».
+        await prisma.entreprise
+          .findMany({
+            where: {
+              AND: [
+                { OR: clausesRecherche(requete) },
+                secteur ? { secteur } : {},
+                departement ? { departement } : {},
+              ],
+            },
+            select: { id: true },
+            take: 1001,
+          })
+          .then((r) => r.length)
+      : await prisma.entreprise.count({
+          where: {
+            AND: [secteur ? { secteur } : {}, departement ? { departement } : {}],
+          },
+        });
 
   const compteurs = await compteursAnnuaire(locales.map((e) => e.id));
 
