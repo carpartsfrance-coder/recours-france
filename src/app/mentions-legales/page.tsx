@@ -46,8 +46,17 @@ export default function MentionsLegales() {
                 <p className="rf-alerte-legale">
                   <strong>Mentions légales incomplètes.</strong> Ce site ne doit pas être ouvert au public en
                   l’état : l’article 6 III de la loi pour la confiance dans l’économie numérique impose
-                  l’identité de l’éditeur et celle de l’hébergeur. Variables à renseigner chez l’hébergeur :{" "}
-                  {manquantes.join(", ")}.
+                  l’identité de l’éditeur et celle de l’hébergeur.
+                  {/* Les noms de variables restent hors de la page publique : ce
+                      sont des détails d’exploitation, et les afficher à un
+                      visiteur venu régler un litige n’inspire pas confiance.
+                      « npm run verifier:mise-en-ligne » les nomme, lui. */}
+                  {process.env.NODE_ENV === "production" ? null : (
+                    <>
+                      {" "}
+                      Variables à renseigner : {manquantes.join(", ")}.
+                    </>
+                  )}
                 </p>
               ) : null}
               <p>
