@@ -29,7 +29,13 @@ services:
     # compilation, avant le démarrage. Sans `--accept-data-loss` à dessein —
     # une modification de schéma qui détruirait des données doit faire échouer
     # le déploiement, pas s'appliquer en silence.
-    preDeployCommand: npx prisma db push --skip-generate
+    #
+    # Le script d'index suit immédiatement : Prisma ne sait pas exprimer les
+    # index partiels ni les index trigrammes, et `db push` peut les écarter en
+    # alignant le schéma. Sans eux la recherche passe de quelques
+    # millisecondes à vingt-quatre secondes. Le fichier est idempotent
+    # (CREATE INDEX IF NOT EXISTS), il ne coûte rien quand tout est en place.
+    preDeployCommand: npx prisma db push --skip-generate && npm run db:index-annuaire
     # /api/vivant, surtout pas /api/sante : cette dernière répond 503 dès
     # qu'une tâche planifiée est en retard — bon pour une alerte, désastreux
     # pour une sonde, qui redémarrerait un service en parfait état de marche.
@@ -150,7 +156,10 @@ services:
     branch: main
     schedule: "30 7 * * *"
     buildCommand: npm ci && npx prisma generate
-    startCommand: npm run relances
+    # `--appliquer` n'est pas une option de confort : sans lui le script se
+    # contente de simuler et n'envoie rien. La tâche tournait donc chaque jour
+    # sans jamais relancer personne.
+    startCommand: npm run relances -- --appliquer
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -173,7 +182,11 @@ services:
     branch: main
     schedule: "45 7 * * *"
     buildCommand: npm ci && npx prisma generate
-    startCommand: npm run contestations
+    # Idem, et l'enjeu est autrement sérieux : sans ce drapeau, aucune
+    # contestation d'entreprise n'était jamais traitée. Toute la position
+    # juridique du service repose sur le couple publication immédiate et
+    # retrait sur signalement — un retrait qui ne s'exécutait pas.
+    startCommand: npm run contestations -- --appliquer
     envVars:
       - key: DATABASE_URL
         sync: false
