@@ -7,9 +7,16 @@
  * le tunnel se termine normalement, l'écran de réussite s'affiche, et la
  * personne n'a simplement jamais de nouvelles.
  *
- *   DATABASE_URL=… SMTP_HOST=… npm run essai:courriel -- vous@exemple.fr
+ *   npm run essai:courriel -- vous@exemple.fr
+ *
+ * Les identifiants sont demandés à la saisie plutôt que passés en variables
+ * d'environnement. Une commande qui les porte en clair les laisse dans
+ * l'historique du terminal, et se recopie volontiers dans une conversation ou
+ * un ticket — c'est arrivé. Ici ils ne quittent jamais le processus.
  */
 
+import { createInterface } from "node:readline/promises";
+import { stdin, stdout } from "node:process";
 import { envoyer, versTexte } from "../src/lib/mailer";
 
 const destinataire = process.argv[2];
@@ -24,11 +31,40 @@ function ligne(cle: string, valeur: string | undefined, secret = false) {
 }
 
 async function main() {
+  // Demandés seulement s'ils manquent, et seulement devant un vrai terminal.
+  // `readline` ne résout jamais sa promesse quand l'entrée est un tube : le
+  // script restait bloqué sans rien afficher, ce qu'aucune trace n'expliquait.
+  const interactif = Boolean(stdin.isTTY);
+  if ((!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) && !interactif) {
+    console.log(
+      "\nIdentifiants absents, et l'entrée n'est pas un terminal.\n" +
+        "Relancez depuis un terminal, ou fournissez SMTP_USER et SMTP_PASSWORD.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    const invite = createInterface({ input: stdin, output: stdout });
+    if (!process.env.SMTP_USER) {
+      process.env.SMTP_USER = (await invite.question("\nIdentifiant SMTP : ")).trim();
+    }
+    if (!process.env.SMTP_PASSWORD) {
+      process.env.SMTP_PASSWORD = (await invite.question("Mot de passe SMTP : ")).trim();
+    }
+    invite.close();
+    process.env.SMTP_HOST ||= "smtp.mailersend.net";
+    process.env.SMTP_PORT ||= "587";
+    process.env.MAIL_ENABLED = "true";
+  }
+
   console.log("\nConfiguration lue :");
   ligne("MAIL_ENABLED", process.env.MAIL_ENABLED);
   ligne("SMTP_HOST", process.env.SMTP_HOST);
   ligne("SMTP_PORT", process.env.SMTP_PORT ?? "587 (défaut)");
   ligne("SMTP_USER", process.env.SMTP_USER);
+  if (/^COLLEZ|^\.\.\.$|^<|^votre/i.test(process.env.SMTP_USER ?? "")) {
+    console.log("\n  ⚠ L'identifiant est resté un texte à remplacer.");
+  }
   ligne("SMTP_PASSWORD", process.env.SMTP_PASSWORD, true);
   ligne("MAIL_FROM", process.env.MAIL_FROM);
   ligne("MAIL_REPLY_TO", process.env.MAIL_REPLY_TO);
@@ -77,4 +113,10 @@ async function main() {
   }
 }
 
-main();
+// Un script d'essai qui meurt en silence est pire qu'inutile : on croit avoir
+// vérifié quelque chose. Toute erreur non prévue s'affiche et fait sortir en
+// échec.
+main().catch((e) => {
+  console.error("\n  erreur inattendue :", e instanceof Error ? e.message : e);
+  process.exit(1);
+});
