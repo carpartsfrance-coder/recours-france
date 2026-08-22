@@ -10,11 +10,13 @@
 //  6. Aucun texte libre du consommateur n'est publié tel quel.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearchPostgres"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [pg_trgm]
   url      = env("DATABASE_URL")
 }
 
@@ -225,6 +227,21 @@ model Entreprise {
   @@index([denomination])
   @@index([departement])
   @@index([naf])
+  /// Index que Prisma sait désormais exprimer, et qu'il doit donc connaître.
+  ///
+  /// Ils vivaient dans scripts/index-annuaire.sql, hors du schéma. « prisma db
+  /// push » supprime tout ce qu'il ne connaît pas : à chaque déploiement il les
+  /// effaçait en annonçant « in sync » et en sortant en code 0, la recherche
+  /// repassait de moins d'une seconde à cent, et le site tombait le temps que
+  /// les requêtes saturent la base. Déclarés ici, ils survivent.
+  ///
+  /// Les noms reprennent exactement ceux déjà construits en production, pour
+  /// que Prisma les reconnaisse au lieu de les rebâtir — quarante minutes de
+  /// verrou en écriture évitées à chaque mise en ligne.
+  @@index([denomination(ops: raw("gin_trgm_ops"))], type: Gin, map: "Entreprise_denomination_trgm_idx")
+  @@index([enseigne(ops: raw("gin_trgm_ops"))], type: Gin, map: "Entreprise_enseigne_trgm_idx")
+  @@index([siteWeb(ops: raw("gin_trgm_ops"))], type: Gin, map: "Entreprise_siteweb_trgm_idx")
+  @@index([secteur, etatAdministratif, denomination], map: "Entreprise_secteur_etat_denom_idx")
   @@index([etatAdministratif])
   // Index de couverture des trois étages de l'annuaire : secteur, puis
   // secteur × département, puis secteur × département × commune.
