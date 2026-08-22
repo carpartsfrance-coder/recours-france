@@ -23,12 +23,25 @@ export async function GET(requete: Request) {
 
   const suggestions = new Map<string, Suggestion>();
 
+  // Les chiffres de la saisie, isolés une fois : un SIREN fait neuf chiffres,
+  // un SIRET quatorze. Toute autre longueur n'est pas un numéro.
+  const chiffres = q.replace(/\D/g, "");
+
   const locales = await prisma.entreprise.findMany({
     where: {
       OR: [
         { denomination: { contains: q, mode: "insensitive" } },
         { enseigne: { contains: q, mode: "insensitive" } },
-        { siren: { contains: q.replace(/\D/g, "") || "@@" } },
+        // Le SIREN se cherche par égalité, jamais par fragment.
+        //
+        // La branche précédente retirait les non-chiffres de la saisie et
+        // cherchait ce reste n'importe où dans le numéro. « 7night » donnait
+        // donc « 7 », soit siren LIKE '%7%' : presque toutes les entreprises de
+        // France, et l'autocomplétion proposait ENGIE, EDF et FNAC DARTY à
+        // quelqu'un qui tapait le nom de sa boutique. Aucun index ne sert un
+        // LIKE '%…%' sur un numéro, de surcroît.
+        ...(/^\d{9}$/.test(chiffres) ? [{ siren: chiffres }] : []),
+        ...(/^\d{14}$/.test(chiffres) ? [{ siretSiege: chiffres }] : []),
       ],
     },
     take: 5,

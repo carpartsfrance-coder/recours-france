@@ -72,7 +72,17 @@ export default async function Annuaire({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const requete = (typeof params.q === "string" ? params.q : "").trim();
+  const saisie = (typeof params.q === "string" ? params.q : "").trim();
+  /**
+   * En deçà de trois caractères, on ne cherche pas.
+   *
+   * « a » correspond à 9 592 463 fiches : la base les parcourt toutes, la page
+   * affiche « 9 592 463 fiches correspondent », et personne n'a rien appris.
+   * Aucun index ne sauve ce cas — un index trigramme ne sait rien faire d'un
+   * motif de moins de trois caractères, c'est sa définition même.
+   */
+  const requete = saisie.length >= 3 ? saisie : "";
+  const saisieTropCourte = saisie.length > 0 && saisie.length < 3;
   const secteur = typeof params.secteur === "string" ? params.secteur : "";
   const departement = typeof params.departement === "string" ? params.departement : "";
   const tri = typeof params.tri === "string" && TRIS.some((t) => t.cle === params.tri) ? params.tri : "pertinence";
@@ -80,6 +90,8 @@ export default async function Annuaire({
   const page = Math.max(1, Number(params.page ?? 1) || 1);
 
   const { lignes, total, totalRegistres, erreurSource, pagesApi } = await collecter({
+    // La valeur filtrée, pas la saisie : c'est ici que le garde des trois
+    // caractères doit s'appliquer. La lui passer brute le contournait.
     requete,
     secteur,
     departement,
@@ -94,7 +106,7 @@ export default async function Annuaire({
 
   const lienPage = (n: number) => {
     const p = new URLSearchParams();
-    if (requete) p.set("q", requete);
+    if (saisie) p.set("q", saisie);
     if (secteur) p.set("secteur", secteur);
     if (departement) p.set("departement", departement);
     if (tri !== "pertinence") p.set("tri", tri);
@@ -105,7 +117,7 @@ export default async function Annuaire({
 
   const lienTri = (cle: string) => {
     const p = new URLSearchParams();
-    if (requete) p.set("q", requete);
+    if (saisie) p.set("q", saisie);
     if (secteur) p.set("secteur", secteur);
     if (departement) p.set("departement", departement);
     if (cle !== "pertinence") p.set("tri", cle);
@@ -115,7 +127,7 @@ export default async function Annuaire({
 
   const lienBascule = () => {
     const p = new URLSearchParams();
-    if (requete) p.set("q", requete);
+    if (saisie) p.set("q", saisie);
     if (secteur) p.set("secteur", secteur);
     if (departement) p.set("departement", departement);
     if (tri !== "pertinence") p.set("tri", tri);
@@ -161,7 +173,7 @@ export default async function Annuaire({
                 id="f-q"
                 className="rf-input"
                 name="q"
-                defaultValue={requete}
+                defaultValue={saisie}
                 placeholder="Nom, raison sociale ou SIREN"
                 style={{ padding: "10px 12px", fontSize: 14, minHeight: 42 }}
               />
@@ -281,7 +293,16 @@ export default async function Annuaire({
             </div>
           ) : null}
 
-          {resultats.length === 0 ? (
+          {saisieTropCourte ? (
+            <div className="rf-carte rf-mt-16" style={{ padding: 22 }}>
+              <p style={{ fontSize: 17, fontWeight: 700 }}>Saisissez au moins trois caractères</p>
+              <p className="rf-texte rf-mt-10">
+                En deçà, la recherche remonterait des millions de fiches sans vous apprendre quoi que
+                ce soit. Vous pouvez aussi parcourir l’annuaire{" "}
+                <Link href="/annuaire">par secteur et par ville</Link>.
+              </p>
+            </div>
+          ) : resultats.length === 0 ? (
             <div style={{ padding: "36px 22px", textAlign: "center" }}>
               <p style={{ fontSize: 17, fontWeight: 700 }}>Aucune entreprise ne correspond à cette recherche</p>
               <p className="rf-texte rf-mt-8" style={{ maxWidth: 560, margin: "8px auto 0" }}>
