@@ -29,7 +29,8 @@
     "db:index-annuaire": "bash scripts/index-annuaire.sh",
     "compteurs": "tsx scripts/compteurs-annuaire.ts",
     "purger:demo": "tsx scripts/purger-demonstration.ts",
-    "verifier:mise-en-ligne": "tsx scripts/verifier-mise-en-ligne.ts"
+    "verifier:mise-en-ligne": "tsx scripts/verifier-mise-en-ligne.ts",
+    "essai:courriel": "tsx scripts/essai-courriel.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
