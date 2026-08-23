@@ -177,6 +177,11 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
    * chiffre d'affaires de 2022, le résultat net de 2025 — et chaque carte
    * affiche son année. Deux années différentes côte à côte demandent d'être
    * étiquetées, pas d'être alignées de force sur la plus récente.
+   *
+   * Le millésime ne paraît qu'une fois par carte, sous la valeur. L'écrire
+   * aussi dans le titre le faisait mentir : le titre reprenait le dernier
+   * exercice déposé, la valeur celui qui portait le poste, et JK AUTO
+   * annonçait « Chiffre d'affaires 2025 » au-dessus de « Exercice 2023 ».
    */
   const valeurFinance = (champ: "chiffreAffaires" | "resultatNet") => {
     if (!dernier) return { n: "Non déposé", l: "Aucun compte annuel au registre", absent: true };
@@ -538,7 +543,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               <div className="rfe-carte">
                 <div className="rfe-finance__k">
                   <Graphique taille={18} />
-                  {typo(dernier ? `Chiffre d’affaires ${dernier.exercice}` : "Chiffre d’affaires")}
+                  {typo("Chiffre d’affaires")}
                 </div>
                 <div className="rfe-finance__v">
                   <div className={`rfe-finance__n${ca.absent ? " rfe-finance__n--absent" : ""}`}>{ca.n}</div>
@@ -549,7 +554,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               <div className="rfe-carte">
                 <div className="rfe-finance__k">
                   <Camembert taille={18} />
-                  {typo(dernier ? `Résultat net ${dernier.exercice}` : "Résultat net")}
+                  {typo("Résultat net")}
                 </div>
                 <div className="rfe-finance__v">
                   <div className={`rfe-finance__n${rn.absent ? " rfe-finance__n--absent" : ""}`}>{rn.n}</div>
