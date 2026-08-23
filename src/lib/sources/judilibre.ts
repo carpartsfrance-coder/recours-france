@@ -131,7 +131,17 @@ export async function decision(id: string): Promise<DecisionJudilibre | null> {
 
 /* ── Extraction des parties ───────────────────────────────────────────────── */
 
-export type Role = "demandeur" | "defendeur";
+/**
+ * Le rôle procédural, avec son incertitude assumée.
+ *
+ * « partie » n'est pas un troisième camp : c'est l'aveu qu'on ne sait pas
+ * lequel des deux. Il survient sur les en-têtes dont les retours à la ligne
+ * ont été écrasés, où « PARTIE EN DEMANDE … PARTIE EN DÉFENSE » se retrouvent
+ * sur une seule ligne : la société y figure bien, mais la désigner
+ * demanderesse quand elle se défendait serait une erreur de fait sur une page
+ * qui porte son nom.
+ */
+export type Role = "demandeur" | "defendeur" | "partie";
 
 export type PartieMorale = {
   /** La dénomination telle qu'elle est écrite dans la décision. */
@@ -197,6 +207,17 @@ const FORMES = [
   "EARL", "SEM", "SA",
 ];
 
+/**
+ * « Société », sans sigle, désigne aussi une personne morale.
+ *
+ * Beaucoup de greffes écrivent « Société DISTRIMOTOR, immatriculée au RCS… »
+ * plutôt que « S.A.R.L. DISTRIMOTOR ». Le mot est trop courant pour être
+ * cherché n'importe où — il ouvre la moitié des phrases d'un exposé des faits —
+ * mais dans un bloc de parties, après un intitulé de rôle et hors ligne de
+ * représentation, il désigne bien une partie.
+ */
+const MOT_SOCIETE = "Soci[eé]t[eé]";
+
 /** « S.A.R.L. » et « SARL » désignent la même chose. */
 function normaliserForme(brut: string): string {
   return brut.replace(/[.\s]/g, "").toUpperCase();
@@ -237,11 +258,11 @@ export function normaliserDenomination(brut: string): string {
  */
 const ROLES: { motif: RegExp; role: Role }[] = [
   {
-    motif: /^\s*(DEMANDEUR|DEMANDERESSE|REQUERANT|REQUERANTE|APPELANT|APPELANTE|PARTIES? +EN +DEMANDE)S?\b/i,
+    motif: /^\s*\*?\s*(DEMANDEURE?|DEMANDERESSE|REQUERANTE?|APPELANTE?|PARTIE\(?S?\)? +EN +DEMANDE)S?\b/i,
     role: "demandeur",
   },
   {
-    motif: /^\s*(DEFENDEUR|DEFENDERESSE|INTIME|INTIMEE|PARTIES? +EN +DEFENSE)S?\b/i,
+    motif: /^\s*\*?\s*(DEFENDEURE?|DEFENDERESSE|INTIMEE?|PARTIE\(?S?\)? +EN +D[EÉ]FENSE)S?\b/i,
     role: "defendeur",
   },
 ];
@@ -275,7 +296,7 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
     ? segments.map((s) => d.texte.slice(s.start, s.end)).join("\n")
     : d.texte.slice(0, 3000);
 
-  const formes = FORMES.map((f) => f.split("").join("\\.?")).join("|");
+  const formes = [...FORMES.map((f) => f.split("").join("\\.?")), MOT_SOCIETE].join("|");
   // Forme juridique, puis le nom jusqu'à une virgule, un retour à la ligne ou
   // « dont le siège » — les trois façons dont un en-tête clôt une désignation.
   // La dénomination court de la forme juridique jusqu'au premier marqueur qui
@@ -286,7 +307,12 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
     ",", "\\n", "\\[Adresse", "\\[Localité", "\\[Localite",
     "dont le si[eè]ge", "ayant son si[eè]ge", "sise\\b", "sis\\b",
     "immatricul", "\\bRCS\\b", "\\bSIREN\\b", "\\bSIRET\\b",
-    "repr[eé]sent", "prise en la personne", "$",
+    "repr[eé]sent", "prise en la personne",
+    // Une dénomination ne contient pas de verbe conjugué : « SAS DISTRIMOTOR
+    // contenant la clause attributive de compétence alléguée n'est pas signé »
+    // était capturé en entier faute de cette borne.
+    "\\b(?:contenant|ayant|exer[çc]ant|agissant|domicili|pris en|venant aux)",
+    "$",
   ].join("|");
   const motif = new RegExp(`\\b((?:${formes})\\.?)\\s+([^,\\n]{2,90}?)(?=\\s*(?:${bornes}))`, "gi");
 
@@ -305,9 +331,9 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
   let role: Role | null = null;
 
   for (const ligne of entete.split(/\n/)) {
-    for (const r of ROLES) {
-      if (r.motif.test(ligne)) role = r.role;
-    }
+    const marqueurs = ROLES.filter((r) => r.motif.test(ligne));
+    if (marqueurs.length === 1) role = marqueurs[0].role;
+    else if (marqueurs.length > 1) role = "partie";
     if (!role) continue;
     if (REPRESENTATION.test(ligne)) continue;
 
@@ -323,7 +349,8 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
 
     for (const m of noms) {
       const forme = normaliserForme(m[1]);
-      if (!FORMES.includes(forme)) continue;
+      const connue = FORMES.includes(forme) || /^SOCIETE$/i.test(forme.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+      if (!connue) continue;
       const denomination = m[2].trim().replace(/\s+/g, " ");
       if (!denomination) continue;
       // Sans identifiant, un nom pseudonymisé ne mène nulle part.

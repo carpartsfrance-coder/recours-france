@@ -738,7 +738,11 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                     <span className="rfe-decision__date">{formatDateLongue(d.date)}</span>
                     {d.numero ? <span className="rfe-decision__num">{typo(`n° ${d.numero}`)}</span> : null}
                     <span className="rfe-decision__role">
-                      {d.role === "demandeur" ? "Partie demanderesse" : "Partie défenderesse"}
+                      {d.role === "demandeur"
+                        ? "Partie demanderesse"
+                        : d.role === "defendeur"
+                          ? "Partie défenderesse"
+                          : "Partie à l’instance"}
                     </span>
                     <a
                       href={`https://www.courdecassation.fr/decision/${d.judilibreId}`}
