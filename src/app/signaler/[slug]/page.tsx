@@ -22,11 +22,15 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const cible = await resoudreCible(slug);
+  const query = await searchParams;
+  // L'onglet nomme ce que la page nomme : le site quand on vient de sa fiche.
+  const cible = await resoudreCible(slug, typeof query.via === "string" ? query.via : null);
   if (!cible) return {};
   return {
     title: `Signaler un problème avec ${cible.nom}`,
@@ -45,7 +49,8 @@ export default async function PageTunnel({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const cible = await resoudreCible(slug);
+  const via = typeof query.via === "string" ? query.via : null;
+  const cible = await resoudreCible(slug, via);
   if (!cible) notFound();
 
   const motif = typeof query.motif === "string" ? query.motif : null;
@@ -62,7 +67,9 @@ export default async function PageTunnel({
           siren={cible.siren ? formatSiren(cible.siren) : null}
           familles={famillesPour(cible.naf ?? null, cible.secteur ?? null)}
           preselection={preselection}
-            fiche={cible.fiche}
+          fiche={cible.fiche}
+          societe={cible.societe}
+          via={via}
         />
       </main>
       <PiedDePage />

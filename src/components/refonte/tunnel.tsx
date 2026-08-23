@@ -44,9 +44,20 @@ type Props = {
    * reconnaissable n'a pas de fiche où aller voir.
    */
   fiche: string | null;
+  /**
+   * La raison sociale, quand `nom` porte celui du site.
+   *
+   * On cliquait sur « Sides.fr » et l'écran suivant annonçait « SOCIETE
+   * INDUSTRIELLE POUR LE DEVELOPPEMENT DE LA SECURITE ». Le site désigne ce
+   * que la personne connaît ; la société reste affichée, mais derrière, avec
+   * le lieu et le SIREN.
+   */
+  societe: string | null;
+  /** Le slug de la boutique d'origine, à rendre à l'action pour le rattachement. */
+  via: string | null;
 };
 
-export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche }: Props) {
+export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche, societe, via }: Props) {
   const [ecran, setEcran] = useState<1 | 2 | 3>(1);
   const [famille, setFamille] = useState<string | null>(preselection?.famille ?? null);
   const [categorie, setCategorie] = useState<string | null>(preselection?.categorie ?? null);
@@ -79,6 +90,7 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche }
     demarrer(async () => {
       const r = await publierSignalement({
         slug,
+        via,
         famille: famille ?? "autre",
         categorie: categorie ?? "",
         dateFaits: (dateExacte ? new Date(dateExacte) : dateDepuisChip(chipDate ?? "ce-mois")).toISOString(),
@@ -116,9 +128,15 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche }
             <div style={{ fontSize: 20, fontWeight: 800, color: "var(--rf-cobalt-fonce)", marginTop: 2 }}>
               {nom}
             </div>
-            {lieu || siren ? (
+            {societe || lieu || siren ? (
               <div className="rfn-second" style={{ marginTop: 2 }}>
-                {[lieu, siren ? `SIREN ${siren}` : null].filter(Boolean).join(" · ")}
+                {[
+                  societe ? `Exploité par ${societe}` : null,
+                  lieu,
+                  siren ? `SIREN ${siren}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
             ) : null}
           </div>

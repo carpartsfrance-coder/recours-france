@@ -42,7 +42,13 @@ export async function GET(
   });
   if (!boutique) redirect("/signaler");
 
-  if (boutique.entreprise) redirect(`/signaler/${boutique.entreprise.slug}${suffixe}`);
+  if (boutique.entreprise) {
+    // `via` garde la trace du site d'où l'on vient. Sans lui, le tunnel
+    // n'affiche que la raison sociale, et la déclaration se rattache à la
+    // société seule : elle ne paraîtrait jamais sur la fiche de la boutique.
+    const separateur = suffixe ? "&" : "?";
+    redirect(`/signaler/${boutique.entreprise.slug}${suffixe}${separateur}via=${encodeURIComponent(slug)}`);
+  }
 
   // Le tunnel reprend le nom tel qu'il figure sur la fiche d'où l'on vient :
   // changer de désignation entre les deux écrans fait douter d'avoir cliqué juste.

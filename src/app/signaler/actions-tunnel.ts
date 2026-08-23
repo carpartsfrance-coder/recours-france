@@ -37,7 +37,7 @@ export async function deposerDepuisBrouillon(
 
   // Une boutique déjà connue accueille le signalement : c'est l'objet que le
   // consommateur désigne, indépendamment de toute personne morale.
-  const boutique = cible.entrepriseId === null && cible.site ? await boutiquePour(cible.site) : null;
+  const boutique = await boutiqueRattachee(cible);
 
   const montantBrut = brouillon.montant ? Number(brouillon.montant.replace(",", ".")) : NaN;
   const montant = Number.isFinite(montantBrut) && montantBrut > 0 ? montantBrut : null;
@@ -99,6 +99,26 @@ export async function deposerDepuisBrouillon(
  * demandée, statut.
  */
 /**
+ * La boutique à laquelle rattacher la déclaration.
+ *
+ * Deux chemins y mènent. Ou bien la fiche boutique a servi de point de départ,
+ * et la cible la connaît déjà — c'est le cas y compris quand l'exploitant est
+ * établi, et c'est celui qui manquait : la déclaration partait alors sur la
+ * société seule et n'apparaissait jamais sur la fiche d'où elle venait. Ou
+ * bien la cible est libre et ne porte qu'un domaine, qu'on résout ici, en
+ * créant la boutique au besoin.
+ */
+async function boutiqueRattachee(
+  cible: { boutiqueId: string | null; entrepriseId: string | null; site: string | null },
+): Promise<{ id: string; slug: string } | null> {
+  if (cible.boutiqueId) {
+    return prisma.boutique.findUnique({ where: { id: cible.boutiqueId }, select: { id: true, slug: true } });
+  }
+  if (cible.entrepriseId === null && cible.site) return boutiquePour(cible.site);
+  return null;
+}
+
+/**
  * Publier tout de suite, ou attendre un rapprochement ?
  *
  * La retenue vaut pour un nom tapé dans un champ : « Bergamotte » désigne
@@ -123,6 +143,8 @@ function etatPublication(entrepriseId: string | null, boutique: { id: string } |
 
 export async function publierSignalement(entree: {
   slug: string;
+  /** Slug de la boutique d'où part la déclaration, quand elle en vient. */
+  via: string | null;
   famille: string;
   categorie: string;
   dateFaits: string;
@@ -139,10 +161,10 @@ export async function publierSignalement(entree: {
     return { erreur: "Cette adresse électronique ne semble pas valide." };
   }
 
-  const cible = await resoudreCible(entree.slug);
+  const cible = await resoudreCible(entree.slug, entree.via);
   if (!cible) return { erreur: "Entreprise introuvable." };
 
-  const boutique = cible.entrepriseId === null && cible.site ? await boutiquePour(cible.site) : null;
+  const boutique = await boutiqueRattachee(cible);
   const reference = await genererReference();
   const enTetes = await headers();
 
@@ -177,10 +199,10 @@ export async function publierSignalement(entree: {
     // est établie, celle de la boutique sinon. Le tunnel proposait jusqu'ici
     // « Voir mon signalement public » vers `/entreprises/autre`, qui n'existe
     // pas — le seul lien que l'auteur veut suivre à cet instant tombait en 404.
-    const fiche = cible.entrepriseId
-      ? `/entreprises/${cible.slug}#signalements`
-      : boutique
-        ? `/boutiques/${boutique.slug}#litiges`
+    const fiche = boutique
+      ? `/boutiques/${boutique.slug}#litiges`
+      : cible.entrepriseId
+        ? `/entreprises/${cible.slug}#signalements`
         : null;
 
     return { reference, fiche };

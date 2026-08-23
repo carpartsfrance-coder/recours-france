@@ -71,6 +71,8 @@ export default async function CibleLibre({
             familles={famillesPour(null, null)}
             preselection={motif ? (DEPUIS_MOTIF[motif] ?? null) : null}
             fiche={cible.fiche}
+            societe={cible.societe}
+            via={null}
           />
         </main>
         <PiedDePage />
