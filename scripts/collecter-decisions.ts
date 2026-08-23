@@ -20,6 +20,13 @@ import {
 const prisma = new PrismaClient();
 const PAUSE_MS = 250;
 
+/** Mots de procédure qu'aucun rapprochement ne doit prendre pour un nom. */
+const PROCEDURE = new Set([
+  "DEMANDE", "DEFENSE", "PARTIE", "PARTIES", "DEMANDEUR", "DEMANDEURS",
+  "DEFENDEUR", "DEFENDEURS", "DEMANDERESSE", "DEFENDERESSE", "APPELANT",
+  "APPELANTE", "INTIME", "INTIMEE", "REQUERANT", "REQUERANTE",
+]);
+
 function argument(nom: string, defaut: string): string {
   return process.argv.find((a) => a.startsWith(`--${nom}=`))?.split("=")[1] ?? defaut;
 }
@@ -93,6 +100,12 @@ async function main() {
       avecParties++;
 
       for (const p of parties) {
+        // Des mots de procédure ressortent parfois comme dénominations, sur
+        // les en-têtes dont la mise en page a été écrasée : « DEMANDE » vient
+        // de « PARTIE EN DEMANDE ». Une société porte bien ce nom au
+        // répertoire, ce qui rend l'erreur silencieuse — et lui attribuerait
+        // des procès qui ne la concernent pas.
+        if (PROCEDURE.has(normaliserDenomination(p.denomination))) continue;
         // Quand la décision donne le numéro d'immatriculation, il suffit :
         // une requête sur clé unique, et plus aucune question d'homonymie.
         let candidats: Candidat[] = [];
@@ -109,25 +122,27 @@ async function main() {
           if (cle.length < 4) continue;
 
           /**
-           * Le tri se fait en deux temps, et ce n'est pas un raffinement.
+           * Égalité exacte, sur l'index btree de la colonne.
            *
-           * La version précédente comparait `upper(unaccent(denomination))` à
-           * la clé. Une fonction appliquée à la colonne interdit tout index :
-           * Postgres balayait les treize millions de lignes, et la production,
-           * qui coupe à dix secondes, tuait la requête. En local la même
-           * requête passait — assez lentement pour qu'on ne le remarque pas.
+           * Deux versions ont échoué avant celle-ci. `upper(unaccent(...))`
+           * appliquait une fonction à la colonne : aucun index utilisable,
+           * balayage des treize millions de lignes, sept secondes. `ILIKE` sur
+           * un motif encadré de pourcents empruntait bien l'index trigramme,
+           * mais son coût dépend du terme : un mot fréquent ramène un bitmap
+           * énorme, et la production tuait encore la requête.
            *
-           * `ILIKE` sur un motif encadré de pourcents emprunte au contraire
-           * l'index trigramme déjà posé sur la colonne. Il ramène un petit
-           * ensemble, que l'égalité exacte départage ensuite en mémoire. La
-           * règle stricte est intacte ; seul le chemin pour y arriver change.
+           * L'égalité, elle, coûte cinq millisecondes quel que soit le mot. On
+           * interroge les trois écritures plausibles du nom — telle quelle,
+           * en majuscules, et normalisée — puisque le répertoire Sirene stocke
+           * en majuscules et que les greffes suivent rarement la même règle.
            */
-          const approchants: Candidat[] = await prisma.$queryRaw`
-            SELECT id, siren, denomination, "formeJuridique"
-            FROM "Entreprise"
-            WHERE denomination ILIKE ${"%" + cle + "%"}
-            LIMIT 200`;
-          candidats = approchants.filter((c) => normaliserDenomination(c.denomination) === cle);
+          const variantes = [...new Set([p.denomination, p.denomination.toUpperCase(), cle])];
+          const trouves = await prisma.entreprise.findMany({
+            where: { denomination: { in: variantes } },
+            select: { id: true, siren: true, denomination: true, formeJuridique: true },
+            take: 25,
+          });
+          candidats = trouves.filter((c) => normaliserDenomination(c.denomination) === cle);
         }
 
         if (candidats.length === 0) { inconnues++; continue; }
