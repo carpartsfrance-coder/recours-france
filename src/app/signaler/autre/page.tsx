@@ -120,7 +120,7 @@ export default async function CibleLibre({
                 type="text"
                 name="nom"
                 className="rfx-input"
-                defaultValue={brouillon.libreNom ?? recherche}
+                defaultValue={brouillon.libreNom ?? (recherche.includes(".") ? "" : recherche)}
                 placeholder="ex. Bergamotte"
                 autoComplete="organization"
               />
@@ -135,7 +135,10 @@ export default async function CibleLibre({
                 type="text"
                 name="site"
                 className="rfx-input"
-                defaultValue={brouillon.libreSite ?? ""}
+                /* La recherche qui a mené ici est presque toujours un domaine —
+                   on arrive de l'annuaire des boutiques, où l'on vient de le
+                   taper. Le redemander serait le demander deux fois. */
+                defaultValue={brouillon.libreSite ?? (recherche.includes(".") ? recherche : "")}
                 placeholder="ex. bergamotte.com"
                 autoComplete="url"
               />

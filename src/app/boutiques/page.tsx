@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Page } from "@/components/chrome";
 import { prisma } from "@/lib/db";
-import { normaliserDomaine, nomDepuisDomaine } from "@/lib/boutiques";
+import { nomAffiche, normaliserDomaine } from "@/lib/boutiques";
 import { formatNombre } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -77,10 +77,10 @@ export default async function Boutiques({
             </div>
             <p className="rf-texte rf-mt-8" style={{ fontSize: 14 }}>
               Cette boutique n’a encore fait l’objet d’aucun signalement. Si vous rencontrez un litige avec{" "}
-              {nomDepuisDomaine(domaine)}, vous pouvez le déclarer : la fiche sera créée à cette occasion.
+              {nomAffiche(domaine)}, vous pouvez le déclarer : la fiche sera créée à cette occasion.
             </p>
             <Link
-              href={`/signaler?site=${encodeURIComponent(domaine)}`}
+              href={`/signaler/autre?q=${encodeURIComponent(domaine)}`}
               className="rf-btn rf-btn--primaire rf-mt-16"
             >
               Signaler un litige avec {domaine}

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { adressePostale, formatDateLongue, formatMontant, formatNombre, formatSiren } from "@/lib/format";
 import { DonneesStructurees, faqJsonLd, filAlianeJsonLd, organisationJsonLd } from "@/components/donnees-structurees";
 import { boutiqueIndexable } from "@/lib/indexation";
+import { nomAffiche } from "@/lib/boutiques";
 import { EDITEUR, siegeSocial } from "@/lib/editeur";
 import { typo } from "@/lib/typographie";
 import { demarchesPour, portesEntree, PARCOURS, FAQ, questionsReferencement } from "@/lib/boutique-fiche";
@@ -66,15 +67,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
   if (!boutique) return { title: "Boutique en ligne" };
 
+  const nom = nomAffiche(boutique.domaine);
   return {
     ...(boutiqueIndexable(boutique) ? {} : { robots: { index: false, follow: true } }),
     // Le titre porte « avis » et le domaine : c'est la requête visée, et elle
     // s'écrit telle que la personne la tape.
-    title: typo(`${boutique.nom} : avis, litiges et signalements`),
+    title: typo(`${nom} : avis, litiges et signalements`),
     description: typo(
       boutique.entreprise
-        ? `Vous recherchez des avis sur ${boutique.nom} ? Consultez les litiges publiés, l’identité de la société exploitante (${boutique.entreprise.denomination}) et les démarches disponibles.`
-        : `Vous recherchez des avis sur ${boutique.nom} ? Consultez les litiges publiés, les informations sur la boutique et les démarches disponibles.`,
+        ? `Vous recherchez des avis sur ${nom} ? Consultez les litiges publiés, l’identité de la société exploitante (${boutique.entreprise.denomination}) et les démarches disponibles.`
+        : `Vous recherchez des avis sur ${nom} ? Consultez les litiges publiés, les informations sur la boutique et les démarches disponibles.`,
     ),
     alternates: { canonical: `/boutiques/${slug}` },
   };
@@ -105,7 +107,7 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
 
   await prisma.boutique.update({ where: { id: boutique.id }, data: { vues: { increment: 1 } } });
 
-  const nom = boutique.nom;
+  const nom = nomAffiche(boutique.domaine);
   const societe = boutique.entreprise;
   const secteur = societe?.secteur ?? null;
   const portes = portesEntree(secteur);
@@ -191,7 +193,7 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
         ? { entrepriseId: boutique.entrepriseId }
         : { domaine: { endsWith: extension }, derniereActivite: { not: null } }),
     },
-    select: { slug: true, nom: true },
+    select: { slug: true, domaine: true },
     orderBy: boutique.entrepriseId ? { domaine: "asc" } : { derniereActivite: "desc" },
     take: 18,
   });
@@ -798,7 +800,7 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
                             borderRadius: 999, fontSize: 14.5, textDecoration: "none",
                           }}
                         >
-                          {v.nom}
+                          {nomAffiche(v.domaine)}
                         </Link>
                       </li>
                     ))}

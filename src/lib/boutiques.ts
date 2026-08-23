@@ -46,6 +46,25 @@ export function nomDepuisDomaine(domaine: string): string {
     .join(" ");
 }
 
+/**
+ * Le nom sous lequel la boutique est désignée au lecteur : le domaine entier,
+ * majuscule initiale. « Carpartsfrance.fr », « Palomano.com ».
+ *
+ * `Boutique.nom` ne convient pas pour cet usage. Il ne retient que le premier
+ * label du domaine — l'extension disparaît, et le sous-domaine avec :
+ * `tapjoy.helpshift.com` devient « Tapjoy », qui ne désigne plus rien. Or
+ * l'extension fait partie de l'identité du site, et de la requête : on cherche
+ * « palomano.com avis », pas « palomano avis ». La perdre sur la fiche, alors
+ * que l'annuaire affiche le domaine complet, revenait à nommer deux choses
+ * différentes au même endroit.
+ *
+ * La forme brute, en minuscules, reste celle de la ligne « Site : » et des
+ * liens : c'est une adresse, pas un nom propre.
+ */
+export function nomAffiche(domaine: string): string {
+  return domaine.charAt(0).toUpperCase() + domaine.slice(1);
+}
+
 function slugDepuisDomaine(domaine: string): string {
   return domaine.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

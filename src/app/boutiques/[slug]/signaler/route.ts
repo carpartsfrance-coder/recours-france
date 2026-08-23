@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { nomAffiche } from "@/lib/boutiques";
 import { ecrireBrouillon } from "@/lib/brouillon";
 import { CIBLE_LIBRE } from "@/lib/tunnel";
 import { DEPUIS_MOTIF } from "@/lib/tunnel-refonte";
@@ -37,12 +38,14 @@ export async function GET(
 
   const boutique = await prisma.boutique.findUnique({
     where: { slug },
-    select: { nom: true, domaine: true, entreprise: { select: { slug: true } } },
+    select: { domaine: true, entreprise: { select: { slug: true } } },
   });
   if (!boutique) redirect("/signaler");
 
   if (boutique.entreprise) redirect(`/signaler/${boutique.entreprise.slug}${suffixe}`);
 
-  await ecrireBrouillon({ libreNom: boutique.nom, libreSite: boutique.domaine });
+  // Le tunnel reprend le nom tel qu'il figure sur la fiche d'où l'on vient :
+  // changer de désignation entre les deux écrans fait douter d'avoir cliqué juste.
+  await ecrireBrouillon({ libreNom: nomAffiche(boutique.domaine), libreSite: boutique.domaine });
   redirect(`/signaler/${CIBLE_LIBRE}${suffixe}`);
 }
