@@ -191,21 +191,20 @@ export async function synchroniserEntreprise(
   /**
    * Chiffres agrégés publiés par l'API (issus des dépôts).
    *
-   * Le dépôt confidentiel l'emporte sur le chiffre. Quand le BODACC annonce
-   * une déclaration de confidentialité au titre de l'article L. 232-25, la
-   * société a expressément demandé que ses comptes ne soient pas communiqués :
-   * qu'une autre source en laisse filtrer un poste ne rouvre pas ce droit, et
-   * le publier irait contre la volonté qu'elle a fait enregistrer.
+   * On publie ce que le registre publie, ni plus ni moins.
+   *
+   * J'avais d'abord fait primer le dépôt confidentiel sur le chiffre, en
+   * pensant respecter la volonté de la société. C'était trop large :
+   * l'article L. 232-25 a deux alinéas, et le second ne couvre que le compte
+   * de résultat — le bilan reste public. DISTRIMOTOR en relève, et l'État
+   * publie son résultat net chaque année. Nous le masquions.
+   *
+   * Être plus strict que le registre revient à cacher une information
+   * publique, ce qui vide la fiche de sa raison d'être. La règle qui reste est
+   * celle qui compte : un poste que la source ne donne pas — un zéro, une
+   * absence — n'est pas affiché. Voir `versComptes`.
    */
-  const confidentiels = new Set(
-    (await prisma.compteAnnuel.findMany({
-      where: { entrepriseId: entreprise.id, confidentiel: true },
-      select: { exercice: true },
-    })).map((c) => c.exercice),
-  );
-
   for (const c of recherche.versComptes(base)) {
-    if (confidentiels.has(c.exercice)) continue;
     await prisma.compteAnnuel.upsert({
       where: { entrepriseId_exercice: { entrepriseId: entreprise.id, exercice: c.exercice } },
       create: {

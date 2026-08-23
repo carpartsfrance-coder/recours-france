@@ -159,16 +159,33 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
      quatrième carte porte donc le dépôt lui-même, qui est une donnée réelle —
      et savoir qu'une société ne dépose aucun compte est déjà un renseignement. */
   const dernier = comptes[0] ?? null;
-  const dernierPublic = comptes.find((c) => !c.confidentiel && (c.chiffreAffaires || c.resultatNet)) ?? null;
+  const dernierPublic = comptes.find((c) => c.chiffreAffaires || c.resultatNet) ?? null;
   const anneeCourante = new Date().getFullYear();
   const donneesAnciennes = dernierPublic !== null && anneeCourante - dernierPublic.exercice >= 3;
 
+  /**
+   * Chaque poste porte son propre exercice.
+   *
+   * La confidentialité de l'article L. 232-25 n'est pas tout ou rien. Son
+   * premier alinéa couvre l'ensemble des comptes ; le second ne couvre que le
+   * compte de résultat, et le bilan reste public. DISTRIMOTOR relève du
+   * second : son chiffre d'affaires est masqué presque chaque année, son
+   * résultat net est publié tous les ans. Lier les deux au même exercice
+   * cachait un résultat que le registre publie.
+   *
+   * On remonte donc, poste par poste, au dernier exercice qui le porte — le
+   * chiffre d'affaires de 2022, le résultat net de 2025 — et chaque carte
+   * affiche son année. Deux années différentes côte à côte demandent d'être
+   * étiquetées, pas d'être alignées de force sur la plus récente.
+   */
   const valeurFinance = (champ: "chiffreAffaires" | "resultatNet") => {
     if (!dernier) return { n: "Non déposé", l: "Aucun compte annuel au registre", absent: true };
+    const porteur = comptes.find((c) => c[champ]);
+    if (porteur) {
+      return { n: formatMontant(Number(porteur[champ])), l: `Exercice ${porteur.exercice}`, absent: false };
+    }
     if (dernier.confidentiel) return { n: "Non publié", l: "Comptes confidentiels", absent: true };
-    const v = dernier[champ];
-    if (!v) return { n: "Non publié", l: `Exercice ${dernier.exercice}, poste non détaillé`, absent: true };
-    return { n: formatMontant(Number(v)), l: `Exercice ${dernier.exercice}`, absent: false };
+    return { n: "Non publié", l: `Exercice ${dernier.exercice}, poste non détaillé`, absent: true };
   };
   const ca = valeurFinance("chiffreAffaires");
   const rn = valeurFinance("resultatNet");
@@ -573,33 +590,24 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               </div>
             </div>
 
-            {dernierPublic ? (
+            {/* Le rappel « dernier exercice public » a disparu : les cartes
+                portent désormais chacune leur année, il répétait mot pour mot
+                ce qu'elles disaient juste au-dessus. Reste l'avertissement,
+                qui lui garde son utilité — un chiffre de 2019 lu en 2026 ne
+                décrit pas la société d'aujourd'hui. */}
+            {donneesAnciennes ? (
               <div className="rfe-carte rfe-anciennes" style={{ marginTop: 16 }}>
                 <div>
-                  <div className="rfe-finance__k">{typo("Dernier chiffre d’affaires public")}</div>
-                  <div className="rfe-finance__n" style={{ marginTop: 8, fontSize: 23 }}>
-                    {dernierPublic.chiffreAffaires ? formatMontant(Number(dernierPublic.chiffreAffaires)) : "Non publié"}
-                  </div>
-                  <div className="rfe-finance__l">{typo(`Exercice ${dernierPublic.exercice}`)}</div>
+                  <span className="rfe-chip-ambre">
+                    <Alerte taille={13} />
+                    {typo("Données anciennes")}
+                  </span>
+                  <p className="rfe-finance__l" style={{ marginTop: 8 }}>
+                    {typo(
+                      `Le dernier exercice publié remonte à ${dernierPublic?.exercice}. À ne pas confondre avec la situation actuelle.`,
+                    )}
+                  </p>
                 </div>
-                <div>
-                  <div className="rfe-finance__k">{typo("Dernier résultat net public")}</div>
-                  <div className="rfe-finance__n" style={{ marginTop: 8, fontSize: 23 }}>
-                    {dernierPublic.resultatNet ? formatMontant(Number(dernierPublic.resultatNet)) : "Non publié"}
-                  </div>
-                  <div className="rfe-finance__l">{typo(`Exercice ${dernierPublic.exercice}`)}</div>
-                </div>
-                {donneesAnciennes ? (
-                  <div>
-                    <span className="rfe-chip-ambre">
-                      <Alerte taille={13} />
-                      {typo("Données anciennes")}
-                    </span>
-                    <p className="rfe-finance__l" style={{ marginTop: 8 }}>
-                      {typo("À ne pas confondre avec la situation actuelle.")}
-                    </p>
-                  </div>
-                ) : null}
               </div>
             ) : null}
 
