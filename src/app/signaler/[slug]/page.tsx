@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BandeauIndependance, PiedDePage } from "@/components/chrome";
 import { resoudreCible } from "@/lib/cible";
 import { Tunnel } from "@/components/refonte/tunnel";
 import { DEPUIS_MOTIF, famillesPour } from "@/lib/tunnel-refonte";
@@ -56,23 +55,21 @@ export default async function PageTunnel({
   const motif = typeof query.motif === "string" ? query.motif : null;
   const preselection = motif ? (DEPUIS_MOTIF[motif] ?? null) : null;
 
+  // Le parcours porte son propre bandeau, son en-tête et son pied : le handoff
+  // n'y laisse que le logo et « Quitter ». Tout le reste de la navigation
+  // disparaît, parce qu'à partir de ce clic l'écran ne propose plus qu'une
+  // chose. Enrober cette page dans le gabarit du site les doublerait.
   return (
-    <>
-      <BandeauIndependance />
-      <main id="contenu">
-        <Tunnel
-          slug={cible.slug}
-          nom={cible.nom}
-          lieu={cible.commune ?? null}
-          siren={cible.siren ? formatSiren(cible.siren) : null}
-          familles={famillesPour(cible.naf ?? null, cible.secteur ?? null)}
-          preselection={preselection}
-          fiche={cible.fiche}
-          societe={cible.societe}
-          via={via}
-        />
-      </main>
-      <PiedDePage />
-    </>
+    <Tunnel
+      slug={cible.slug}
+      nom={cible.nom}
+      lieu={cible.commune ?? null}
+      siren={cible.siren ? formatSiren(cible.siren) : null}
+      familles={famillesPour(cible.naf ?? null, cible.secteur ?? null)}
+      preselection={preselection}
+      fiche={cible.fiche}
+      societe={cible.societe}
+      via={via}
+    />
   );
 }

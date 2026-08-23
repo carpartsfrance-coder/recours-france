@@ -27,30 +27,27 @@ export const FAMILLES: Famille[] = [
     desc: "Garage, artisan, chantier, intervention",
     categories: [
       "Prestation ou travaux mal réalisés",
-      "Prestation inachevée ou chantier abandonné",
-      "Retard ou intervention non effectuée",
-      "Dommage causé pendant l’intervention",
-      "Facture ou supplément contesté",
-      "Refus de reprendre ou corriger le travail",
-      "Autre problème",
+      "Chantier abandonné",
+      "Retard",
+      "Dommage causé",
+      "Facture contestée",
     ],
     exemple:
-      "J’ai confié mon véhicule à cette entreprise pour une réparation. Après l’intervention, la panne était toujours présente et l’entreprise a refusé une nouvelle prise en charge.",
+      "Après la réparation, le problème initial persiste et une nouvelle anomalie est apparue. J’ai demandé à l’entreprise de reprendre l’intervention.",
   },
   {
     cle: "achat",
     libelle: "Achat ou livraison",
     desc: "Commande, produit, remboursement",
     categories: [
-      "Remboursement non reçu",
       "Commande non reçue",
       "Produit défectueux",
+      "Remboursement non reçu",
       "Garantie refusée",
-      "Produit différent de celui commandé",
-      "Autre problème",
+      "Produit différent",
     ],
     exemple:
-      "J’ai commandé un article auprès de cette entreprise. Le produit n’est jamais arrivé et je n’ai reçu ni livraison ni remboursement malgré mes relances.",
+      "J’ai commandé un article qui n’est jamais arrivé. Mes relances au service client sont restées sans réponse.",
   },
   {
     cle: "contrat",
@@ -62,30 +59,28 @@ export const FAMILLES: Famille[] = [
       "Facturation incorrecte",
       "Service non fourni",
       "Renouvellement non souhaité",
-      "Autre problème",
     ],
     exemple:
-      "J’ai demandé la résiliation de mon contrat. Les prélèvements se sont poursuivis les mois suivants et ma demande est restée sans réponse.",
+      "J’ai demandé la résiliation de mon contrat. Les prélèvements se sont poursuivis les mois suivants.",
   },
   {
     cle: "autre",
     libelle: "Autre situation",
-    desc: "Aucune des familles ci-dessus",
+    // Le handoff ne donne pas de description à cette carte : les trois autres
+    // énumèrent des exemples, celle-ci n'en a pas à donner sans mentir.
+    desc: "",
     categories: ["Autre problème"],
     exemple:
-      "Décrivez les faits : ce que vous avez demandé à l’entreprise, ce qui s’est passé, et ce que vous avez tenté depuis.",
+      "Décrivez les faits : ce que vous avez demandé, ce qui s’est passé, et ce que vous avez tenté depuis.",
   },
 ];
 
 export const SOLUTIONS = [
-  "Un remboursement",
   "Une réparation ou reprise des travaux",
+  "Un remboursement",
   "Un remplacement",
-  "La fin de la prestation",
-  "L’annulation du contrat",
-  "L’arrêt des prélèvements",
   "Une réduction du prix",
-  "Une autre solution",
+  "Autre solution",
 ] as const;
 
 export const DATES_APPROX = [
@@ -94,25 +89,41 @@ export const DATES_APPROX = [
   { cle: "plus-ancien", libelle: "Il y a plus d’un mois", jours: 60 },
 ] as const;
 
-/** Chaque catégorie précise retombe sur une des six clés d'agrégation. */
+/**
+ * Chaque catégorie précise retombe sur une des six clés d'agrégation.
+ *
+ * Les libellés d'avant la refonte du parcours restent dans la table. Ils ne
+ * sont plus proposés, mais ils dorment dans les brouillons déjà ouverts et
+ * dans les signalements publiés : les retirer ferait retomber ces
+ * déclarations-là sur « AUTRE », c'est-à-dire perdre leur nature.
+ */
 const VERS_ENUM: Record<string, CategorieLitige> = {
+  // Prestation
   "Prestation ou travaux mal réalisés": "SAV",
-  "Prestation inachevée ou chantier abandonné": "SAV",
-  "Retard ou intervention non effectuée": "SAV",
-  "Dommage causé pendant l’intervention": "SAV",
-  "Facture ou supplément contesté": "REMBOURSEMENT",
-  "Refus de reprendre ou corriger le travail": "GARANTIE",
-  "Remboursement non reçu": "REMBOURSEMENT",
+  "Chantier abandonné": "SAV",
+  Retard: "SAV",
+  "Dommage causé": "SAV",
+  "Facture contestée": "REMBOURSEMENT",
+  // Achat
   "Commande non reçue": "LIVRAISON",
   "Produit défectueux": "GARANTIE",
+  "Remboursement non reçu": "REMBOURSEMENT",
   "Garantie refusée": "GARANTIE",
-  "Produit différent de celui commandé": "LIVRAISON",
+  "Produit différent": "LIVRAISON",
+  // Contrat
   "Résiliation non prise en compte": "RESILIATION",
   "Prélèvement contesté": "RESILIATION",
   "Facturation incorrecte": "REMBOURSEMENT",
   "Service non fourni": "SAV",
   "Renouvellement non souhaité": "RESILIATION",
   "Autre problème": "AUTRE",
+  // Libellés hérités
+  "Prestation inachevée ou chantier abandonné": "SAV",
+  "Retard ou intervention non effectuée": "SAV",
+  "Dommage causé pendant l’intervention": "SAV",
+  "Facture ou supplément contesté": "REMBOURSEMENT",
+  "Refus de reprendre ou corriger le travail": "GARANTIE",
+  "Produit différent de celui commandé": "LIVRAISON",
 };
 
 export function categorieEnum(precise: string): CategorieLitige {
@@ -120,13 +131,15 @@ export function categorieEnum(precise: string): CategorieLitige {
 }
 
 const VERS_DEMANDE: Record<string, DemandeConsommateur> = {
-  "Un remboursement": "REMBOURSEMENT_INTEGRAL",
   "Une réparation ou reprise des travaux": "REPARATION",
+  "Un remboursement": "REMBOURSEMENT_INTEGRAL",
   "Un remplacement": "REMPLACEMENT",
+  "Une réduction du prix": "REMBOURSEMENT_PARTIEL",
+  "Autre solution": "AUTRE",
+  // Libellés hérités
   "La fin de la prestation": "AUTRE",
   "L’annulation du contrat": "RESILIATION",
   "L’arrêt des prélèvements": "RESILIATION",
-  "Une réduction du prix": "REMBOURSEMENT_PARTIEL",
   "Une autre solution": "AUTRE",
 };
 
@@ -174,7 +187,41 @@ export const DEPUIS_MOTIF: Record<string, { famille: string; categorie: string }
   REMBOURSEMENT: { famille: "achat", categorie: "Remboursement non reçu" },
   LIVRAISON: { famille: "achat", categorie: "Commande non reçue" },
   GARANTIE: { famille: "achat", categorie: "Produit défectueux" },
-  SAV: { famille: "prestation", categorie: "Refus de reprendre ou corriger le travail" },
+  SAV: { famille: "prestation", categorie: "Prestation ou travaux mal réalisés" },
   RESILIATION: { famille: "contrat", categorie: "Résiliation non prise en compte" },
   AUTRE: { famille: "autre", categorie: "Autre problème" },
 };
+
+/**
+ * Le résumé public, au style rapporté.
+ *
+ * Le handoff laisse ce point ouvert : « règles de reformulation au style
+ * rapporté, retrait des données personnelles et garde-fous sur les
+ * accusations ». Tant qu'elles ne sont pas écrites, le résumé n'est pas tiré
+ * du récit.
+ *
+ * Ce n'est pas un pis-aller. Le récit confidentiel contient des noms de
+ * salariés, des plaques, des numéros de commande et parfois des mots que la
+ * plateforme s'interdit — « arnaque », « escroc ». Le reformuler à l'aveugle
+ * publierait tout cela sous une syntaxe plus propre. Les trois phrases sont
+ * donc construites à partir des seuls choix fermés : famille, catégorie,
+ * solution. Rien n'y entre que le consommateur n'ait sélectionné lui-même, et
+ * « Modifier le résumé public » le ramène précisément à ces choix.
+ */
+const OUVERTURE: Record<string, string> = {
+  prestation: "Le consommateur indique avoir fait appel à cette entreprise pour une prestation.",
+  achat: "Le consommateur indique avoir effectué un achat auprès de cette entreprise.",
+  contrat: "Le consommateur indique être lié à cette entreprise par un contrat ou un abonnement.",
+  autre: "Le consommateur déclare rencontrer un problème avec cette entreprise.",
+};
+
+export function resumePublic(famille: string, categorie: string, solution: string): string[] {
+  const phrases = [OUVERTURE[famille] ?? OUVERTURE.autre];
+  if (categorie) {
+    phrases.push(`Selon sa déclaration, le problème rencontré relève de la catégorie « ${categorie.toLowerCase()} ».`);
+  }
+  if (solution) {
+    phrases.push(`Il demande ${solution.toLowerCase()}.`);
+  }
+  return phrases;
+}

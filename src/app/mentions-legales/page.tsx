@@ -138,6 +138,16 @@ export default function MentionsLegales() {
                 réclamations aux professionnels, n’envoie aucun courrier, ne négocie aucun litige, ne recueille
                 pas les réponses des professionnels et ne délivre pas de conseil juridique personnalisé.
               </p>
+              {/* L'alerte n'est pas une transmission de réclamation : elle
+                  signale au professionnel qu'un litige le concernant a été
+                  publié, et rien d'autre. La distinction est celle que fait
+                  déjà le parcours de dépôt, et il faut qu'elle figure ici. */}
+              <p className="rf-mt-12">
+                Lorsqu’une adresse professionnelle vérifiée est disponible, Recours France peut informer
+                l’entreprise qu’un litige la concernant a été publié, en lui communiquant le lien de la page
+                publique. Aucune coordonnée personnelle du consommateur n’est jointe, et aucune réponse ni
+                résolution ne peut être garantie.
+              </p>
               <p className="rf-mt-12">
                 Aucune formulation du site ne doit être comprise comme un agrément public, une prise en charge,
                 une pression exercée sur une entreprise ou une garantie de résultat.

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { BandeauIndependance, Page, PiedDePage } from "@/components/chrome";
 import { Tunnel } from "@/components/refonte/tunnel";
 import { DEPUIS_MOTIF, famillesPour } from "@/lib/tunnel-refonte";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { normaliserDomaine } from "@/lib/boutiques";
 import { CIBLE_LIBRE } from "@/lib/tunnel";
 import { resoudreCible } from "@/lib/cible";
+import { typo } from "@/lib/typographie";
+import { Bouclier, FlecheGauche } from "@/components/refonte/icones";
 
 export const dynamic = "force-dynamic";
 
@@ -23,17 +24,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Entrée du tunnel pour une entreprise ou une boutique non répertoriée.
+ * Écran 1 du parcours — désigner l'entreprise ou la boutique.
+ *
+ * Il ne s'affiche que lorsque la cible n'est pas connue : arrivé d'une fiche,
+ * on entre directement sur la situation. Ces signalements-là sont souvent les
+ * plus utiles — une boutique en ligne dont aucune personne morale n'est
+ * établie, une société étrangère, une enseigne qu'aucun registre français ne
+ * connaît. Les refuser renverrait chez elle la personne dont la difficulté est
+ * précisément de ne pas savoir à qui elle a affaire.
  *
  * Ce segment est statique : Next le fait passer avant le segment dynamique
- * `[slug]`, et aucun slug d'entreprise ne peut valoir « autre » puisqu'ils se
- * terminent tous par les neuf chiffres du SIREN.
- *
- * Ces signalements sont souvent les plus utiles : une boutique en ligne dont
- * aucune personne morale n'est établie, une société étrangère, une enseigne
- * qu'aucun registre français ne connaît. Les refuser renverrait chez elle la
- * personne dont la difficulté est justement de ne pas savoir à qui elle a
- * affaire.
+ * `[slug]`, et il masque donc la valeur réservée à la cible libre. C'est
+ * pourquoi la même page sert les deux rôles — le formulaire quand rien n'est
+ * désigné, le parcours dès qu'une cible l'est.
  */
 export default async function CibleLibre({
   searchParams,
@@ -45,38 +48,22 @@ export default async function CibleLibre({
   const erreur = query.erreur === "1";
   const recherche = typeof query.q === "string" ? query.q : "";
 
-  /**
-   * La cible est déjà désignée : on passe au tunnel.
-   *
-   * Ce segment statique masque le segment dynamique `[slug]` pour la valeur
-   * « autre », qui est justement celle de la cible libre : `/signaler/autre`
-   * ne pouvait donc jamais afficher le tunnel, et le formulaire renvoyait vers
-   * une étape inexistante. Le parcours libre — celui de toute boutique dont
-   * l'exploitant n'est pas établi — s'arrêtait sur une page introuvable.
-   *
-   * Le formulaire reste accessible pour corriger la cible : `?cible=1`.
-   */
+  /** La cible est désignée : on passe à la situation. `?cible=1` revient ici. */
   const cible = brouillon.libreNom && query.cible !== "1" ? await resoudreCible(CIBLE_LIBRE) : null;
   if (cible) {
     const motif = typeof query.motif === "string" ? query.motif : null;
     return (
-      <>
-        <BandeauIndependance />
-        <main id="contenu">
-          <Tunnel
-            slug={CIBLE_LIBRE}
-            nom={cible.nom}
-            lieu={null}
-            siren={null}
-            familles={famillesPour(null, null)}
-            preselection={motif ? (DEPUIS_MOTIF[motif] ?? null) : null}
-            fiche={cible.fiche}
-            societe={cible.societe}
-            via={null}
-          />
-        </main>
-        <PiedDePage />
-      </>
+      <Tunnel
+        slug={CIBLE_LIBRE}
+        nom={cible.nom}
+        lieu={null}
+        siren={null}
+        familles={famillesPour(null, null)}
+        preselection={motif ? (DEPUIS_MOTIF[motif] ?? null) : null}
+        fiche={cible.fiche}
+        societe={cible.societe}
+        via={null}
+      />
     );
   }
 
@@ -98,75 +85,149 @@ export default async function CibleLibre({
   }
 
   return (
-    <Page
-      entete={{ baseline: "Observatoire des problèmes consommateurs", sansCta: true }}
-      piedComplet={false}
-    >
-      <div className="rfx rfx--doux">
-        <div className="rfx-tunnel" style={{ padding: "36px 20px 56px" }}>
-          <h1 className="rfx-h2">Quelle entreprise ou boutique ?</h1>
-          <p className="rfx-texte" style={{ marginTop: 10 }}>
-            Elle n’est pas répertoriée chez nous — c’est fréquent pour une boutique en ligne, une
-            société étrangère, ou une enseigne récente. Indiquez ce que vous connaissez : le nom, ou
-            l’adresse du site sur lequel vous avez acheté.
+    <div className="rfp">
+      <div className="rfp-bandeau">{typo("Plateforme privée et indépendante, sans lien avec l’État.")}</div>
+
+      <header className="rfp-entete">
+        <div className="rfp-conteneur rfp-conteneur--1000 rfp-entete__piste">
+          <Link href="/" className="rfp-logo" aria-label="Recours France — accueil">
+            <span className="rfp-logo__mot">
+              Recours
+              <em>France</em>
+            </span>
+            <span className="rfp-logo__barres" aria-hidden="true">
+              <i style={{ width: 32, background: "var(--p-bleu)" }} />
+              <i style={{ width: 24, background: "#E1000F" }} />
+            </span>
+          </Link>
+          <Link href="/" className="rfp-quitter">
+            Quitter
+          </Link>
+        </div>
+      </header>
+
+      <main id="contenu">
+        <div className="rfp-conteneur rfp-conteneur--900" style={{ paddingTop: 30 }}>
+          <ol className="rfp-etapes">
+            <li className="rfp-etape rfp-etape--actif" aria-current="step" style={{ width: 118 }}>
+              <span className="rfp-etape__rond">1</span>
+              <span className="rfp-etape__nom">Entreprise</span>
+            </li>
+            <li className="rfp-etapes__trait rfp-etapes__trait--fait" aria-hidden="true" />
+            <li className="rfp-etape" style={{ width: 130 }}>
+              <span className="rfp-etape__rond">2</span>
+              <span className="rfp-etape__nom">Votre situation</span>
+            </li>
+            <li className="rfp-etapes__trait" aria-hidden="true" />
+            <li className="rfp-etape" style={{ width: 150 }}>
+              <span className="rfp-etape__rond">3</span>
+              <span className="rfp-etape__nom">{typo("Vérifier et publier")}</span>
+            </li>
+          </ol>
+
+          <h1 className="rfp-h1" style={{ marginTop: 28 }}>
+            {typo("Quelle entreprise ou boutique ?")}
+          </h1>
+          <p className="rfp-sous" style={{ marginTop: 10, marginInline: "auto", maxWidth: "56ch" }}>
+            {typo("Indiquez le nom que vous connaissez ou l’adresse du site sur lequel vous avez acheté.")}
           </p>
 
-          {erreur ? (
-            <div className="rfx-erreur" style={{ marginTop: 18 }} role="alert">
-              Indiquez au moins un nom ou une adresse de site pour continuer.
-            </div>
-          ) : null}
+          <form action={continuer}>
+            <div className="rfp-carte rfp-carte--12" style={{ marginTop: 26, maxWidth: 780, marginInline: "auto" }}>
+              {erreur ? (
+                <div className="rfp-blocage" role="alert" style={{ marginTop: 0, marginBottom: 18 }}>
+                  {typo("Indiquez au moins un nom ou une adresse de site pour continuer.")}
+                </div>
+              ) : null}
 
-          <form action={continuer} style={{ marginTop: 24 }}>
-            <label className="rfx-champ">
-              <span className="rfx-champ__label">Nom de l’entreprise ou de l’enseigne</span>
-              <span className="rfx-champ__aide">Tel que vous le connaissez</span>
-              <input
-                type="text"
-                name="nom"
-                className="rfx-input"
-                defaultValue={brouillon.libreNom ?? (recherche.includes(".") ? "" : recherche)}
-                placeholder="ex. Bergamotte"
-                autoComplete="organization"
-              />
-            </label>
+              <div className="rfp-champ">
+                <label className="rfp-champ__label" htmlFor="rfp-nom">
+                  {typo("Nom de l’entreprise ou de l’enseigne")}
+                </label>
+                <span className="rfp-champ__aide">{typo("Tel que vous le connaissez")}</span>
+                <input
+                  id="rfp-nom"
+                  name="nom"
+                  type="text"
+                  className="rfp-input"
+                  placeholder="ex. Garage Martin"
+                  autoComplete="organization"
+                  defaultValue={brouillon.libreNom ?? (recherche.includes(".") ? "" : recherche)}
+                />
+              </div>
 
-            <label className="rfx-champ">
-              <span className="rfx-champ__label">Adresse du site</span>
-              <span className="rfx-champ__aide">
-                Facultatif, mais c’est souvent le plus sûr : c’est le site que vous avez utilisé.
-              </span>
-              <input
-                type="text"
-                name="site"
-                className="rfx-input"
-                /* La recherche qui a mené ici est presque toujours un domaine —
-                   on arrive de l'annuaire des boutiques, où l'on vient de le
-                   taper. Le redemander serait le demander deux fois. */
-                defaultValue={brouillon.libreSite ?? (recherche.includes(".") ? recherche : "")}
-                placeholder="ex. bergamotte.com"
-                autoComplete="url"
-              />
-            </label>
+              <div className="rfp-champ">
+                <label className="rfp-champ__label" htmlFor="rfp-site">
+                  {typo("Adresse du site")}
+                </label>
+                <span className="rfp-champ__aide">
+                  {typo("Facultatif, mais souvent plus fiable pour identifier la bonne entreprise.")}
+                </span>
+                <input
+                  id="rfp-site"
+                  name="site"
+                  type="text"
+                  className="rfp-input"
+                  placeholder="ex. entreprise.fr"
+                  autoComplete="url"
+                  /* La recherche qui a mené ici est presque toujours un domaine —
+                     on arrive de l'annuaire des boutiques, où l'on vient de le
+                     taper. Le redemander serait le demander deux fois. */
+                  defaultValue={brouillon.libreSite ?? (recherche.includes(".") ? recherche : "")}
+                />
+              </div>
 
-            <div className="rfx-bloc rfx-bloc--alt" style={{ padding: "12px 14px" }}>
-              <p className="rfx-petit" style={{ margin: 0 }}>
-                Votre signalement sera enregistré et vous recevrez vos démarches. Il ne sera pas
-                publié tant que l’entreprise n’aura pas été identifiée : nous ne créons pas de fiche
-                publique sur la seule foi d’un nom, au risque de l’attribuer à un homonyme.
+              <div className="rfp-encart" style={{ marginTop: 24 }}>
+                <Bouclier taille={44} style={{ flex: "none", color: "var(--p-bleu)" }} />
+                <div>
+                  <div className="rfp-encart__titre">{typo("Pourquoi cette vérification ?")}</div>
+                  <p style={{ marginTop: 5 }}>
+                    {typo(
+                      "Nous vérifions l’identité de l’entreprise pour éviter d’attribuer votre litige à un homonyme.",
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <p className="rfp-second" style={{ marginTop: 20, textAlign: "center" }}>
+                {typo("Si l’entreprise est identifiée, votre litige pourra être publié immédiatement.")}
+                <br />
+                {typo("Sinon, votre dossier sera enregistré jusqu’à sa confirmation.")}
               </p>
             </div>
 
-            <button type="submit" className="rfx-btn rfx-btn--large" style={{ marginTop: 20 }}>
-              Continuer
-            </button>
+            <div style={{ maxWidth: 520, marginInline: "auto", marginTop: 24 }}>
+              <button type="submit" className="rfp-btn">
+                Continuer
+              </button>
+            </div>
           </form>
 
-          <p className="rfx-mention" style={{ marginTop: 24 }}>
-            <Link href="/signaler">← Chercher une entreprise répertoriée</Link>
+          <p style={{ textAlign: "center", marginTop: 18 }}>
+            <Link href="/signaler" className="rfp-lien-retour">
+              <FlecheGauche taille={17} />
+              {typo("Chercher une entreprise répertoriée")}
+            </Link>
+          </p>
+
+          <p className="rfp-aide" style={{ textAlign: "center", marginTop: 6 }}>
+            {typo("Gratuit • sans compte • quelques informations suffisent")}
           </p>
         </div>
-      </div>
-    </Page>
+      </main>
+
+      <footer className="rfp-pied">
+        <div className="rfp-conteneur rfp-conteneur--1000 rfp-pied__piste">
+          <span>{typo("Recours France • Plateforme privée et indépendante")}</span>
+          <nav className="rfp-pied__liens">
+            <Link href="/a-propos">{typo("À propos")}</Link>
+            <Link href="/methodologie">Fonctionnement</Link>
+            <Link href="/charte-de-moderation">{typo("Règles de publication")}</Link>
+            <Link href="/donnees-personnelles">{typo("Confidentialité")}</Link>
+            <Link href="/contact">Contact</Link>
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }

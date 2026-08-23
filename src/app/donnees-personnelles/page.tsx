@@ -140,6 +140,12 @@ export default function DonneesPersonnelles() {
                 les réclamations aux professionnels.
               </p>
               <p className="rf-mt-12">
+                Lorsqu’une adresse professionnelle vérifiée est disponible, l’entreprise peut être informée
+                qu’un litige la concernant a été publié. Ce message ne contient que le lien de la page publique,
+                déjà accessible à tous : ni votre identité, ni votre adresse électronique, ni votre récit
+                détaillé, ni vos justificatifs n’y figurent.
+              </p>
+              <p className="rf-mt-12">
                 Seuls interviennent l’hébergeur de la plateforme et le prestataire d’envoi d’emails, tous deux
                 situés dans l’Union européenne et liés par un contrat de sous-traitance. Aucun transfert hors de
                 l’Union européenne n’est réalisé.

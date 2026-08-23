@@ -215,3 +215,80 @@ export const Balance = (p: Props) => (
     <path d="M20 8.5 17.8 13a2.6 2.6 0 0 0 4.4 0z" />
   </Trait>
 );
+
+/* ── Ajouts du parcours de dépôt ─────────────────────────────────────────────
+   Le handoff nomme une icône par emplacement, et l'écart entre deux d'entre
+   elles porte du sens : le camion dit « livraison » là où le colis disait
+   « produit », la cloche dit « on vous alerte » là où l'enveloppe dit « on
+   vous écrit ». Les confondre reviendrait à changer la phrase. */
+
+export const Camion = (p: Props) => (
+  <Trait {...p}>
+    <path d="M2.5 7.5h10.5v9H2.5z" />
+    <path d="M13 10.5h4l2.5 3v3H13z" />
+    <circle cx="6.5" cy="18" r="1.7" />
+    <circle cx="16.5" cy="18" r="1.7" />
+  </Trait>
+);
+
+export const Points = (p: Props) => (
+  <Trait {...p}>
+    <circle cx="5.5" cy="12" r="1.1" />
+    <circle cx="12" cy="12" r="1.1" />
+    <circle cx="18.5" cy="12" r="1.1" />
+  </Trait>
+);
+
+export const Euro = (p: Props) => (
+  <Trait {...p}>
+    <path d="M17.4 7.2a6.4 6.4 0 1 0 0 9.6" />
+    <path d="M4.6 10.4h8M4.6 13.6h8" />
+  </Trait>
+);
+
+export const Etiquette = (p: Props) => (
+  <Trait {...p}>
+    <path d="M3.8 11.2V4.6a.8.8 0 0 1 .8-.8h6.6l9 9-7.4 7.4-9-9z" />
+    <circle cx="7.9" cy="7.9" r="1.3" />
+  </Trait>
+);
+
+export const Cloche = (p: Props) => (
+  <Trait {...p}>
+    <path d="M6 9.6a6 6 0 0 1 12 0c0 4 1.4 5.6 1.4 5.6H4.6S6 13.6 6 9.6z" />
+    <path d="M10.2 18.6a2 2 0 0 0 3.6 0" />
+  </Trait>
+);
+
+export const Avion = (p: Props) => (
+  <Trait {...p}>
+    <path d="M21 3.4 2.6 11.1l6.3 2.4 2.4 6.3z" />
+    <path d="M21 3.4 8.9 13.5" />
+  </Trait>
+);
+
+export const Chaine = (p: Props) => (
+  <Trait {...p}>
+    <path d="M10.2 13.8a3.6 3.6 0 0 0 5.4.4l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.5 1.5" />
+    <path d="M13.8 10.2a3.6 3.6 0 0 0-5.4-.4l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.5-1.5" />
+  </Trait>
+);
+
+export const FlecheGauche = (p: Props) => (
+  <Trait {...p}>
+    <path d="M19 12H5M11 18l-6-6 6-6" />
+  </Trait>
+);
+
+export const Dossier = (p: Props) => (
+  <Trait {...p}>
+    <path d="M3.5 6.4a1.6 1.6 0 0 1 1.6-1.6h3.6l2 2.4h7.7a1.6 1.6 0 0 1 1.6 1.6v8.8a1.6 1.6 0 0 1-1.6 1.6H5.1a1.6 1.6 0 0 1-1.6-1.6z" />
+  </Trait>
+);
+
+export const Rafraichir = (p: Props) => (
+  <Trait {...p}>
+    <path d="M20.4 11a8.4 8.4 0 1 0-.9 5" />
+    <path d="M20.6 4.8V11h-6.2" />
+  </Trait>
+);
