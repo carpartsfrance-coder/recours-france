@@ -224,8 +224,7 @@ export function PiedDePage({
                 className="rf-pied__logo"
               />
               <p className="rf-pied__texte">
-                Plateforme privée indépendante de signalement des litiges de consommation, éditée par
-                {nomEditeur()}. Sans lien avec l’État, une administration ou une autorité publique.
+                Plateforme privée indépendante de signalement des litiges de consommation, éditée par {nomEditeur()}. Sans lien avec l’État, une administration ou une autorité publique.
               </p>
               {institutionnel ? null : (
                 <p className="rf-pied__texte rf-mt-12" style={{ color: "var(--rf-sur-nuit-attenue)" }}>

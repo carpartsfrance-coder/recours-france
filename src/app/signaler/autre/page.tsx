@@ -1,16 +1,25 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Page } from "@/components/chrome";
+import { BandeauIndependance, Page, PiedDePage } from "@/components/chrome";
+import { Tunnel } from "@/components/refonte/tunnel";
+import { DEPUIS_MOTIF, famillesPour } from "@/lib/tunnel-refonte";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { normaliserDomaine } from "@/lib/boutiques";
+import { CIBLE_LIBRE } from "@/lib/tunnel";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Quelle entreprise ou boutique ?",
-  robots: { index: false, follow: false },
-};
+/** Le titre suit ce que la page affiche : la désignation de la cible, ou le tunnel. */
+export async function generateMetadata(): Promise<Metadata> {
+  const brouillon = await lireBrouillon();
+  return {
+    title: brouillon.libreNom
+      ? `Signaler un problème avec ${brouillon.libreNom}`
+      : "Quelle entreprise ou boutique ?",
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Entrée du tunnel pour une entreprise ou une boutique non répertoriée.
@@ -35,6 +44,37 @@ export default async function CibleLibre({
   const erreur = query.erreur === "1";
   const recherche = typeof query.q === "string" ? query.q : "";
 
+  /**
+   * La cible est déjà désignée : on passe au tunnel.
+   *
+   * Ce segment statique masque le segment dynamique `[slug]` pour la valeur
+   * « autre », qui est justement celle de la cible libre : `/signaler/autre`
+   * ne pouvait donc jamais afficher le tunnel, et le formulaire renvoyait vers
+   * une étape inexistante. Le parcours libre — celui de toute boutique dont
+   * l'exploitant n'est pas établi — s'arrêtait sur une page introuvable.
+   *
+   * Le formulaire reste accessible pour corriger la cible : `?cible=1`.
+   */
+  if (brouillon.libreNom && query.cible !== "1") {
+    const motif = typeof query.motif === "string" ? query.motif : null;
+    return (
+      <>
+        <BandeauIndependance />
+        <main id="contenu">
+          <Tunnel
+            slug={CIBLE_LIBRE}
+            nom={brouillon.libreNom}
+            lieu={null}
+            siren={null}
+            familles={famillesPour(null, null)}
+            preselection={motif ? (DEPUIS_MOTIF[motif] ?? null) : null}
+          />
+        </main>
+        <PiedDePage />
+      </>
+    );
+  }
+
   async function continuer(donnees: FormData) {
     "use server";
     const nom = String(donnees.get("nom") ?? "").trim();
@@ -49,7 +89,7 @@ export default async function CibleLibre({
       libreNom: nom || domaine || "",
       libreSite: domaine ?? undefined,
     });
-    redirect("/signaler/autre/situation");
+    redirect("/signaler/autre");
   }
 
   return (

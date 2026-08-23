@@ -144,3 +144,74 @@ export const Question = (p: Props) => (
     <path d="M9.5 9.5a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.1-2.5 3.6M12 17h.01" />
   </Trait>
 );
+
+/* ── Ajouts de la fiche boutique ─────────────────────────────────────────────
+   Le handoff de la fiche boutique demande huit portes d'entrée dérivées de
+   l'activité du site. Les six motifs de la fiche entreprise ne suffisaient
+   plus, et forcer deux situations distinctes à partager un pictogramme rend la
+   grille illisible : l'œil s'appuie sur la forme avant de lire. */
+
+export const Cle = (p: Props) => (
+  <Trait {...p}>
+    <path d="M15.5 3a5.5 5.5 0 0 0-5.2 7.3L3 17.6V21h3.4l7.3-7.3A5.5 5.5 0 1 0 15.5 3z" />
+    <circle cx="16.4" cy="7.6" r="1.2" />
+  </Trait>
+);
+
+export const Retour = (p: Props) => (
+  <Trait {...p}>
+    <path d="M4 9h11a5 5 0 0 1 0 10H8" />
+    <path d="M8 5 4 9l4 4" />
+  </Trait>
+);
+
+export const Telephone = (p: Props) => (
+  <Trait {...p}>
+    <path d="M6.2 3.5h3l1.4 3.6-2 1.4a12 12 0 0 0 5.4 5.4l1.4-2 3.6 1.4v3a1.7 1.7 0 0 1-1.9 1.7A15.6 15.6 0 0 1 4.5 5.4 1.7 1.7 0 0 1 6.2 3.5z" />
+    <path d="M15 3.6a5.6 5.6 0 0 1 4.7 4.7" />
+  </Trait>
+);
+
+export const Lien = (p: Props) => (
+  <Trait {...p}>
+    <path d="M14 5h5v5" />
+    <path d="M19 5l-8.2 8.2" />
+    <path d="M17.4 13.6V18a1.6 1.6 0 0 1-1.6 1.6H6a1.6 1.6 0 0 1-1.6-1.6V8.2A1.6 1.6 0 0 1 6 6.6h4.4" />
+  </Trait>
+);
+
+export const Personne = (p: Props) => (
+  <Trait {...p}>
+    <circle cx="12" cy="8.2" r="3.6" />
+    <path d="M4.8 20c0-3.6 3.2-5.8 7.2-5.8s7.2 2.2 7.2 5.8" />
+  </Trait>
+);
+
+export const Calendrier = (p: Props) => (
+  <Trait {...p}>
+    <rect x="3.5" y="5" width="17" height="15" rx="2" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+  </Trait>
+);
+
+export const CercleCoche = (p: Props) => (
+  <Trait {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8.2 12.3l2.6 2.6 5-5.2" />
+  </Trait>
+);
+
+export const Loupe = (p: Props) => (
+  <Trait {...p}>
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <path d="M15.4 15.4L21 21" />
+  </Trait>
+);
+
+export const Balance = (p: Props) => (
+  <Trait {...p}>
+    <path d="M12 4.5v15M7.5 19.5h9M4 8.5l8-2.2 8 2.2" />
+    <path d="M4 8.5 1.8 13a2.6 2.6 0 0 0 4.4 0z" />
+    <path d="M20 8.5 17.8 13a2.6 2.6 0 0 0 4.4 0z" />
+  </Trait>
+);
