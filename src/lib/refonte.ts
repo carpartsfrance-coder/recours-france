@@ -312,3 +312,45 @@ export function problemesFiche(naf: string | null, secteur: string | null): Prob
   if (/^(47|46|45[1]|10|29)/.test(code)) return PRODUITS;
   return PAR_SECTEUR_FICHE[secteur ?? ""] ?? PRODUITS;
 }
+
+/* ── Publications officielles ────────────────────────────────────────────────
+   Le BODACC publie les annonces légales des sociétés commerciales : dépôts de
+   comptes, modifications statutaires, ventes de fonds, procédures collectives.
+   Chaque annonce a une page publique et pérenne, que la fiche cite plutôt que
+   de la recopier — la source fait foi, pas nous. */
+
+export type FamillePublication = {
+  cle: string;
+  titre: string;
+  /** Ce que la famille apprend au lecteur, en une phrase. */
+  explication: string;
+  categories: string[];
+};
+
+export const FAMILLES_PUBLICATION: FamillePublication[] = [
+  {
+    cle: "comptes",
+    titre: "Dépôts de comptes annuels",
+    explication:
+      "Chaque dépôt est annoncé au BODACC avec la date de clôture de l’exercice. L’annonce atteste du dépôt ; elle ne contient pas les chiffres, qui figurent dans les comptes eux-mêmes.",
+    categories: ["dpc"],
+  },
+  {
+    cle: "vie",
+    titre: "Vie de la société",
+    explication:
+      "Immatriculation, changements de dirigeant, de capital, d’adresse ou d’activité, ventes et cessions de fonds de commerce.",
+    categories: ["creation", "immatriculation", "modification", "vente"],
+  },
+  {
+    cle: "procedures",
+    titre: "Procédures collectives et radiation",
+    explication:
+      "Sauvegarde, redressement, liquidation, conciliation, radiation du registre. Une procédure en cours change l’interlocuteur d’un litige : c’est le mandataire judiciaire qu’il faut saisir.",
+    categories: ["collective", "conciliation", "radiation"],
+  },
+];
+
+export function famillePublication(categorie: string | null): FamillePublication | null {
+  return FAMILLES_PUBLICATION.find((f) => f.categories.includes(categorie ?? "")) ?? null;
+}

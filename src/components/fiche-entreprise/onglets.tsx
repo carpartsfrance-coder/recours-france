@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CercleCoche, Epingle, Etiquette, Graphique, Liste, Question } from "@/components/refonte/icones";
+import { CercleCoche, Document, Epingle, Etiquette, Graphique, Liste, Question } from "@/components/refonte/icones";
 import { typo } from "@/lib/typographie";
 
 /**
@@ -19,6 +19,7 @@ const ICONES = {
   coche: CercleCoche,
   epingle: Epingle,
   question: Question,
+  document: Document,
 } as const;
 
 export type CleIcone = keyof typeof ICONES;

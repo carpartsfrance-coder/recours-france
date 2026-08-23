@@ -12,7 +12,7 @@ import {
 } from "@/components/donnees-structurees";
 import { mediateurPublie } from "@/lib/mediation";
 import { ficheIndexable } from "@/lib/indexation";
-import { etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
+import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
 import { Onglets } from "@/components/fiche-entreprise/onglets";
 import { BoutonCopier } from "@/components/fiche-entreprise/copier";
 import { typo } from "@/lib/typographie";
@@ -108,7 +108,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   if (!base) notFound();
   if (base.slug !== slug) redirect(`/entreprises/${base.slug}`);
 
-  const { entreprise, comptes } = await detailEntreprise(base.id);
+  const { entreprise, comptes, evenements } = await detailEntreprise(base.id);
   if (!entreprise) notFound();
 
   const nom = entreprise.denomination;
@@ -190,10 +190,27 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
 
   // Une clé, jamais le composant : la frontière serveur/client ne sérialise
   // pas les fonctions, et un composant React en est une.
+  /**
+   * Les publications officielles, regroupées par famille.
+   *
+   * Le BODACC est la source qui fait foi : la fiche cite l'annonce et renvoie
+   * à sa page publique plutôt que d'en recopier le texte. Un dépôt de comptes
+   * atteste du dépôt, pas des chiffres — c'est une nuance que la section dit
+   * explicitement, faute de quoi le lecteur croit lire un bilan.
+   */
+  const publications = FAMILLES_PUBLICATION.map((f) => ({
+    ...f,
+    lignes: evenements.filter((e) => f.categories.includes(e.categorie ?? "")),
+  })).filter((f) => f.lignes.length > 0);
+  const totalPublications = publications.reduce((n, f) => n + f.lignes.length, 0);
+
   const onglets = [
     { href: "#signalements", libelle: total > 0 ? `Signalements (${formatNombre(total)})` : "Signalements", icone: "liste" as const },
     { href: "#types", libelle: "Types de litiges", icone: "etiquette" as const },
     { href: "#finances", libelle: "Finances", icone: "graphique" as const },
+    ...(totalPublications > 0
+      ? [{ href: "#documents", libelle: "Documents officiels", icone: "document" as const }]
+      : []),
     { href: "#plan", libelle: "Plan d’action", icone: "coche" as const },
     { href: "#coordonnees", libelle: "Coordonnées", icone: "epingle" as const },
     { href: "#faq", libelle: "FAQ", icone: "question" as const },
@@ -596,6 +613,91 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             </p>
           </div>
         </section>
+
+        {/* ── Documents et publications officielles ─────────────────────
+            Ajout au handoff : il n'a pas de section pour cela, et la demande
+            est venue après. Elle se pose ici, juste après les finances, parce
+            que le dépôt de comptes est ce qui les atteste. */}
+        {publications.length > 0 ? (
+          <section id="documents" className="rfe-section rfe-section--alt">
+            <div className="rfe-conteneur">
+              <h2 className="rfe-h2">{typo(`Documents et publications officielles de ${nom}`)}</h2>
+              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
+                {typo(
+                  `${formatNombre(totalPublications)} annonce${totalPublications > 1 ? "s" : ""} publiée${totalPublications > 1 ? "s" : ""} au Bulletin officiel des annonces civiles et commerciales. Chaque annonce renvoie à sa page officielle, qui seule fait foi.`,
+                )}
+              </p>
+
+              <div className="rfe-publications" style={{ marginTop: 20 }}>
+                {publications.map((f) => {
+                  const visibles = f.lignes.slice(0, 8);
+                  const reste = f.lignes.length - visibles.length;
+                  return (
+                    <div key={f.cle} className="rfe-pub__groupe">
+                      <div className="rfe-pub__tete">
+                        <span className="rfe-pub__med">
+                          {f.cle === "comptes" ? (
+                            <Document taille={19} />
+                          ) : f.cle === "procedures" ? (
+                            <Alerte taille={19} />
+                          ) : (
+                            <Immeuble taille={19} />
+                          )}
+                        </span>
+                        <span className="rfe-titre-carte">{typo(f.titre)}</span>
+                        <span className="rfe-pub__n">
+                          {formatNombre(f.lignes.length)} annonce{f.lignes.length > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <p className="rfe-pub__expl">{typo(f.explication)}</p>
+
+                      {visibles.map((e) => (
+                        <div
+                          key={e.id}
+                          className={`rfe-pub__l${e.procedureCollective ? " rfe-pub__l--collective" : ""}`}
+                        >
+                          <span className="rfe-pub__date">{formatDateLongue(e.date)}</span>
+                          <span className="rfe-pub__t">{typo(e.titre)}</span>
+                          {e.detail ? <span className="rfe-pub__d">{typo(e.detail)}</span> : null}
+                          {e.urlSource ? (
+                            <a
+                              href={e.urlSource}
+                              className="rfe-pub__lien"
+                              target="_blank"
+                              rel="noopener nofollow"
+                            >
+                              {typo("Voir l’annonce")}
+                              <Fleche taille={15} />
+                            </a>
+                          ) : null}
+                        </div>
+                      ))}
+
+                      {reste > 0 ? (
+                        <p className="rfe-pub__plus">
+                          {typo(`${formatNombre(reste)} annonce${reste > 1 ? "s" : ""} plus ancienne${reste > 1 ? "s" : ""} non affichée${reste > 1 ? "s" : ""}.`)}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Ce que la section ne peut pas montrer, et pourquoi. Le taire
+                  laisserait croire que l'absence de pièce vaut absence de
+                  dépôt, alors qu'elle tient à un régime de confidentialité
+                  ouvert aux petites sociétés. */}
+              <p className="rfe-aide" style={{ marginTop: 16, maxWidth: "84ch", display: "flex", gap: 9, alignItems: "flex-start" }}>
+                <Info taille={16} style={{ flex: "none", color: "var(--p-desactive)", marginTop: 1 }} />
+                <span>
+                  {typo(
+                    "Les pièces elles-mêmes — comptes annuels, statuts, procès-verbaux — sont conservées au Registre national des entreprises (INPI). Une société peut demander que ses comptes restent confidentiels : ils sont alors déposés sans être communicables, et l’annonce du dépôt subsiste seule.",
+                  )}
+                </span>
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {/* ── 9. Plan d'action ──────────────────────────────────────── */}
         <section id="plan" className="rfe-section rfe-section--alt">
