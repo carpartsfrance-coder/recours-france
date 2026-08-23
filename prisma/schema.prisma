@@ -308,10 +308,13 @@ model DecisionJustice {
   denominationCitee String
 
   collecteLe DateTime @default(now())
+  // Pas d'index sur `judilibreId` seul : rien ne l'interroge ainsi. Il n'est
+  // lu que comme valeur, pour composer le lien vers courdecassation.fr, et la
+  // contrainte d'unicité ci-dessus sert déjà l'écriture. Mesuré, il coûtait
+  // quatorze mégaoctets pour trois cent mille lignes sans jamais servir.
 
   @@unique([entrepriseId, judilibreId])
   @@index([entrepriseId, date])
-  @@index([judilibreId])
 }
 
 model Evenement {
