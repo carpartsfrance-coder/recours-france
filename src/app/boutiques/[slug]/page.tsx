@@ -9,14 +9,24 @@ import { formatNombre, formatSiren, formatDateLongue } from "@/lib/format";
 import { litigesPubliables, SEUIL_PUBLICATION_LITIGES } from "@/lib/scoring";
 import { construireGuide } from "@/lib/demarches";
 import { DonneesStructurees, organisationJsonLd } from "@/components/donnees-structurees";
+import { boutiqueIndexable } from "@/lib/indexation";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const boutique = await prisma.boutique.findUnique({ where: { slug } });
+  const boutique = await prisma.boutique.findUnique({
+    where: { slug },
+    include: { _count: { select: { signalements: true } } },
+  });
   if (!boutique) return { title: "Boutique en ligne" };
   return {
+    // Tant qu'aucune déclaration ne s'y rattache, la page compte dix mots
+    // propres sur six cent soixante-dix-sept : elle n'apprend rien à personne
+    // et abîmerait la moyenne du domaine. Le `follow` reste, pour que le
+    // maillage la traverse, et l'ouverture est automatique dès le premier
+    // signalement.
+    ...(boutiqueIndexable(boutique) ? {} : { robots: { index: false, follow: true } }),
     title: `${boutique.domaine} : avis, litige, qui est derrière ce site`,
     description: `Un problème avec ${boutique.domaine} ? Identité de la société qui exploite le site, coordonnées du service client, médiateur compétent et démarches à suivre en cas de litige.`,
     alternates: { canonical: `/boutiques/${slug}` },

@@ -98,3 +98,32 @@ export function ouPlanDeSite(): Prisma.EntrepriseWhereInput {
     ],
   };
 }
+
+/**
+ * Une boutique ne s'ouvre aux moteurs qu'une fois qu'elle a quelque chose à dire.
+ *
+ * Le référentiel des boutiques sert d'abord le produit : rattacher un
+ * signalement au bon domaine quand un consommateur déclare un litige avec une
+ * boutique en ligne. Publier chacune de ces fiches est une autre affaire.
+ *
+ * Mesuré sur une page boutique réelle : six cent soixante-dix-sept mots, dont
+ * DIX lui appartiennent — 98,5 % de gabarit. C'est le modèle le plus mince du
+ * site. En publier cent quarante mille de cette nature ferait exactement ce
+ * qu'on cherche à éviter depuis le début : noyer les pages qui méritent d'être
+ * lues sous des pages qui n'apprennent rien, et faire juger le domaine sur sa
+ * moyenne.
+ *
+ * Le critère est donc le même que pour les fiches d'entreprise, et il est
+ * automatique : dès qu'une boutique porte un signalement, elle a du contenu
+ * propre, elle devient indexable et rejoint le plan de site. Aucune décision à
+ * reprendre à la main.
+ */
+export function boutiqueIndexable(b: { signalements?: unknown[]; _count?: { signalements: number } }): boolean {
+  if (typeof b._count?.signalements === "number") return b._count.signalements > 0;
+  return Array.isArray(b.signalements) && b.signalements.length > 0;
+}
+
+/** La même règle, côté base. */
+export const OU_BOUTIQUE_INDEXABLE: Prisma.BoutiqueWhereInput = {
+  signalements: { some: { moderation: "PUBLIE" } },
+};

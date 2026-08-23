@@ -30,7 +30,8 @@
     "compteurs": "tsx scripts/compteurs-annuaire.ts",
     "purger:demo": "tsx scripts/purger-demonstration.ts",
     "verifier:mise-en-ligne": "tsx scripts/verifier-mise-en-ligne.ts",
-    "essai:courriel": "tsx scripts/essai-courriel.ts"
+    "essai:courriel": "tsx scripts/essai-courriel.ts",
+    "import:domaines": "tsx scripts/import-domaines.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

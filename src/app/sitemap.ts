@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
-import { OU_INDEXABLE, ouPlanDeSite } from "@/lib/indexation";
+import { OU_BOUTIQUE_INDEXABLE, OU_INDEXABLE, ouPlanDeSite } from "@/lib/indexation";
 import { DEPARTEMENTS, SECTEURS, cheminCommune, cheminDepartement, cheminSecteur } from "@/lib/maillage";
 import {
   PAR_FICHIER,
@@ -180,7 +180,10 @@ export default async function sitemap({
     }));
   }
 
+  // Seules les boutiques portant une déclaration : les autres sont en
+  // noindex, les déclarer serait se contredire.
   const boutiques = await prisma.boutique.findMany({
+    where: OU_BOUTIQUE_INDEXABLE,
     select: { slug: true, majLe: true },
     orderBy: { id: "asc" },
     skip: (rang - liste.length) * PAR_FICHIER,
