@@ -50,7 +50,7 @@ export const EDITEUR = {
   siren: lire("EDITEUR_SIREN", "907 510 838"),
   rcsVille: lire("EDITEUR_RCS_VILLE", "Nice"),
   tva: lire("EDITEUR_TVA", "FR61907510838"),
-  directeurPublication: lire("EDITEUR_DIRECTEUR_PUBLICATION"),
+  directeurPublication: lire("EDITEUR_DIRECTEUR_PUBLICATION", "Killian Belabbes"),
 };
 
 /**
@@ -63,9 +63,13 @@ export const EDITEUR = {
  * serait le meilleur moyen de publier une adresse fausse.
  */
 export const HEBERGEUR = {
-  nom: lire("HEBERGEUR_NOM"),
-  adresse: lire("HEBERGEUR_ADRESSE"),
-  telephone: lire("HEBERGEUR_TELEPHONE"),
+  // Relevés le 21 août 2026 dans les conditions d'utilisation de Render
+  // elles-mêmes (render.com/terms, dernière modification du 10 juillet 2026),
+  // et non sur un annuaire tiers : une adresse d'hébergeur fausse est aussi
+  // fautive qu'une adresse absente.
+  nom: lire("HEBERGEUR_NOM", "Render Services, Inc."),
+  adresse: lire("HEBERGEUR_ADRESSE", "525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis"),
+  telephone: lire("HEBERGEUR_TELEPHONE", "+1 415 319 8186"),
   localisationDonnees: lire("HEBERGEUR_REGION") || "Francfort, Allemagne (Union européenne)",
 };
 
