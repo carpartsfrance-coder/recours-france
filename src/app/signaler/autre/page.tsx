@@ -7,6 +7,7 @@ import { DEPUIS_MOTIF, famillesPour } from "@/lib/tunnel-refonte";
 import { ecrireBrouillon, lireBrouillon } from "@/lib/brouillon";
 import { normaliserDomaine } from "@/lib/boutiques";
 import { CIBLE_LIBRE } from "@/lib/tunnel";
+import { resoudreCible } from "@/lib/cible";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,8 @@ export default async function CibleLibre({
    *
    * Le formulaire reste accessible pour corriger la cible : `?cible=1`.
    */
-  if (brouillon.libreNom && query.cible !== "1") {
+  const cible = brouillon.libreNom && query.cible !== "1" ? await resoudreCible(CIBLE_LIBRE) : null;
+  if (cible) {
     const motif = typeof query.motif === "string" ? query.motif : null;
     return (
       <>
@@ -63,11 +65,12 @@ export default async function CibleLibre({
         <main id="contenu">
           <Tunnel
             slug={CIBLE_LIBRE}
-            nom={brouillon.libreNom}
+            nom={cible.nom}
             lieu={null}
             siren={null}
             familles={famillesPour(null, null)}
             preselection={motif ? (DEPUIS_MOTIF[motif] ?? null) : null}
+            fiche={cible.fiche}
           />
         </main>
         <PiedDePage />

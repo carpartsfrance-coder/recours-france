@@ -9,7 +9,7 @@ import { boutiquePour } from "@/lib/boutiques";
 import { lireBrouillon } from "@/lib/brouillon";
 import { situationParCle } from "@/lib/tunnel";
 import { recalculerIndices } from "@/lib/stats";
-import type { CategorieLitige, DemandeConsommateur, EtatProfessionnel } from "@prisma/client";
+import type { CategorieLitige, DemandeConsommateur, EtatModeration, EtatProfessionnel } from "@prisma/client";
 
 /**
  * Dépôt d'un signalement à partir du brouillon du tunnel.
@@ -53,10 +53,7 @@ export async function deposerDepuisBrouillon(
         boutiqueId: boutique?.id ?? null,
         entrepriseLibreNom: cible.entrepriseId === null ? cible.nom : null,
         entrepriseLibreSite: cible.entrepriseId === null ? cible.site : null,
-        // Une saisie libre n'est pas publiée : créer une fiche publique sur la
-        // seule foi d'un nom exposerait à l'attribuer à un homonyme, et le
-        // rapprochement se fait ensuite, à la main ou par la détection de site.
-        moderation: cible.entrepriseId === null ? "EN_ATTENTE" : "PUBLIE",
+        moderation: etatPublication(cible.entrepriseId, boutique),
         categorie: situation.categorie as CategorieLitige,
         sousCategorie: brouillon.sous ?? null,
         montant,
@@ -101,6 +98,29 @@ export async function deposerDepuisBrouillon(
  * sur la fiche est composé des seuls champs fermés : catégorie, date, solution
  * demandée, statut.
  */
+/**
+ * Publier tout de suite, ou attendre un rapprochement ?
+ *
+ * La retenue vaut pour un nom tapé dans un champ : « Bergamotte » désigne
+ * peut-être trois sociétés, et publier une mise en cause sur cette seule foi
+ * reviendrait à l'attribuer au hasard. Ces déclarations-là attendent.
+ *
+ * Un domaine résolu en boutique n'est pas de cet ordre. La boutique existe
+ * dans notre référentiel, elle a sa fiche, son adresse, et c'est elle que le
+ * consommateur désigne — pas une personne morale, qui reste inconnue et qui
+ * n'est nommée nulle part. Retenir ces déclarations rendait fausses les deux
+ * promesses que le parcours affiche : « publication immédiate » sur la fiche,
+ * « votre signalement est maintenant public » à l'arrivée. Elles ne
+ * paraissaient jamais, et personne n'était prévenu.
+ *
+ * Reste donc en attente le seul cas qu'elle visait : ni société établie, ni
+ * domaine connu.
+ */
+function etatPublication(entrepriseId: string | null, boutique: { id: string } | null): EtatModeration {
+  if (entrepriseId !== null) return "PUBLIE";
+  return boutique ? "PUBLIE" : "EN_ATTENTE";
+}
+
 export async function publierSignalement(entree: {
   slug: string;
   famille: string;
@@ -109,7 +129,7 @@ export async function publierSignalement(entree: {
   recit: string;
   solution: string;
   email: string;
-}): Promise<{ reference: string } | { erreur: string }> {
+}): Promise<{ reference: string; fiche: string | null } | { erreur: string }> {
   const { categorieEnum, demandeEnum } = await import("@/lib/tunnel-refonte");
 
   if (!entree.categorie || !entree.solution || !entree.recit.trim()) {
@@ -134,9 +154,7 @@ export async function publierSignalement(entree: {
         boutiqueId: boutique?.id ?? null,
         entrepriseLibreNom: cible.entrepriseId === null ? cible.nom : null,
         entrepriseLibreSite: cible.entrepriseId === null ? cible.site : null,
-        // Une saisie libre attend son rapprochement : publier sur la seule foi
-        // d'un nom exposerait à l'attribuer à un homonyme.
-        moderation: cible.entrepriseId === null ? "EN_ATTENTE" : "PUBLIE",
+        moderation: etatPublication(cible.entrepriseId, boutique),
         categorie: categorieEnum(entree.categorie),
         sousCategorie: entree.categorie,
         famille: entree.famille,
@@ -155,7 +173,17 @@ export async function publierSignalement(entree: {
     await creerJetonSuivi(signalement.id, entree.email);
     if (cible.entrepriseId) await recalculerIndices(cible.entrepriseId).catch(() => undefined);
 
-    return { reference };
+    // Où le signalement vient de paraître : la fiche de la société quand elle
+    // est établie, celle de la boutique sinon. Le tunnel proposait jusqu'ici
+    // « Voir mon signalement public » vers `/entreprises/autre`, qui n'existe
+    // pas — le seul lien que l'auteur veut suivre à cet instant tombait en 404.
+    const fiche = cible.entrepriseId
+      ? `/entreprises/${cible.slug}#signalements`
+      : boutique
+        ? `/boutiques/${boutique.slug}#litiges`
+        : null;
+
+    return { reference, fiche };
   } catch (e) {
     console.error("[tunnel] dépôt impossible", e);
     return { erreur: "La publication a échoué. Réessayez dans un instant." };

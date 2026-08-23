@@ -31,9 +31,22 @@ type Props = {
   siren: string | null;
   familles: Famille[];
   preselection: { famille: string; categorie: string } | null;
+  /**
+   * La fiche publique concernée — celle de la société, ou celle de la boutique.
+   *
+   * Le tunnel supposait jusqu'ici que le slug d'URL était celui d'une
+   * entreprise. Pour une cible libre il vaut « autre », et les trois liens de
+   * sortie menaient à `/entreprises/autre` : « Quitter », « Je continuerai plus
+   * tard » et surtout « Voir mon signalement public », le seul que l'auteur ait
+   * envie de suivre à cet instant. Tous en 404.
+   *
+   * Nul quand rien de public n'existe encore : une saisie libre sans domaine
+   * reconnaissable n'a pas de fiche où aller voir.
+   */
+  fiche: string | null;
 };
 
-export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props) {
+export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche }: Props) {
   const [ecran, setEcran] = useState<1 | 2 | 3>(1);
   const [famille, setFamille] = useState<string | null>(preselection?.famille ?? null);
   const [categorie, setCategorie] = useState<string | null>(preselection?.categorie ?? null);
@@ -45,6 +58,7 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props
   const [email, setEmail] = useState("");
   const [accord, setAccord] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const [publiee, setPubliee] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, demarrer] = useTransition();
 
@@ -75,6 +89,7 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props
       if ("erreur" in r) setErreur(r.erreur);
       else {
         setReference(r.reference);
+        setPubliee(r.fiche);
         setEcran(3);
       }
     });
@@ -91,7 +106,7 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props
         <div className="rfn-conteneur rfn-conteneur--etroit">
           <div className="rfn-tunnel__marque">
             <span style={{ fontWeight: 800, color: "var(--rf-cobalt-fonce)" }}>Recours France</span>
-            <Link href={`/entreprises/${slug}`} className="rfn-tunnel__quitter">
+            <Link href={fiche ?? "/"} className="rfn-tunnel__quitter">
               Quitter
             </Link>
           </div>
@@ -490,9 +505,11 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props
                 marginTop: 24,
               }}
             >
-              <Link href={`/entreprises/${slug}#signalements`} className="rfn-btn rfn-action">
-                Voir mon signalement public
-              </Link>
+              {publiee ?? fiche ? (
+                <Link href={publiee ?? fiche ?? "/"} className="rfn-btn rfn-action">
+                  Voir mon signalement public
+                </Link>
+              ) : null}
               {[
                 { t: "Préparer ma réclamation", d: "Quelques informations complémentaires" },
                 { t: "Découvrir mes prochaines démarches", d: "Les étapes dans l’ordre, selon votre cas" },
@@ -516,7 +533,7 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection }: Props
             </div>
 
             <p className="rfn-mention" style={{ marginTop: 16 }}>
-              <Link href={`/entreprises/${slug}`}>Je continuerai plus tard</Link>
+              <Link href={fiche ?? "/"}>Je continuerai plus tard</Link>
             </p>
           </div>
         ) : null}

@@ -62,6 +62,7 @@ export default async function PageTunnel({
           siren={cible.siren ? formatSiren(cible.siren) : null}
           familles={famillesPour(cible.naf ?? null, cible.secteur ?? null)}
           preselection={preselection}
+            fiche={cible.fiche}
         />
       </main>
       <PiedDePage />

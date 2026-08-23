@@ -1,6 +1,8 @@
 import { chargerEntreprise } from "@/lib/fiche";
 import { lireBrouillon } from "@/lib/brouillon";
 import { CIBLE_LIBRE } from "@/lib/tunnel";
+import { prisma } from "@/lib/db";
+import { normaliserDomaine } from "@/lib/boutiques";
 
 /**
  * Ce que vise un signalement : une entreprise répertoriée, ou une saisie libre.
@@ -29,12 +31,29 @@ export type Cible = {
    *  et le second décide de l'ordre des familles de litige. */
   siren: string | null;
   naf: string | null;
+  /**
+   * La fiche publique de la cible, quand elle en a une.
+   *
+   * Le tunnel s'en sert pour ses liens de sortie. Il déduisait jusqu'ici
+   * l'adresse du slug d'URL, ce qui ne vaut que pour une entreprise : une cible
+   * libre porte le slug « autre », et « Voir mon signalement public » menait
+   * donc à `/entreprises/autre`. Une boutique en a une, elle aussi — c'est même
+   * la page d'où le visiteur arrive.
+   */
+  fiche: string | null;
 };
 
 export async function resoudreCible(slug: string): Promise<Cible | null> {
   if (slug === CIBLE_LIBRE) {
     const brouillon = await lireBrouillon();
     if (!brouillon.libreNom) return null;
+    // Le domaine désigne peut-être une boutique déjà répertoriée : c'est le cas
+    // ordinaire, puisqu'on arrive de sa fiche. On la cherche sans la créer —
+    // consulter une page ne doit rien écrire en base.
+    const domaine = brouillon.libreSite ? normaliserDomaine(brouillon.libreSite) : null;
+    const boutique = domaine
+      ? await prisma.boutique.findUnique({ where: { domaine }, select: { slug: true } })
+      : null;
     return {
       slug: CIBLE_LIBRE,
       nom: brouillon.libreNom,
@@ -45,6 +64,7 @@ export async function resoudreCible(slug: string): Promise<Cible | null> {
       commune: null,
       siren: null,
       naf: null,
+      fiche: boutique ? `/boutiques/${boutique.slug}` : null,
     };
   }
 
@@ -60,5 +80,6 @@ export async function resoudreCible(slug: string): Promise<Cible | null> {
     commune: base.commune,
     siren: base.siren,
     naf: base.naf,
+    fiche: `/entreprises/${base.slug}`,
   };
 }

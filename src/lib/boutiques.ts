@@ -73,16 +73,21 @@ function slugDepuisDomaine(domaine: string): string {
  * Trouve ou crée la boutique correspondant à une saisie, et tente de lui
  * rattacher sa personne morale à partir des tables importées.
  */
-export async function boutiquePour(saisie: string): Promise<{ id: string; domaine: string } | null> {
+export async function boutiquePour(saisie: string): Promise<{ id: string; domaine: string; slug: string } | null> {
   const domaine = normaliserDomaine(saisie);
   if (!domaine) return null;
 
-  const existante = await prisma.boutique.findUnique({ where: { domaine }, select: { id: true, domaine: true } });
+  const existante = await prisma.boutique.findUnique({
+    where: { domaine },
+    // Le slug part avec : c'est l'adresse de la fiche où le signalement
+    // paraîtra, et l'appelant doit pouvoir y renvoyer son auteur.
+    select: { id: true, domaine: true, slug: true },
+  });
   if (existante) return existante;
 
   const boutique = await prisma.boutique.create({
     data: { domaine, nom: nomDepuisDomaine(domaine), slug: slugDepuisDomaine(domaine) },
-    select: { id: true, domaine: true },
+    select: { id: true, domaine: true, slug: true },
   });
   await rattacherEntreprise(boutique.id, domaine).catch(() => undefined);
   return boutique;
