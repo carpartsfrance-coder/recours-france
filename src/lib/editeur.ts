@@ -18,20 +18,38 @@
  * feu vert.
  */
 
-function lire(cle: string): string {
-  return (process.env[cle] ?? "").trim();
+function lire(cle: string, defaut = ""): string {
+  return (process.env[cle] ?? "").trim() || defaut;
 }
 
+/**
+ * L'identité de l'éditeur, communiquée par lui.
+ *
+ * Ces valeurs vivent dans le code plutôt que dans l'environnement — elles ne
+ * sont ni des secrets ni des réglages, mais des faits stables que la loi
+ * impose de publier. Les laisser en variables faisait dépendre une obligation
+ * légale de dix cases à remplir dans un tableau de bord, et la page a servi
+ * plusieurs jours un avertissement d'incomplétude en production.
+ *
+ * L'environnement reste prioritaire, pour corriger sans redéployer.
+ *
+ * Contrôlé le 21 août 2026 auprès de recherche-entreprises.api.gouv.fr :
+ * SIREN 907510838, CAR PARTS FRANCE, nature juridique 5710 (SAS à associé
+ * unique), en activité depuis le 25 novembre 2021, SIRET du siège
+ * 90751083800028. L'adresse et le dirigeant y sont marqués « non-diffusible »,
+ * la société ayant exercé son droit d'opposition à la diffusion : ils viennent
+ * donc de l'éditeur lui-même, qui reste tenu de les publier ici.
+ */
 export const EDITEUR = {
-  raisonSociale: lire("EDITEUR_RAISON_SOCIALE"),
-  formeJuridique: lire("EDITEUR_FORME") || "Société par actions simplifiée",
+  raisonSociale: lire("EDITEUR_RAISON_SOCIALE", "CAR PARTS FRANCE"),
+  formeJuridique: lire("EDITEUR_FORME", "Société par actions simplifiée à associé unique"),
   capital: lire("EDITEUR_CAPITAL"),
-  adresse: lire("EDITEUR_ADRESSE"),
-  codePostal: lire("EDITEUR_CODE_POSTAL"),
-  ville: lire("EDITEUR_VILLE"),
-  siren: lire("EDITEUR_SIREN"),
-  rcsVille: lire("EDITEUR_RCS_VILLE"),
-  tva: lire("EDITEUR_TVA"),
+  adresse: lire("EDITEUR_ADRESSE", "50 boulevard Stalingrad"),
+  codePostal: lire("EDITEUR_CODE_POSTAL", "06300"),
+  ville: lire("EDITEUR_VILLE", "Nice"),
+  siren: lire("EDITEUR_SIREN", "907 510 838"),
+  rcsVille: lire("EDITEUR_RCS_VILLE", "Nice"),
+  tva: lire("EDITEUR_TVA", "FR61907510838"),
   directeurPublication: lire("EDITEUR_DIRECTEUR_PUBLICATION"),
 };
 
