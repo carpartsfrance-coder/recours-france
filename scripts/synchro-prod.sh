@@ -46,6 +46,7 @@ case "$CHOIX" in
     npx tsx scripts/sync.ts --siren="$SIREN"
     echo
     echo "── Décisions de justice ──"
+    echo "clé Judilibre : ${#CLE} caractères"
     for J in tj tcom ca; do
       npx tsx scripts/collecter-decisions.ts \
         --juridiction="$J" --siren="$SIREN" --depuis=2000-01-01 \

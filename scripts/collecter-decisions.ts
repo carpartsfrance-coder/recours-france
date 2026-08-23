@@ -63,6 +63,13 @@ async function main() {
   const taille = Number(argument("taille", "20"));
   const appliquer = process.argv.includes("--appliquer");
 
+  // `unaccent` sert au rapprochement par nom. Sur une base fraîchement créée
+  // par Render l'extension n'existe pas, et la requête échouait au premier
+  // nom à comparer. Elle est idempotente : rien ne se passe si elle est là.
+  await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS unaccent").catch((e) => {
+    console.warn(`[avertissement] extension unaccent indisponible : ${e}`);
+  });
+
   console.log(`Juridiction ${juridiction}, depuis le ${depuis}, ${lots} page(s) de ${taille}.`);
   console.log(appliquer ? "Écriture en base activée.\n" : "Simulation : rien ne sera écrit (--appliquer pour exécuter).\n");
 
@@ -70,7 +77,10 @@ async function main() {
 
   for (let page = 0; page < lots; page++) {
     const hits = await chercher(requete, { taille, page, juridictions: [juridiction], depuis });
-    if (hits.length === 0) break;
+    if (hits.length === 0) {
+      if (page === 0) console.log("  (aucune décision trouvée pour cette recherche)");
+      break;
+    }
 
     for (const h of hits) {
       await dormir(PAUSE_MS);
