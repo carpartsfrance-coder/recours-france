@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Page } from "@/components/chrome";
 import { CompteurVue } from "@/components/fiche/compteur-vue";
 import { prisma } from "@/lib/db";
 import { chargerEntreprise, detailEntreprise } from "@/lib/fiche";
@@ -13,21 +12,15 @@ import {
 } from "@/components/donnees-structurees";
 import { mediateurPublie } from "@/lib/mediation";
 import { ficheIndexable } from "@/lib/indexation";
-import { BENEFICES, MOTIFS_FICHE, etapesPlan, faqRefonte } from "@/lib/refonte";
-import { OuEnEtesVous } from "@/components/refonte/ou-en-etes-vous";
+import { etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
+import { Onglets } from "@/components/fiche-entreprise/onglets";
+import { BoutonCopier } from "@/components/fiche-entreprise/copier";
+import { typo } from "@/lib/typographie";
+import { EDITEUR, siegeSocial } from "@/lib/editeur";
 import {
-  Alerte,
-  Bulle,
-  Carte,
-  Chevron,
-  Colis,
-  Document,
-  Fleche,
-  Horloge,
-  Info,
-  Oeil,
-  Question,
-  Remboursement,
+  Alerte, Bouclier, Branchement, Bulle, Camembert, Carte, CercleCoche,
+  Chevron, Cloche, Colis, Document, Epingle, Fleche, Graphique, Groupe,
+  Horloge, Immeuble, Info, Oeil, Presse, Question, Remboursement,
 } from "@/components/refonte/icones";
 import { GUIDES, declarationPublique } from "@/lib/observatoire";
 import {
@@ -40,9 +33,9 @@ import {
 } from "@/lib/maillage";
 import {
   LIBELLES_DEMANDE,
-  communeEnTitre,
   LIBELLES_ETAT_PRO,
   adressePostale,
+  communeEnTitre,
   formatDateLongue,
   formatMontant,
   formatNombre,
@@ -52,7 +45,7 @@ import {
 } from "@/lib/format";
 
 /**
- * Fiche entreprise — refonte d'août 2026.
+ * Fiche entreprise — gabarit du handoff DISTRIMOTOR.
  *
  * L'ordre des sections vient du handoff et n'est pas négociable : le problème
  * du visiteur d'abord, l'entreprise ensuite. Une page qui ouvrirait sur le
@@ -61,17 +54,25 @@ import {
  * une autre question : « j'ai un problème avec cette entreprise, que puis-je
  * faire ? »
  *
- * Un seul état vide sur toute la page, dans la section des signalements. Les
- * autres sections disent ce qu'elles savent ou se taisent : rien n'est
- * inventé pour étoffer la page, et six fiches sur treize millions portent
- * aujourd'hui un signalement.
+ * Un seul état vide sur toute la page, dans la section des signalements. Le
+ * handoff l'exige — « ne pas répéter cette absence ailleurs » — et la raison
+ * tient : six fiches sur treize millions en portent un aujourd'hui, et répéter
+ * « aucun » quatre fois par page ferait treize millions de pages creuses.
+ *
+ * Ni note, ni étoile, ni score, ni `AggregateRating`. La requête visée reste
+ * « avis {entreprise} » : le mot est servi par le title, la description, le
+ * chapô et la première question de la foire aux questions — pas par une note
+ * qui n'existe pas.
  *
  * Mise en cache une journée : rien ici ne dépend du visiteur.
  */
 export const revalidate = 86400;
 
-const ICONES = { remboursement: Remboursement, colis: Colis, bulle: Bulle, alerte: Alerte, carte: Carte, question: Question };
-const ICONES_BENEFICE = { oeil: Oeil, document: Document, horloge: Horloge };
+const ICONES_PROBLEME = {
+  alerte: Alerte, colis: Colis, remboursement: Remboursement,
+  bouclier: Bouclier, document: Document, question: Question,
+  carte: Carte, bulle: Bulle,
+};
 
 export async function generateMetadata({
   params,
@@ -80,33 +81,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const base = await chargerEntreprise(slug);
-  if (!base) return {};
+  if (!base) return { title: "Entreprise" };
 
-  const total = await prisma.signalement.count({
-    where: { entrepriseId: base.id, moderation: "PUBLIE" },
-  });
   const nom = base.denomination;
-
-  // La commune entre dans le titre, et ce n'est pas cosmétique. Sur le seul
-  // nom, 3 728 730 fiches portaient un titre strictement identique à au moins
-  // une autre — 1,3 million de SARL homonymes. « JK AUTO (Fos-sur-Mer) »
-  // distingue, et sert la requête telle qu'on la tape : « avis jk auto fos ».
   const lieu = base.commune ? ` (${communeEnTitre(base.commune)})` : "";
 
   return {
-    // Une société radiée ou une société civile n'a pas à paraître dans les
-    // résultats : la page lui demande de réagir à un litige de consommation,
-    // ce qui n'a pas de sens dans le premier cas et est impossible dans le
-    // second. Le `follow` reste, pour que le maillage traverse la page.
     ...(ficheIndexable(base) ? {} : { robots: { index: false, follow: true } }),
-    title: `${nom}${lieu} : avis, signalements et litiges`,
-    // La description répond à la question que le chercheur a réellement posée —
-    // « avis X » — sans prétendre que des avis notés existent : elle l'invite à
-    // consulter ce que la fiche porte vraiment, des signalements déclarés.
-    description:
-      total > 0
-        ? `Vous cherchez des avis sur ${nom}${lieu} ? ${formatNombre(total)} signalement${total > 1 ? "s" : ""} de consommateurs publié${total > 1 ? "s" : ""} : problèmes rencontrés, solutions demandées, démarches de réclamation et médiation.`
-        : `Vous cherchez des avis sur ${nom}${lieu} ? Consultez sa fiche : signalements de consommateurs, démarches de réclamation, remboursement, SAV et médiation. Signalez gratuitement votre litige.`,
+    // Le handoff écrit « {nom} : litiges et signalements publics ». « avis » y
+    // est ajouté, et seulement là : c'est le mot que la personne tape, le
+    // title est l'élément le plus décisif pour une requête de marque, et le
+    // handoff se donne lui-même « {nom} avis » comme première cible. Le H1
+    // reste celui du handoff, au mot près.
+    title: typo(`${nom}${lieu} : avis, litiges et signalements publics`),
+    description: typo(
+      `Vous recherchez des avis sur ${nom} ? Consultez les signalements publiés, leur statut et les démarches disponibles.`,
+    ),
     alternates: { canonical: `/entreprises/${base.slug}` },
   };
 }
@@ -118,7 +108,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   if (!base) notFound();
   if (base.slug !== slug) redirect(`/entreprises/${base.slug}`);
 
-  const { entreprise, evenements, comptes } = await detailEntreprise(base.id);
+  const { entreprise, comptes } = await detailEntreprise(base.id);
   if (!entreprise) notFound();
 
   const nom = entreprise.denomination;
@@ -134,6 +124,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
       where: { entrepriseId: entreprise.id, moderation: "PUBLIE", resolutionConfirmee: true },
     }),
   ]);
+  const enAttente = total - resolus;
 
   const mediateurDeclare = mediateurPublie(entreprise);
   const [boutique, proches] = await Promise.all([
@@ -145,13 +136,42 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   ]);
   // Toutes les voisines trouvées, pas une sélection de dix. C'est le maillage
   // interne qui fait explorer un annuaire de cette taille, pas le plan de site :
-  // societe.com pose près de cent liens fiche→fiche par page. La refonte les
-  // avait fait disparaître, et chaque fiche se retrouvait sans issue.
+  // societe.com pose près de cent liens fiche→fiche par page.
   const comparables = [...proches.memeVille, ...proches.memeDepartement, ...proches.memeSecteur];
   const secteur = entreprise.secteur ?? "autre";
-  const etapes = etapesPlan(nom, mediateurDeclare?.nom ?? null);
+  const etapes = etapesPlan(nom, mediateurDeclare?.nom ?? null).slice(0, 3);
   const questions = faqRefonte(nom);
-  const tunnel = `/signaler/${slug}`;
+  const problemes = problemesFiche(entreprise.naf ?? null, entreprise.secteur ?? null);
+  const tunnel = `/signaler/${base.slug}`;
+
+  const commune = entreprise.commune ?? null;
+  const adresse = adressePostale(entreprise);
+  const lienDepartement = entreprise.departement ? cheminDepartement(secteur, entreprise.departement) : null;
+  const lienCommune =
+    entreprise.departement && entreprise.communeSlug
+      ? cheminCommune(secteur, entreprise.departement, entreprise.communeSlug)
+      : null;
+
+  /* ── Finances ─────────────────────────────────────────────────────────
+     Le handoff demande quatre cartes dont « Total du bilan ». Nous ne
+     collectons pas ce poste : afficher « Non publié » laisserait croire qu'un
+     dépôt a été consulté et trouvé confidentiel, ce qui serait faux. La
+     quatrième carte porte donc le dépôt lui-même, qui est une donnée réelle —
+     et savoir qu'une société ne dépose aucun compte est déjà un renseignement. */
+  const dernier = comptes[0] ?? null;
+  const dernierPublic = comptes.find((c) => !c.confidentiel && (c.chiffreAffaires || c.resultatNet)) ?? null;
+  const anneeCourante = new Date().getFullYear();
+  const donneesAnciennes = dernierPublic !== null && anneeCourante - dernierPublic.exercice >= 3;
+
+  const valeurFinance = (champ: "chiffreAffaires" | "resultatNet") => {
+    if (!dernier) return { n: "Non déposé", l: "Aucun compte annuel au registre", absent: true };
+    if (dernier.confidentiel) return { n: "Non publié", l: "Comptes confidentiels", absent: true };
+    const v = dernier[champ];
+    if (!v) return { n: "Non publié", l: `Exercice ${dernier.exercice}, poste non détaillé`, absent: true };
+    return { n: formatMontant(Number(v)), l: `Exercice ${dernier.exercice}`, absent: false };
+  };
+  const ca = valeurFinance("chiffreAffaires");
+  const rn = valeurFinance("resultatNet");
 
   const lignesLegales = [
     { k: "Raison sociale", v: nom },
@@ -162,134 +182,164 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
       ? { k: "Immatriculation", v: formatDateLongue(entreprise.dateImmatriculation) }
       : null,
     entreprise.naf ? { k: "Code d’activité", v: entreprise.naf } : null,
-    entreprise.trancheEffectif
-      ? { k: "Effectif", v: libelleEffectif(entreprise.trancheEffectif) }
-      : { k: "Effectif", v: "Non renseigné (Insee)" },
     {
       k: "État administratif",
       v: entreprise.etatAdministratif === "ACTIVE" ? "En activité" : "Cessée",
     },
   ].filter((l): l is { k: string; v: string } => l !== null);
 
-  const finances = comptes.slice(0, 4).map((c) => ({
-    k: `Exercice ${c.exercice}`,
-    v: c.confidentiel
-      ? "Comptes déposés avec déclaration de confidentialité"
-      : [
-          c.chiffreAffaires ? `CA ${formatMontant(Number(c.chiffreAffaires))}` : null,
-          c.resultatNet ? `résultat ${formatMontant(Number(c.resultatNet))}` : null,
-        ]
-          .filter(Boolean)
-          .join(" · ") || "Comptes déposés, détail non publié",
-  }));
-
-  const sommaire = [
-    { href: "#probleme", libelle: "Mon problème" },
-    { href: "#signalements", libelle: "Signalements" },
-    { href: "#demarches", libelle: "Démarches" },
-    { href: "#contact", libelle: "Contact et médiateur" },
-    { href: "#informations", libelle: "Informations" },
-    { href: "#comparables", libelle: "Comparables" },
-    { href: "#faq", libelle: "Méthodologie et FAQ" },
+  // Une clé, jamais le composant : la frontière serveur/client ne sérialise
+  // pas les fonctions, et un composant React en est une.
+  const onglets = [
+    { href: "#signalements", libelle: total > 0 ? `Signalements (${formatNombre(total)})` : "Signalements", icone: "liste" as const },
+    { href: "#types", libelle: "Types de litiges", icone: "etiquette" as const },
+    { href: "#finances", libelle: "Finances", icone: "graphique" as const },
+    { href: "#plan", libelle: "Plan d’action", icone: "coche" as const },
+    { href: "#coordonnees", libelle: "Coordonnées", icone: "epingle" as const },
+    { href: "#faq", libelle: "FAQ", icone: "question" as const },
   ];
 
-  const commune = entreprise.commune ?? null;
-  const adresse = adressePostale(entreprise);
-
   const fil = [
-    { libelle: "Annuaire", href: "/annuaire" },
-    { libelle: libelleSecteur(secteur), href: cheminSecteur(secteur) },
-    ...(entreprise.departement && nomDepartement(entreprise.departement)
-      ? [
-          {
-            libelle: nomDepartement(entreprise.departement)!,
-            href: cheminDepartement(secteur, entreprise.departement) ?? undefined,
-          },
-        ]
-      : []),
-    ...(entreprise.departement && commune
-      ? [{ libelle: commune, href: cheminCommune(secteur, entreprise.departement, commune) ?? undefined }]
-      : []),
+    { libelle: "Accueil", href: "/" },
+    { libelle: "Entreprises", href: "/annuaire" },
     { libelle: nom },
   ];
 
   return (
-    <Page
-      entete={{ baseline: "Observatoire des problèmes consommateurs", navActive: "annuaire" }}
-      fil={fil}
-    >
+    <div className="rfe">
       <CompteurVue siren={entreprise.siren} />
-      {/* Uniquement ce que la page affiche réellement : fil d'Ariane, éditeur,
-          questions fréquentes. Ni Review ni AggregateRating — ce ne sont pas
-          des avis notés, et l'étoile serait un mensonge de plus. */}
       <DonneesStructurees donnees={filAlianeJsonLd(fil)} />
       <DonneesStructurees
         donnees={organisationJsonLd({
           nom,
           siren: entreprise.siren,
-          url: `/entreprises/${entreprise.slug}`,
+          url: `/entreprises/${base.slug}`,
           siteWeb: entreprise.siteWeb,
           adresse: entreprise.adresseSiege,
           codePostal: entreprise.codePostal,
           commune: entreprise.commune,
-          telephone: entreprise.telephoneReclamation,
-          email: entreprise.emailReclamation,
         })}
       />
-      <DonneesStructurees donnees={faqJsonLd(questions.map((q) => ({ q: q.q, a: q.r.join(" ") })))} />
+      {/* Ni Review ni AggregateRating : aucune note n'est affichée, en déclarer
+          une serait faux et exposerait à une pénalité. */}
+      <DonneesStructurees donnees={faqJsonLd(questions.map((q) => ({ q: typo(q.q), a: typo(q.r.join(" ")) })))} />
 
-      <div className="rfn">
-        {/* ── Hero ───────────────────────────────────────────────────────── */}
-        <section className="rfn-hero">
-          <div className="rfn-conteneur rfn-hero__grille">
-            <div className="rfn-hero__gauche">
-              <div className="rfn-chips">
-                {entreprise.secteur ? (
-                  <span className="rfn-chip rfn-chip--bleu">{libelleSecteur(entreprise.secteur)}</span>
+      {/* ── 1. Bandeau d'indépendance ───────────────────────────────── */}
+      <div className="rfp-bandeau" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <Info taille={15} />
+        {typo("Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec l’État.")}
+      </div>
+
+      {/* ── 2. En-tête ──────────────────────────────────────────────── */}
+      <header className="rfe-entete">
+        <div className="rfe-conteneur rfe-entete__piste">
+          <Link href="/" className="rfe-logo" aria-label="Recours France — accueil">
+            <span className="rfe-logo__med">
+              <Presse taille={22} />
+            </span>
+            <span className="rfe-logo__filet" aria-hidden="true" />
+            <span>
+              <span className="rfe-logo__nom" style={{ display: "block" }}>
+                Recours France
+              </span>
+              <span className="rfe-logo__base">Observatoire des problèmes consommateurs</span>
+            </span>
+          </Link>
+          <nav className="rfe-nav">
+            <Link href="/methodologie">{typo("Comment ça marche")}</Link>
+            <Link href="/annuaire">Entreprises</Link>
+            <Link href="/aide">Guides</Link>
+          </nav>
+          <Link href={tunnel} className="rfe-btn rfe-btn--sm rfe-entete__cta">
+            {typo("Rendre mon litige visible")}
+          </Link>
+        </div>
+      </header>
+
+      <main id="contenu">
+        {/* ── 3. Fil d'Ariane ───────────────────────────────────────── */}
+        <div className="rfe-conteneur">
+          <nav className="rfe-fil" aria-label="Fil d’Ariane">
+            {fil.map((f, i) => (
+              <span key={f.libelle} style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                {i > 0 ? <Chevron taille={14} style={{ transform: "rotate(-90deg)" }} /> : null}
+                {f.href ? <Link href={f.href}>{f.libelle}</Link> : <span>{f.libelle}</span>}
+              </span>
+            ))}
+          </nav>
+        </div>
+
+        {/* ── 4. Hero ───────────────────────────────────────────────── */}
+        <div className="rfe-conteneur" style={{ paddingBottom: "clamp(20px, 2.4cqw, 32px)" }}>
+          <div className="rfe-hero">
+            <div className="rfe-hero__g">
+              <h1 className="rfe-h1">{typo(`${nom} : litiges et signalements publics`)}</h1>
+
+              <p className="rfe-intro" style={{ marginTop: 14 }}>
+                {typo(
+                  `Vous recherchez des avis sur ${nom} ? Recours France ne publie pas de notes commerciales : consultez les situations déclarées, leur statut et les solutions demandées.`,
+                )}
+              </p>
+
+              <div className="rfe-identite" style={{ marginTop: 16 }}>
+                <span>
+                  <Immeuble taille={18} />
+                  <strong style={{ fontWeight: 700, color: "var(--p-navy)" }}>{nom}</strong>
+                </span>
+                <span>{typo(`SIREN ${formatSiren(entreprise.siren)}`)}</span>
+                {commune ? (
+                  <span>
+                    <Epingle taille={18} />
+                    {communeEnTitre(commune)}
+                  </span>
                 ) : null}
-                {commune ? <span className="rfn-chip">{commune}</span> : null}
-                <span className="rfn-chip">Fiche non revendiquée</span>
               </div>
 
-              <h1 className="rfn-h1" style={{ marginTop: 18 }}>
-                Un problème avec {nom} ? Rendez-le visible pour inciter l’entreprise à réagir.
-              </h1>
-
-              <p className="rfn-intro" style={{ marginTop: 16 }}>
-                Publiez votre situation sur la fiche de {nom}, préparez votre réclamation écrite et
-                suivez les prochaines démarches adaptées à votre litige.
-              </p>
-
-              <div className="rfn-btns" style={{ marginTop: 22 }}>
-                <Link href={tunnel} className="rfn-btn">
-                  Rendre mon litige visible
-                  <Fleche taille={18} />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 20 }}>
+                <Link href={tunnel} className="rfe-btn">
+                  {typo("Rendre mon litige visible")}
                 </Link>
-                <Link href={total > 0 ? "#signalements" : "#probleme"} className="rfn-btn rfn-btn--2">
-                  {total === 0
-                    ? "Trouver la démarche adaptée"
-                    : total === 1
-                      ? "Voir le signalement"
-                      : `Voir les ${formatNombre(total)} signalements`}
-                </Link>
+                {total > 0 ? (
+                  <a href="#signalements" className="rfe-btn rfe-btn--2">
+                    {typo(
+                      total > 1
+                        ? `Voir les ${formatNombre(total)} signalements publics`
+                        : "Voir le signalement public (1)",
+                    )}
+                  </a>
+                ) : null}
               </div>
 
-              <p className="rfn-mention" style={{ marginTop: 14 }}>
-                Gratuit · vous relisez tout avant publication · justificatifs facultatifs
-              </p>
+              <div className="rfe-mentions" style={{ marginTop: 18 }}>
+                <span>
+                  <Remboursement taille={16} />
+                  {typo("Publication gratuite")}
+                </span>
+                <span>
+                  <Horloge taille={16} />3 minutes
+                </span>
+                <span>
+                  <Bouclier taille={16} />
+                  {typo("Vous gardez le contrôle")}
+                </span>
+              </div>
             </div>
 
-            <div className="rfn-hero__droite">
-              <div className="rfn-obtenu">
-                <div className="rfn-obtenu__tete">Ce que vous obtenez</div>
-                {BENEFICES(nom).map((b) => {
-                  const Icone = ICONES_BENEFICE[b.icone];
+            <div className="rfe-hero__d">
+              <div className="rfe-obtenu">
+                {[
+                  { i: Oeil, t: "Votre litige devient visible", d: "Votre situation est consultable publiquement." },
+                  { i: Cloche, t: "L’entreprise peut être alertée", d: "Après vérification de vos coordonnées." },
+                  { i: Document, t: "Votre réclamation est préparée", d: "Des modèles et conseils adaptés." },
+                  { i: Branchement, t: "Vos prochaines étapes sont expliquées", d: "Relance, médiation ou recours adapté." },
+                ].map((l) => {
+                  const Icone = l.i;
                   return (
-                    <div key={b.titre} className="rfn-obtenu__item">
-                      <Icone taille={22} />
+                    <div key={l.t} className="rfe-obtenu__l">
+                      <Icone taille={20} />
                       <div>
-                        <div className="rfn-obtenu__titre">{b.titre}</div>
-                        <div className="rfn-obtenu__desc">{b.desc}</div>
+                        <div className="rfe-obtenu__t">{typo(l.t)}</div>
+                        <div className="rfe-obtenu__d">{typo(l.d)}</div>
                       </div>
                     </div>
                   );
@@ -297,506 +347,521 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── 5. Onglets ────────────────────────────────────────────── */}
+        <Onglets liens={onglets} />
+
+        {/* ── 6. Signalements publics ───────────────────────────────── */}
+        <section id="signalements" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Signalements publics concernant ${nom}`)}</h2>
+
+            {total === 0 ? (
+              <div className="rfe-carte" style={{ marginTop: 20 }}>
+                <div className="rfe-h3">
+                  {typo(`Aucun signalement public concernant ${nom} pour le moment.`)}
+                </div>
+                <p className="rfe-second" style={{ marginTop: 8, maxWidth: "70ch" }}>
+                  {typo(
+                    "Cela ne permet pas de conclure que l’entreprise ne rencontre aucun problème. Cela signifie qu’aucun consommateur n’a encore rendu son litige visible ici.",
+                  )}
+                </p>
+                <Link href={tunnel} className="rfe-btn" style={{ marginTop: 18 }}>
+                  {typo("Être le premier à rendre mon litige visible")}
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="rfe-compteurs" style={{ marginTop: 18 }}>
+                  <span className="rfe-compteur">
+                    <b>{formatNombre(total)}</b>
+                    <span>
+                      signalement{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
+                    </span>
+                  </span>
+                  <span className="rfe-compteur rfe-compteur--vert">
+                    <b>{formatNombre(resolus)}</b>
+                    <span>résolu{resolus > 1 ? "s" : ""}</span>
+                  </span>
+                  <span className="rfe-compteur rfe-compteur--rouge">
+                    <b>{formatNombre(enAttente)}</b>
+                    <span>en attente</span>
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gap: 14, marginTop: 20 }}>
+                  {signalements.map((s) => {
+                    const categorie =
+                      s.sousCategorie ??
+                      problemes.find((p) => p.motif === s.categorie)?.libelle ??
+                      "Litige";
+                    return (
+                      <article key={s.id} className="rfe-signalement">
+                        <div className="rfe-signalement__g">
+                          <span className="rfe-pilule">{typo(categorie)}</span>
+                          <h3 className="rfe-h3" style={{ marginTop: 12 }}>
+                            {typo(`${categorie} — faits du ${formatDateLongue(s.dateFaits)}`)}
+                          </h3>
+                          <p className="rfe-texte" style={{ marginTop: 8, maxWidth: "72ch" }}>
+                            {typo(
+                              declarationPublique(
+                                s,
+                                (c) => LIBELLES_DEMANDE[c] ?? c,
+                                (c) => LIBELLES_ETAT_PRO[c] ?? c,
+                              ),
+                            )}
+                          </p>
+                          <hr style={{ border: 0, borderTop: "1px solid var(--p-filet)", margin: "16px 0 12px" }} />
+                          <div className="rfe-aide" style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+                            <span>{typo(`Publié le ${formatDateLongue(s.creeLe)}`)}</span>
+                            {s.solutionLibelle ? (
+                              <span>
+                                {typo("Solution demandée :")}{" "}
+                                <strong style={{ color: "var(--p-texte)", fontWeight: 600 }}>
+                                  {typo(s.solutionLibelle)}
+                                </strong>
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="rfe-signalement__d">
+                          <span
+                            className={`rfe-statut ${s.resolutionConfirmee ? "rfe-statut--resolu" : "rfe-statut--attente"}`}
+                          >
+                            {s.resolutionConfirmee ? <CercleCoche taille={13} /> : <Horloge taille={13} />}
+                            {typo(s.resolutionConfirmee ? "Résolu" : "En attente de solution")}
+                          </span>
+                          <p className="rfe-aide" style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+                            <Cloche taille={16} style={{ flex: "none", color: "var(--p-desactive)", marginTop: 1 }} />
+                            {typo("Entreprise pouvant être alertée après vérification des coordonnées.")}
+                          </p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <div className="rfe-bandeau" style={{ marginTop: 20 }}>
+                  <span className="rfe-probleme__med" style={{ borderRadius: "50%" }}>
+                    <Groupe taille={22} />
+                  </span>
+                  <div className="rfe-bandeau__t">
+                    <div className="rfe-titre-carte">{typo("Vous rencontrez un problème similaire ?")}</div>
+                  </div>
+                  <Link href={tunnel} className="rfe-btn rfe-btn--sm">
+                    {typo("Publier mon litige gratuitement")}
+                  </Link>
+                </div>
+              </>
+            )}
+
+            <p className="rfe-aide" style={{ marginTop: 16, maxWidth: "86ch" }}>
+              {typo(
+                "Chaque signalement reprend la déclaration de son auteur. Recours France ne vérifie pas le récit des faits et n’intervient pas dans le règlement du litige.",
+              )}
+            </p>
+          </div>
         </section>
 
-        {/* ── Nav de sections, collante ──────────────────────────────────── */}
-        <nav className="rfn-nav" aria-label="Sections de la fiche">
-          <div className="rfn-conteneur rfn-nav__piste">
-            {sommaire.map((s) => (
-              <a key={s.href} href={s.href} className="rfn-nav__lien">
-                {s.libelle}
-              </a>
-            ))}
-            <div className="rfn-nav__cta">
-              <Link href={tunnel} className="rfn-btn" style={{ minHeight: 38, fontSize: 14.5, padding: "0 16px" }}>
-                Rendre mon litige visible
-              </Link>
-            </div>
-          </div>
-        </nav>
-
-        {/* ── Quel problème rencontrez-vous ? ────────────────────────────── */}
-        <section id="probleme" className="rfn-section">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Quel problème rencontrez-vous ?</h2>
-            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
-              Choisissez la situation la plus proche de la vôtre. Les démarches et la réclamation
-              sont adaptées à votre choix.
+        {/* ── 7. Quel problème rencontrez-vous ? ────────────────────── */}
+        <section id="types" className="rfe-section rfe-section--alt">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo("Quel problème rencontrez-vous ?")}</h2>
+            <p className="rfe-second" style={{ marginTop: 10, maxWidth: "64ch" }}>
+              {typo(
+                "Choisissez la situation la plus proche de la vôtre : la réclamation et les démarches sont adaptées à votre choix.",
+              )}
             </p>
 
-            <div className="rfn-grille" style={{ marginTop: 22 }}>
-              {MOTIFS_FICHE.map((m) => {
-                const Icone = ICONES[m.icone];
+            <div className="rfe-grille" style={{ marginTop: 20 }}>
+              {problemes.map((p) => {
+                const Icone = ICONES_PROBLEME[p.icone];
                 return (
-                  <Link
-                    key={m.cle}
-                    href={`${tunnel}?motif=${m.cle}`}
-                    className="rfn-carte rfn-probleme"
-                  >
-                    <span className="rfn-probleme__icone">
-                      <Icone taille={20} />
+                  <Link key={p.cle} href={`${tunnel}?motif=${p.motif}`} className="rfe-carte rfe-probleme">
+                    <span className="rfe-probleme__med">
+                      <Icone taille={22} />
                     </span>
-                    <span className="rfn-probleme__titre">{m.libelle}</span>
-                    <span className="rfn-probleme__desc">{m.desc}</span>
-                    <span className="rfn-probleme__pied">
-                      <Fleche taille={18} />
+                    <span className="rfe-titre-carte">{typo(p.libelle)}</span>
+                    <span className="rfe-aide">{typo(p.exemple)}</span>
+                    <span className="rfe-probleme__pied">
+                      {typo("Signaler ce problème")}
+                      <Fleche taille={16} />
                     </span>
                   </Link>
                 );
               })}
             </div>
-
-            <div className="rfn-beige" style={{ marginTop: 18 }}>
-              <Info taille={18} />
-              <span>
-                Vous ne savez pas par où commencer ? Nous vous indiquons la prochaine étape selon
-                votre situation.
-              </span>
-            </div>
           </div>
         </section>
 
-        {/* ── Signalements publics ───────────────────────────────────────── */}
-        <section id="signalements" className="rfn-section rfn-section--gris">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Signalements publics concernant {nom}</h2>
+        {/* ── 8. Informations financières ───────────────────────────── */}
+        <section id="finances" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Informations financières de ${nom}`)}</h2>
 
-            {total === 0 ? (
-              <div
-                className="rfn-carte"
-                style={{
-                  marginTop: 20,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 20,
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 22,
-                }}
-              >
-                <div style={{ flex: "1 1 340px", minWidth: 0 }}>
-                  <div className="rfn-h3">Aucun signalement public concernant {nom} pour le moment.</div>
-                  <p className="rfn-second" style={{ marginTop: 8 }}>
-                    Vous avez rencontré un problème ? Votre publication permettra de rendre cette
-                    situation visible.
+            <div className="rfe-finances" style={{ marginTop: 20 }}>
+              <div className="rfe-carte">
+                <div className="rfe-finance__k">
+                  <Graphique taille={18} />
+                  {typo(dernier ? `Chiffre d’affaires ${dernier.exercice}` : "Chiffre d’affaires")}
+                </div>
+                <div className="rfe-finance__v">
+                  <div className={`rfe-finance__n${ca.absent ? " rfe-finance__n--absent" : ""}`}>{ca.n}</div>
+                  <div className="rfe-finance__l">{typo(ca.l)}</div>
+                </div>
+              </div>
+
+              <div className="rfe-carte">
+                <div className="rfe-finance__k">
+                  <Camembert taille={18} />
+                  {typo(dernier ? `Résultat net ${dernier.exercice}` : "Résultat net")}
+                </div>
+                <div className="rfe-finance__v">
+                  <div className={`rfe-finance__n${rn.absent ? " rfe-finance__n--absent" : ""}`}>{rn.n}</div>
+                  <div className="rfe-finance__l">{typo(rn.l)}</div>
+                </div>
+              </div>
+
+              <div className="rfe-carte">
+                <div className="rfe-finance__k">
+                  <Document taille={18} />
+                  {typo("Comptes déposés")}
+                </div>
+                <div className="rfe-finance__v">
+                  <div className={`rfe-finance__n${comptes.length === 0 ? " rfe-finance__n--absent" : ""}`}>
+                    {comptes.length === 0 ? "Aucun" : formatNombre(comptes.length)}
+                  </div>
+                  <div className="rfe-finance__l">
+                    {typo(
+                      comptes.length === 0
+                        ? "Aucun exercice au registre à ce jour"
+                        : `Exercices ${comptes[comptes.length - 1].exercice} à ${comptes[0].exercice}`,
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rfe-carte">
+                <div className="rfe-finance__k">
+                  <Groupe taille={18} />
+                  {typo("Effectif connu")}
+                </div>
+                <div className="rfe-finance__v">
+                  <div className="rfe-finance__n" style={{ fontSize: 21 }}>
+                    {libelleEffectif(entreprise.trancheEffectif)}
+                  </div>
+                  <div className="rfe-finance__l">{typo("Tranche déclarée au répertoire Sirene")}</div>
+                </div>
+              </div>
+            </div>
+
+            {dernierPublic ? (
+              <div className="rfe-carte rfe-anciennes" style={{ marginTop: 16 }}>
+                <div>
+                  <div className="rfe-finance__k">{typo("Dernier chiffre d’affaires public")}</div>
+                  <div className="rfe-finance__n" style={{ marginTop: 8, fontSize: 23 }}>
+                    {dernierPublic.chiffreAffaires ? formatMontant(Number(dernierPublic.chiffreAffaires)) : "Non publié"}
+                  </div>
+                  <div className="rfe-finance__l">{typo(`Exercice ${dernierPublic.exercice}`)}</div>
+                </div>
+                <div>
+                  <div className="rfe-finance__k">{typo("Dernier résultat net public")}</div>
+                  <div className="rfe-finance__n" style={{ marginTop: 8, fontSize: 23 }}>
+                    {dernierPublic.resultatNet ? formatMontant(Number(dernierPublic.resultatNet)) : "Non publié"}
+                  </div>
+                  <div className="rfe-finance__l">{typo(`Exercice ${dernierPublic.exercice}`)}</div>
+                </div>
+                {donneesAnciennes ? (
+                  <div>
+                    <span className="rfe-chip-ambre">
+                      <Alerte taille={13} />
+                      {typo("Données anciennes")}
+                    </span>
+                    <p className="rfe-finance__l" style={{ marginTop: 8 }}>
+                      {typo("À ne pas confondre avec la situation actuelle.")}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="rfe-aide" style={{ marginTop: 16, display: "flex", gap: 9, alignItems: "flex-start" }}>
+              <Info taille={16} style={{ flex: "none", color: "var(--p-desactive)", marginTop: 1 }} />
+              <span>
+                {typo(
+                  "Source : comptes annuels déposés au registre (BODACC). Le total du bilan et le chiffre d’affaires sont deux notions distinctes : le premier mesure la taille comptable, le second l’activité. Aucune estimation n’est produite ici.",
+                )}
+              </span>
+            </p>
+          </div>
+        </section>
+
+        {/* ── 9. Plan d'action ──────────────────────────────────────── */}
+        <section id="plan" className="rfe-section rfe-section--alt">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Litige avec ${nom} : le plan d’action`)}</h2>
+            <p className="rfe-second" style={{ marginTop: 10, maxWidth: "64ch" }}>
+              {typo(
+                "Ces démarches sont gratuites et s’effectuent dans cet ordre. Chacune conditionne la suivante : une médiation saisie sans réclamation écrite préalable est déclarée irrecevable.",
+              )}
+            </p>
+
+            <div className="rfe-plan" style={{ marginTop: 20 }}>
+              {etapes.map((e, i) => (
+                <div key={e.cle} className="rfe-carte">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span className="rfe-plan__n">{i + 1}</span>
+                    <span className="rfe-titre-carte">{typo(e.titre)}</span>
+                  </div>
+                  <p className="rfe-second" style={{ marginTop: 12 }}>
+                    {typo(e.sous)}
                   </p>
                 </div>
-                <Link href={tunnel} className="rfn-btn">
-                  Publier le premier signalement
-                  <Fleche taille={18} />
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="rfn-compteurs" style={{ marginTop: 20 }}>
-                  <div>
-                    <div className="rfn-compteur__n" style={{ color: "var(--rf-cobalt-fonce)" }}>
-                      {formatNombre(total)}
-                    </div>
-                    <div className="rfn-compteur__l">
-                      signalement{total > 1 ? "s" : ""} publié{total > 1 ? "s" : ""}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="rfn-compteur__n" style={{ color: "var(--rf-succes)" }}>
-                      {formatNombre(resolus)}
-                    </div>
-                    <div className="rfn-compteur__l">résolu{resolus > 1 ? "s" : ""} selon l’auteur</div>
-                  </div>
-                  <div>
-                    <div className="rfn-compteur__n" style={{ color: "var(--rf-erreur)" }}>
-                      {formatNombre(total - resolus)}
-                    </div>
-                    <div className="rfn-compteur__l">sans résolution déclarée</div>
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gap: 12, marginTop: 22 }}>
-                  {signalements.map((s) => (
-                    <article key={s.id} className="rfn-carte">
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 8,
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <div className="rfn-chips">
-                          {/* La catégorie précise d'abord : c'est le libellé que
-                              l'auteur a choisi. L'énumération ne sert qu'à
-                              agréger, et publier « Garantie » là où il a coché
-                              « Refus de reprendre ou corriger le travail » lui
-                              ferait dire autre chose. */}
-                          <span className="rfn-chip rfn-chip--bleu">
-                            {s.sousCategorie ??
-                              MOTIFS_FICHE.find((m) => m.cle === s.categorie)?.libelle ??
-                              s.categorie}
-                          </span>
-                          <span className="rfn-chip">
-                            {s.resolutionConfirmee ? "Résolu selon l’auteur" : "Déclaré"}
-                          </span>
-                        </div>
-                        <span className="rfn-mention">{formatDateLongue(s.creeLe)}</span>
-                      </div>
-                      <div style={{ marginTop: 12 }}>
-                        {s.solutionLibelle ? (
-                          <div className="rfn-def">
-                            <span className="rfn-def__k">Solution demandée</span>
-                            <span className="rfn-def__v">{s.solutionLibelle}</span>
-                          </div>
-                        ) : null}
-                        <div className="rfn-def">
-                          <span className="rfn-def__k">Statut</span>
-                          <span className="rfn-def__v">
-                            {s.resolutionConfirmee ? "Résolu selon l’auteur" : "En attente de solution"}
-                          </span>
-                        </div>
-                        {!s.solutionLibelle ? (
-                          <p className="rfn-second" style={{ marginTop: 10 }}>
-                            {declarationPublique(
-                              s,
-                              (c) => LIBELLES_DEMANDE[c] ?? c,
-                              (c) => LIBELLES_ETAT_PRO[c] ?? c,
-                            )}
-                          </p>
-                        ) : null}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <p className="rfn-mention" style={{ marginTop: 18, maxWidth: "78ch" }}>
-              Chaque signalement reprend la déclaration de son auteur. Recours France ne vérifie pas
-              le récit des faits, n’intervient pas dans le règlement du litige et ne génère aucun
-              contenu artificiel pour étoffer cette page.
-            </p>
-          </div>
-        </section>
-
-        {/* ── Votre plan d'action ────────────────────────────────────────── */}
-        <section id="demarches" className="rfn-section">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Votre plan d’action</h2>
-            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
-              Les étapes suivent l’ordre habituellement recommandé en droit de la consommation.
-              Dépliez une étape pour le détail.
-            </p>
-
-            <div style={{ marginTop: 22 }}>
-              {etapes.map((e, i) => (
-                <div key={e.cle} className="rfn-etape">
-                  <div className="rfn-etape__rail">
-                    <span className="rfn-etape__pastille">{i + 1}</span>
-                    {i < etapes.length - 1 ? <span className="rfn-etape__filet" /> : null}
-                  </div>
-                  <div className="rfn-etape__corps">
-                    <details className="rfn-accordeon">
-                      <summary className="rfn-accordeon__bouton">
-                        <span style={{ minWidth: 0 }}>
-                          <span className="rfn-accordeon__titre">{e.titre}</span>
-                          <span className="rfn-accordeon__sous" style={{ display: "block" }}>
-                            {e.sous}
-                          </span>
-                        </span>
-                        <span className="rfn-accordeon__marque">
-                          Détails
-                          <Chevron taille={16} className="rfn-accordeon__chevron" />
-                        </span>
-                      </summary>
-                      <div className="rfn-accordeon__panneau">
-                        {e.paragraphes.map((t) => (
-                          <p key={t} className="rfn-second" style={{ marginBottom: 10 }}>
-                            {t}
-                          </p>
-                        ))}
-                        {e.points ? (
-                          <ul style={{ margin: "4px 0 0", paddingLeft: 18, listStyle: "disc" }}>
-                            {e.points.map((p) => (
-                              <li key={p} className="rfn-second" style={{ marginBottom: 5 }}>
-                                {p}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
-                    </details>
-                  </div>
-                </div>
               ))}
             </div>
 
-            <OuEnEtesVous nom={nom} href={tunnel} />
-
-            <p className="rfn-mention" style={{ marginTop: 18 }}>
-              Informations générales de droit de la consommation. Elles ne constituent pas un conseil
-              juridique personnalisé.
-            </p>
-          </div>
-        </section>
-
-        {/* ── Coordonnées et médiateur ───────────────────────────────────── */}
-        <section id="contact" className="rfn-section rfn-section--gris">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Coordonnées et médiateur</h2>
-            <div className="rfn-grille rfn-grille--2" style={{ marginTop: 20 }}>
-              <div className="rfn-carte">
-                <div className="rfn-eyebrow">Adresse du siège</div>
-                <p className="rfn-texte" style={{ marginTop: 10 }}>
-                  {adresse ?? "Adresse non publiée dans les registres."}
-                </p>
-                <p className="rfn-mention" style={{ marginTop: 12 }}>
-                  Coordonnées issues de sources publiques. Aucun courriel ni téléphone n’est déclaré
-                  publiquement à ce jour.
-                </p>
-              </div>
-              <div className="rfn-carte">
-                <div className="rfn-eyebrow">Médiateur de la consommation</div>
-                <p className="rfn-texte" style={{ marginTop: 10 }}>
-                  {mediateurDeclare
-                    ? mediateurDeclare.nom
-                    : `Aucune adhésion déclarée par ${nom} à ce jour.`}
-                </p>
-                <p className="rfn-mention" style={{ marginTop: 12 }}>
-                  Tout professionnel est tenu de proposer un dispositif de médiation. Demandez-lui par
-                  écrit de quel médiateur il relève.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Informations légales et financières ────────────────────────── */}
-        <section id="informations" className="rfn-section">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Informations légales et financières</h2>
-            <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "60ch" }}>
-              Données issues du répertoire Sirene (Insee), du registre national des entreprises
-              (INPI) et du BODACC.
+            {/* Aucun délai universel : il dépend du contrat, du produit et du
+                médiateur compétent, et « quatorze jours » lu hors contexte
+                fait renoncer un consommateur qui n'est pas hors délai. */}
+            <p className="rfe-aide" style={{ marginTop: 16, maxWidth: "80ch" }}>
+              {typo(
+                "Les délais applicables dépendent de votre contrat, du produit et du médiateur compétent. Ils sont précisés une fois votre situation connue. Ces informations générales ne constituent pas un conseil juridique personnalisé.",
+              )}
             </p>
 
-            <div className="rfn-defs" style={{ marginTop: 20 }}>
-              {lignesLegales.map((l) => (
-                <div key={l.k} className="rfn-def">
-                  <span className="rfn-def__k">{l.k}</span>
-                  <span className="rfn-def__v">{l.v}</span>
-                </div>
+            <p className="rfe-second" style={{ marginTop: 14 }}>
+              Guides détaillés :{" "}
+              {GUIDES.slice(0, 5).map((g, i) => (
+                <span key={g.href}>
+                  {i > 0 ? " · " : ""}
+                  <Link href={g.href}>{g.libelle}</Link>
+                </span>
               ))}
-            </div>
-
-            {finances.length > 0 ? (
-              <details className="rfn-accordeon" style={{ marginTop: 20 }}>
-                <summary className="rfn-accordeon__bouton">
-                  <span className="rfn-accordeon__titre">
-                    Informations financières ({finances.length} exercice{finances.length > 1 ? "s" : ""})
-                  </span>
-                  <span className="rfn-accordeon__marque">
-                    <Chevron taille={16} className="rfn-accordeon__chevron" />
-                  </span>
-                </summary>
-                <div className="rfn-accordeon__panneau">
-                  {finances.map((f) => (
-                    <div key={f.k} className="rfn-def">
-                      <span className="rfn-def__k">{f.k}</span>
-                      <span className="rfn-def__v">{f.v}</span>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-
-            {evenements.length > 0 ? (
-              <details className="rfn-accordeon" style={{ marginTop: 12 }}>
-                <summary className="rfn-accordeon__bouton">
-                  <span className="rfn-accordeon__titre">Événements récents et sources</span>
-                  <span className="rfn-accordeon__marque">
-                    <Chevron taille={16} className="rfn-accordeon__chevron" />
-                  </span>
-                </summary>
-                <div className="rfn-accordeon__panneau">
-                  {evenements.slice(0, 8).map((e) => (
-                    <div key={e.id} className="rfn-def">
-                      <span className="rfn-def__k">{formatDateLongue(e.date)}</span>
-                      <span className="rfn-def__v">{e.titre}</span>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
+            </p>
           </div>
         </section>
 
-        {/* ── Vous représentez cette entreprise ? ────────────────────────── */}
-        <section id="entreprise" className="rfn-section rfn-section--gris" style={{ paddingBlock: 30 }}>
-          <div className="rfn-conteneur">
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 16,
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div className="rfn-h3">Vous représentez {nom} ?</div>
-                <p className="rfn-second" style={{ marginTop: 6 }}>
-                  Contestez une déclaration vous concernant ou prenez la main sur cette fiche.
-                </p>
+        {/* ── 10. Coordonnées et informations légales ───────────────── */}
+        <section id="coordonnees" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Coordonnées et informations légales de ${nom}`)}</h2>
+
+            <div className="rfe-cols" style={{ marginTop: 20 }}>
+              <div className="rfe-carte">
+                <div className="rfe-titre-carte" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Epingle taille={18} style={{ color: "var(--p-bleu)" }} />
+                  {typo("Siège social")}
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <div className="rfe-ligne">
+                    <span className="rfe-ligne__k">Adresse</span>
+                    <span className="rfe-ligne__v">{adresse || "Non renseignée"}</span>
+                    {adresse ? <BoutonCopier valeur={adresse} libelle="l’adresse" /> : null}
+                  </div>
+                  {commune ? (
+                    <div className="rfe-ligne">
+                      <span className="rfe-ligne__k">Commune</span>
+                      <span className="rfe-ligne__v">{communeEnTitre(commune)}</span>
+                    </div>
+                  ) : null}
+                  {boutique ? (
+                    <div className="rfe-ligne">
+                      <span className="rfe-ligne__k">Site marchand</span>
+                      <span className="rfe-ligne__v">
+                        <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>
+                      </span>
+                    </div>
+                  ) : null}
+                  {mediateurDeclare ? (
+                    <div className="rfe-ligne">
+                      <span className="rfe-ligne__k">{typo("Médiateur déclaré")}</span>
+                      <span className="rfe-ligne__v">{mediateurDeclare.nom}</span>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-              <div className="rfn-btns">
-                <Link href={`/entreprises/${slug}/contester`} className="rfn-btn rfn-btn--2">
-                  Contester une déclaration
-                </Link>
-                <Link href={`/entreprises/${slug}/revendiquer`} className="rfn-btn rfn-btn--2">
-                  Revendiquer cette fiche
-                </Link>
+
+              <div className="rfe-carte">
+                <div className="rfe-titre-carte" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Immeuble taille={18} style={{ color: "var(--p-bleu)" }} />
+                  {typo("Informations du registre")}
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  {lignesLegales.map((l) => (
+                    <div key={l.k} className="rfe-ligne">
+                      <span className="rfe-ligne__k">{typo(l.k)}</span>
+                      <span className="rfe-ligne__v">{l.v}</span>
+                      <BoutonCopier valeur={l.v} libelle={l.k.toLowerCase()} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
+            <p className="rfe-aide" style={{ marginTop: 16 }}>
+              {typo(
+                "Données issues du répertoire Sirene (Insee), du Registre national des entreprises (INPI) et du BODACC (DILA), réutilisées telles que publiées.",
+              )}{" "}
+              <Link href={`/entreprises/${base.slug}/signaler-une-erreur`}>{typo("Signaler une erreur")}</Link>
+            </p>
+
+            {/* Le maillage de l'annuaire : secteur, département, commune. */}
+            <p className="rfe-second" style={{ marginTop: 14 }}>
+              {typo("Voir aussi :")}{" "}
+              <Link href={cheminSecteur(secteur)}>{libelleSecteur(secteur)}</Link>
+              {lienDepartement ? (
+                <>
+                  {" · "}
+                  <Link href={lienDepartement}>{nomDepartement(entreprise.departement!)}</Link>
+                </>
+              ) : null}
+              {lienCommune ? (
+                <>
+                  {" · "}
+                  <Link href={lienCommune}>{commune ? communeEnTitre(commune) : entreprise.communeSlug}</Link>
+                </>
+              ) : null}
+            </p>
           </div>
         </section>
 
-        {/* ── Entreprises comparables : le maillage interne ──────────────── */}
+        {/* ── 11. Entreprises comparables ───────────────────────────── */}
         {comparables.length > 0 ? (
-          <section id="comparables" className="rfn-section">
-            <div className="rfn-conteneur">
-              <h2 className="rfn-h2">Entreprises comparables</h2>
-              <p className="rfn-texte" style={{ marginTop: 10, maxWidth: "62ch" }}>
-                Même activité, même territoire. Ce rapprochement ne constitue ni un classement, ni
-                une comparaison de qualité.
+          <section className="rfe-section rfe-section--alt">
+            <div className="rfe-conteneur">
+              <h2 className="rfe-h2">{typo("Entreprises du même secteur")}</h2>
+              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
+                {typo(
+                  "Rapprochement par activité et par département, à partir des registres publics. Ce n’est ni un classement, ni une comparaison de qualité, ni une recommandation.",
+                )}
               </p>
-              <div className="rfn-comparables">
-                {comparables.map((v) => (
-                  <Link key={v.slug} href={`/entreprises/${v.slug}`} className="rfn-comparable">
-                    <span className="rfn-comparable__nom">{v.denomination}</span>
-                    <span className="rfn-comparable__lieu">
-                      {v.signalements > 0
-                        ? `${formatNombre(v.signalements)} signalement${v.signalements > 1 ? "s" : ""}`
-                        : (v.commune ?? "")}
+              <div className="rfe-comparables" style={{ marginTop: 18 }}>
+                {comparables.map((c) => (
+                  <Link key={c.slug} href={`/entreprises/${c.slug}`} className="rfe-comparable">
+                    <span className="rfe-comparable__n">{c.denomination}</span>
+                    <span className="rfe-comparable__d">
+                      {[c.commune ? communeEnTitre(c.commune) : null, `${formatNombre(c.signalements)} signalement${c.signalements > 1 ? "s" : ""}`]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </Link>
                 ))}
               </div>
-              {boutique ? (
-                <p className="rfn-mention" style={{ marginTop: 16 }}>
-                  Cette société exploite la boutique{" "}
-                  <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>.
-                </p>
-              ) : null}
             </div>
           </section>
         ) : null}
 
-        {/* ── Méthodologie, indépendance et FAQ ──────────────────────────── */}
-        <section id="faq" className="rfn-section">
-          <div className="rfn-conteneur">
-            <h2 className="rfn-h2">Méthodologie, indépendance et questions fréquentes</h2>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "clamp(20px, 3cqw, 40px)",
-                marginTop: 20,
-                alignItems: "flex-start",
-              }}
-            >
-              <div style={{ flex: "1 1 440px", minWidth: 0, display: "grid", gap: 10 }}>
-                {questions.map((q) => (
-                  <details key={q.cle} className="rfn-accordeon">
-                    <summary className="rfn-accordeon__bouton">
-                      <span className="rfn-accordeon__titre">{q.q}</span>
-                      <span className="rfn-accordeon__marque">
-                        <Chevron taille={16} className="rfn-accordeon__chevron" />
-                      </span>
-                    </summary>
-                    <div className="rfn-accordeon__panneau">
-                      {q.r.map((t) => (
-                        <p key={t} className="rfn-second">
-                          {t}
-                        </p>
-                      ))}
-                    </div>
-                  </details>
-                ))}
-              </div>
-
-              <aside style={{ flex: "1 1 280px", minWidth: 0 }}>
-                <div className="rfn-beige" style={{ display: "block" }}>
-                  <div className="rfn-h3" style={{ color: "var(--rf-beige-texte)" }}>
-                    Recours France est une plateforme indépendante
-                  </div>
-                  <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5 }}>
-                    Recours France n’est ni un service de l’État, ni un tribunal, ni un cabinet
-                    d’avocats, ni un médiateur de la consommation.
-                  </p>
-                  <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5 }}>
-                    La plateforme ne transmet pas les réclamations aux professionnels et n’intervient
-                    pas dans le règlement des litiges. Un signalement représente la déclaration de son
-                    auteur : il ne signifie pas qu’un manquement a été juridiquement établi.
-                  </p>
-                    {/* Les guides de démarche : c'est ici que le maillage sert
-                      vraiment, une fiche renvoyant vers des pages qui, elles,
-                      peuvent se référencer sur des requêtes de démarche. */}
-                  <div
-                    style={{
-                      marginTop: 14,
-                      paddingTop: 14,
-                      borderTop: "1px solid var(--rf-beige-bordure)",
-                      display: "grid",
-                      gap: 8,
-                      fontSize: 14,
-                    }}
+        {/* ── FAQ — l'onglet du handoff n'avait pas de section ───────── */}
+        <section id="faq" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Questions fréquentes sur ${nom} et sur Recours France`)}</h2>
+            <div style={{ display: "grid", gap: 12, marginTop: 20, maxWidth: "82ch" }}>
+              {questions.map((q) => (
+                <details key={q.cle} className="rfe-carte">
+                  <summary
+                    className="rfe-titre-carte"
+                    style={{ cursor: "pointer", listStyle: "none", minHeight: 28, display: "flex", alignItems: "center", gap: 10 }}
                   >
-                    {GUIDES.slice(0, 4).map((g) => (
-                      <Link key={g.href} href={g.href}>
-                        {g.libelle}
-                      </Link>
+                    <Chevron taille={18} style={{ flex: "none", color: "var(--p-bleu)" }} />
+                    {typo(q.q)}
+                  </summary>
+                  <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                    {q.r.map((p, i) => (
+                      <p key={i} className="rfe-texte">
+                        {typo(p)}
+                      </p>
                     ))}
                   </div>
-                  <div
-                    style={{
-                      marginTop: 14,
-                      paddingTop: 14,
-                      borderTop: "1px solid var(--rf-beige-bordure)",
-                      display: "grid",
-                      gap: 8,
-                      fontSize: 14,
-                    }}
-                  >
-                    <Link href="/methodologie">Notre méthodologie →</Link>
-                    <Link href="/charte-de-moderation">Charte de modération →</Link>
-                    <Link href="/methodologie#sources">Origine des données →</Link>
-                  </div>
-                </div>
-              </aside>
+                </details>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ── Bandeau final, écrans larges ───────────────────────────────── */}
-        <section className="rfn-final">
-          <div className="rfn-conteneur rfn-final__grille">
-            <div style={{ minWidth: 0 }}>
-              <h2>Rendez votre litige visible et lancez vos démarches</h2>
-              <p>Gratuit · vous relisez tout avant publication · justificatifs facultatifs</p>
-            </div>
-            <Link href={tunnel} className="rfn-btn">
-              Rendre mon litige visible
-              <Fleche taille={18} />
+        {/* ── 12. CTA final ─────────────────────────────────────────── */}
+        <div className="rfe-conteneur" style={{ paddingBottom: "clamp(30px, 3.2cqw, 50px)" }}>
+          <div className="rfe-final">
+            <h2 className="rfe-h2">{typo(`Un problème avec ${nom} ?`)}</h2>
+            <p className="rfe-second" style={{ marginTop: 10 }}>
+              {typo("Publication gratuite · 3 minutes · vous gardez le contrôle")}
+            </p>
+            <Link href={tunnel} className="rfe-btn" style={{ marginTop: 18 }}>
+              {typo("Rendre mon litige visible")}
             </Link>
           </div>
-        </section>
-
-        {/* ── Barre d'action, écrans étroits ─────────────────────────────── */}
-        <div className="rfn-barre">
-          <Link href={tunnel} className="rfn-btn">
-            Rendre mon litige visible
-          </Link>
         </div>
+      </main>
+
+      {/* ── 13. Pied de page ────────────────────────────────────────── */}
+      <footer className="rfe-pied">
+        <div className="rfe-conteneur">
+          <div className="rfe-pied__cols">
+            <div className="rfe-pied__marque">
+              <span className="rfe-logo">
+                <span className="rfe-logo__med">
+                  <Presse taille={22} />
+                </span>
+                <span className="rfe-logo__filet" aria-hidden="true" />
+                <span>
+                  <span className="rfe-logo__nom" style={{ display: "block" }}>
+                    Recours France
+                  </span>
+                  <span className="rfe-logo__base">Observatoire des problèmes consommateurs</span>
+                </span>
+              </span>
+              {/* Le handoff l'impose : distinguer l'éditeur de la plateforme de
+                  l'entreprise faisant l'objet de la fiche. Sur treize millions
+                  de fiches, la confusion se produira tôt ou tard. */}
+              <p className="rfe-distinguo">
+                {typo(
+                  `Cette fiche porte sur ${nom}, société tierce sans lien avec l’éditeur de la plateforme.`,
+                )}
+                <br />
+                {typo(
+                  `Recours France est édité par ${EDITEUR.raisonSociale}${EDITEUR.siren ? `, SIREN ${EDITEUR.siren}` : ""}${siegeSocial() ? ` — ${siegeSocial()}` : ""}.`,
+                )}
+              </p>
+            </div>
+
+            <div>
+              <div className="rfe-pied__t">Plateforme</div>
+              <div className="rfe-pied__liens">
+                <Link href="/methodologie">{typo("Comment ça marche")}</Link>
+                <Link href="/annuaire">Annuaire des entreprises</Link>
+                <Link href="/boutiques">Boutiques en ligne</Link>
+                <Link href="/a-propos">{typo("À propos et indépendance")}</Link>
+              </div>
+            </div>
+
+            <div>
+              <div className="rfe-pied__t">Ressources</div>
+              <div className="rfe-pied__liens">
+                <Link href="/aide">Guides et démarches</Link>
+                <Link href="/charte-de-moderation">{typo("Règles de publication")}</Link>
+                <Link href="/mon-espace">Retrouver mon signalement</Link>
+                <Link href="/demarches-officielles">{typo("Démarches officielles")}</Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="rfe-pied__barre">
+            <span>{typo("© 2026 Recours France · Plateforme privée et indépendante")}</span>
+            <nav>
+              <Link href="/mentions-legales">{typo("Mentions légales")}</Link>
+              <Link href="/donnees-personnelles">{typo("Confidentialité")}</Link>
+              <Link href="/contact">Contact</Link>
+            </nav>
+          </div>
+        </div>
+      </footer>
+
+      {/* Barre d'action, écrans étroits */}
+      <div className="rfe-barre">
+        <Link href={tunnel} className="rfe-btn">
+          {typo("Rendre mon litige visible")}
+        </Link>
       </div>
-    </Page>
+    </div>
   );
 }

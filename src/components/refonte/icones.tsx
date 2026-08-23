@@ -292,3 +292,72 @@ export const Rafraichir = (p: Props) => (
     <path d="M20.6 4.8V11h-6.2" />
   </Trait>
 );
+
+export const Copier = (p: Props) => (
+  <Trait {...p}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" />
+  </Trait>
+);
+
+export const Immeuble = (p: Props) => (
+  <Trait {...p}>
+    <path d="M4 20V6.2a1.6 1.6 0 0 1 1.6-1.6h7.8a1.6 1.6 0 0 1 1.6 1.6V20" />
+    <path d="M15 11h3.4A1.6 1.6 0 0 1 20 12.6V20M2.6 20h18.8" />
+    <path d="M7.4 8.4h1.4M7.4 12h1.4M7.4 15.6h1.4M11.4 8.4h1.4M11.4 12h1.4M11.4 15.6h1.4" />
+  </Trait>
+);
+
+export const Epingle = (p: Props) => (
+  <Trait {...p}>
+    <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z" />
+    <circle cx="12" cy="10" r="2.6" />
+  </Trait>
+);
+
+export const Groupe = (p: Props) => (
+  <Trait {...p}>
+    <circle cx="9" cy="8.4" r="3.2" />
+    <path d="M3 19.4c0-3.1 2.7-5 6-5s6 1.9 6 5" />
+    <path d="M16.4 5.6a3.2 3.2 0 0 1 0 5.6M17.6 14.8c2 .6 3.4 2.1 3.4 4.6" />
+  </Trait>
+);
+
+export const Graphique = (p: Props) => (
+  <Trait {...p}>
+    <path d="M4 20V4M4 20h16" />
+    <path d="M8 16.5v-4M12.4 16.5v-8M16.8 16.5v-5.5" />
+  </Trait>
+);
+
+export const Camembert = (p: Props) => (
+  <Trait {...p}>
+    <path d="M12 3.2a8.8 8.8 0 1 0 8.8 8.8H12z" />
+    <path d="M14.6 2.6A8.8 8.8 0 0 1 21.4 9.4h-6.8z" />
+  </Trait>
+);
+
+export const Liste = (p: Props) => (
+  <Trait {...p}>
+    <path d="M8.6 6.4h11.8M8.6 12h11.8M8.6 17.6h11.8" />
+    <circle cx="4.4" cy="6.4" r="1.1" />
+    <circle cx="4.4" cy="12" r="1.1" />
+    <circle cx="4.4" cy="17.6" r="1.1" />
+  </Trait>
+);
+
+export const Branchement = (p: Props) => (
+  <Trait {...p}>
+    <path d="M4 5.5h5.4L14 12l4.6 6.5H20" />
+    <path d="M4 18.5h5.4L14 12" />
+    <path d="M17.4 15.8 20.6 18.5l-3.2 2.7M17.4 3.5 20.6 6.2l-3.2 2.7" />
+  </Trait>
+);
+
+export const Presse = (p: Props) => (
+  <Trait {...p}>
+    <path d="M9 4.4H7.2A1.6 1.6 0 0 0 5.6 6v13.4a1.6 1.6 0 0 0 1.6 1.6h9.6a1.6 1.6 0 0 0 1.6-1.6V6a1.6 1.6 0 0 0-1.6-1.6H15" />
+    <rect x="9" y="2.6" width="6" height="3.6" rx="1.2" />
+    <path d="M12 11.4l3-1.3v2.6c0 1.8-1.2 3.2-3 3.8-1.8-.6-3-2-3-3.8v-2.6z" />
+  </Trait>
+);

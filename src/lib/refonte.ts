@@ -239,3 +239,76 @@ export function faqRefonte(nom: string) {
     },
   ];
 }
+
+/* ── Les six portes d'entrée de la fiche entreprise ───────────────────────────
+   Le handoff DISTRIMOTOR laisse ce point ouvert : « ces catégories sont propres
+   au secteur automobile : le gabarit doit les dériver du code NAF ». Servir
+   « pièce défectueuse » à un cabinet comptable ou à un plombier ferait fuir la
+   seule personne qu'on voulait aider — et l'annuaire couvre treize millions
+   d'établissements, dont la plupart ne vendent aucun produit. */
+
+export type ProblemeFiche = {
+  cle: string;
+  motif: "REMBOURSEMENT" | "LIVRAISON" | "GARANTIE" | "SAV" | "RESILIATION" | "AUTRE";
+  libelle: string;
+  exemple: string;
+  icone: "alerte" | "colis" | "remboursement" | "bouclier" | "document" | "question" | "carte" | "bulle";
+};
+
+/** Le jeu du prototype, mot pour mot : commerce de produits. */
+const PRODUITS: ProblemeFiche[] = [
+  { cle: "defectueux", motif: "GARANTIE", libelle: "Produit défectueux", exemple: "Ex. pièce défectueuse, non conforme ou HS.", icone: "alerte" },
+  { cle: "livraison", motif: "LIVRAISON", libelle: "Commande non reçue", exemple: "Ex. colis jamais livré, livraison annoncée mais absente.", icone: "colis" },
+  { cle: "remboursement", motif: "REMBOURSEMENT", libelle: "Remboursement refusé", exemple: "Ex. remboursement promis mais refusé ou partiel.", icone: "remboursement" },
+  { cle: "garantie", motif: "GARANTIE", libelle: "Garantie non respectée", exemple: "Ex. garantie constructeur ou commerciale non honorée.", icone: "bouclier" },
+  { cle: "facturation", motif: "REMBOURSEMENT", libelle: "Facturation contestée", exemple: "Ex. frais injustifiés, montant incorrect ou doublon.", icone: "document" },
+  { cle: "autre", motif: "AUTRE", libelle: "Autre litige", exemple: "Ex. autre problème lié à une commande ou un service.", icone: "question" },
+];
+
+/** Prestation : garage, artisan, chantier. Le litige porte sur un travail. */
+const PRESTATION: ProblemeFiche[] = [
+  { cle: "malfacon", motif: "SAV", libelle: "Travaux mal réalisés", exemple: "Ex. malfaçon, panne persistante après intervention.", icone: "alerte" },
+  { cle: "abandon", motif: "SAV", libelle: "Chantier abandonné", exemple: "Ex. intervention commencée puis interrompue sans suite.", icone: "bulle" },
+  { cle: "retard", motif: "SAV", libelle: "Retard ou rendez-vous non tenu", exemple: "Ex. délai dépassé, intervention jamais effectuée.", icone: "colis" },
+  { cle: "facturation", motif: "REMBOURSEMENT", libelle: "Facture contestée", exemple: "Ex. supplément non annoncé, devis dépassé.", icone: "document" },
+  { cle: "garantie", motif: "GARANTIE", libelle: "Refus de reprendre le travail", exemple: "Ex. garantie ou reprise refusée après réclamation.", icone: "bouclier" },
+  { cle: "autre", motif: "AUTRE", libelle: "Autre litige", exemple: "Ex. autre problème lié à une prestation ou un service.", icone: "question" },
+];
+
+/** Contrat : télécoms, énergie, banque, abonnements. */
+const CONTRAT: ProblemeFiche[] = [
+  { cle: "resiliation", motif: "RESILIATION", libelle: "Résiliation non prise en compte", exemple: "Ex. demande envoyée, contrat toujours actif.", icone: "carte" },
+  { cle: "prelevement", motif: "RESILIATION", libelle: "Prélèvement contesté", exemple: "Ex. montant prélevé après résiliation ou sans accord.", icone: "remboursement" },
+  { cle: "facturation", motif: "REMBOURSEMENT", libelle: "Facturation contestée", exemple: "Ex. frais injustifiés, montant incorrect ou doublon.", icone: "document" },
+  { cle: "service", motif: "SAV", libelle: "Service non fourni", exemple: "Ex. prestation interrompue ou jamais activée.", icone: "alerte" },
+  { cle: "engagement", motif: "AUTRE", libelle: "Engagement non annoncé", exemple: "Ex. durée, reconduction ou condition découverte après coup.", icone: "bouclier" },
+  { cle: "autre", motif: "AUTRE", libelle: "Autre litige", exemple: "Ex. autre problème lié à un contrat ou un abonnement.", icone: "question" },
+];
+
+const PAR_SECTEUR_FICHE: Record<string, ProblemeFiche[]> = {
+  automobile: PRODUITS,
+  "commerce-detail": PRODUITS,
+  "vente-distance": PRODUITS,
+  reparation: PRESTATION,
+  travaux: PRESTATION,
+  "sante-bienetre": PRESTATION,
+  restauration: PRESTATION,
+  formation: PRESTATION,
+  telecom: CONTRAT,
+  energie: CONTRAT,
+  "banque-assurance": CONTRAT,
+  numerique: CONTRAT,
+  immobilier: CONTRAT,
+};
+
+/**
+ * Le NAF prime sur le secteur : il est plus fin, et c'est lui que le handoff
+ * désigne. Le secteur ne sert que lorsqu'il manque.
+ */
+export function problemesFiche(naf: string | null, secteur: string | null): ProblemeFiche[] {
+  const code = (naf ?? "").replace(/\./g, "").toUpperCase();
+  if (/^(45[23]|43|41|33|95|96|56|86|88|85)/.test(code)) return PRESTATION;
+  if (/^(61|64|65|66|35|36|62|63|68)/.test(code)) return CONTRAT;
+  if (/^(47|46|45[1]|10|29)/.test(code)) return PRODUITS;
+  return PAR_SECTEUR_FICHE[secteur ?? ""] ?? PRODUITS;
+}
