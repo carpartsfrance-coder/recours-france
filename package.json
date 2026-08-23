@@ -34,7 +34,8 @@
     "import:domaines": "tsx scripts/import-domaines.ts",
     "essai:judilibre": "tsx scripts/essai-judilibre.ts",
     "cle:judilibre": "bash scripts/cle-judilibre.sh",
-    "collecter:decisions": "tsx scripts/collecter-decisions.ts"
+    "collecter:decisions": "tsx scripts/collecter-decisions.ts",
+    "synchro:prod": "bash scripts/synchro-prod.sh"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
