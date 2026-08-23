@@ -33,7 +33,8 @@
     "essai:courriel": "tsx scripts/essai-courriel.ts",
     "import:domaines": "tsx scripts/import-domaines.ts",
     "essai:judilibre": "tsx scripts/essai-judilibre.ts",
-    "cle:judilibre": "bash scripts/cle-judilibre.sh"
+    "cle:judilibre": "bash scripts/cle-judilibre.sh",
+    "collecter:decisions": "tsx scripts/collecter-decisions.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

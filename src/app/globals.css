@@ -5493,3 +5493,42 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-pub__lien:hover { text-decoration: underline; }
 .rfe-pub__l--collective { background: var(--p-rouge-fond); }
 .rfe-pub__plus { padding: 13px 20px; border-top: 1px solid var(--p-filet); font-size: 14px; color: var(--p-tertiaire); }
+
+/* ── Décisions de justice ───────────────────────────────────────────────── */
+.rfe-decisions { display: grid; gap: 10px; }
+.rfe-decision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 15px 20px;
+  background: #fff;
+  border: 1px solid var(--p-bord);
+  border-radius: 10px;
+  font-size: 15px;
+}
+.rfe-decision__jur { font-weight: 700; color: var(--p-navy); }
+.rfe-decision__date { color: var(--p-second); font-size: 14px; }
+.rfe-decision__num { color: var(--p-tertiaire); font-size: 14px; }
+.rfe-decision__role {
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--p-medaillon);
+  color: var(--p-second);
+}
+.rfe-decision__sol { flex-basis: 100%; color: var(--p-texte); font-size: 14.5px; }
+.rfe-decision__lien {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--p-bleu);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rfe-decision__lien:hover { text-decoration: underline; }

@@ -59,7 +59,7 @@ export async function chargerEntreprise(slug: string) {
 }
 
 export async function detailEntreprise(entrepriseId: string) {
-  const [entreprise, etablissements, evenements, comptes, donnees] = await Promise.all([
+  const [entreprise, etablissements, evenements, comptes, donnees, decisions] = await Promise.all([
     prisma.entreprise.findUnique({ where: { id: entrepriseId }, include: { mediateur: true } }),
     prisma.etablissement.findMany({
       where: { entrepriseId },
@@ -68,8 +68,9 @@ export async function detailEntreprise(entrepriseId: string) {
     prisma.evenement.findMany({ where: { entrepriseId }, orderBy: { date: "desc" }, take: 40 }),
     prisma.compteAnnuel.findMany({ where: { entrepriseId }, orderBy: { exercice: "desc" } }),
     prisma.donneeSource.findMany({ where: { entrepriseId } }),
+    prisma.decisionJustice.findMany({ where: { entrepriseId }, orderBy: { date: "desc" }, take: 25 }),
   ]);
 
   const sources = new Map(donnees.map((d) => [d.champ, d]));
-  return { entreprise, etablissements, evenements, comptes, sources };
+  return { entreprise, etablissements, evenements, comptes, sources, decisions };
 }

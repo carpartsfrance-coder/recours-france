@@ -108,7 +108,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   if (!base) notFound();
   if (base.slug !== slug) redirect(`/entreprises/${base.slug}`);
 
-  const { entreprise, comptes, evenements } = await detailEntreprise(base.id);
+  const { entreprise, comptes, evenements, decisions } = await detailEntreprise(base.id);
   if (!entreprise) notFound();
 
   const nom = entreprise.denomination;
@@ -232,6 +232,9 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     { href: "#finances", libelle: "Finances", icone: "graphique" as const },
     ...(totalPublications > 0
       ? [{ href: "#documents", libelle: "Documents officiels", icone: "document" as const }]
+      : []),
+    ...(decisions.length > 0
+      ? [{ href: "#justice", libelle: "Décisions de justice", icone: "balance" as const }]
       : []),
     { href: "#plan", libelle: "Plan d’action", icone: "coche" as const },
     { href: "#coordonnees", libelle: "Coordonnées", icone: "epingle" as const },
@@ -705,6 +708,62 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                 <span>
                   {typo(
                     "Les pièces elles-mêmes — comptes annuels, statuts, procès-verbaux — sont conservées au Registre national des entreprises (INPI). Une société peut demander que ses comptes restent confidentiels : ils sont alors déposés sans être communicables, et l’annonce du dépôt subsiste seule.",
+                  )}
+                </span>
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── Décisions de justice ───────────────────────────────────────
+            Le titre dit « citant », jamais « condamnée ». Une décision peut
+            ordonner une expertise, statuer sur un incident, débouter le
+            demandeur : la solution est reprise telle que le juge l'a rendue,
+            et le texte n'est pas recopié — il est lié à sa source, qui fait
+            foi. */}
+        {decisions.length > 0 ? (
+          <section id="justice" className="rfe-section">
+            <div className="rfe-conteneur">
+              <h2 className="rfe-h2">{typo(`Décisions de justice citant ${nom}`)}</h2>
+              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "72ch" }}>
+                {typo(
+                  `${formatNombre(decisions.length)} décision${decisions.length > 1 ? "s" : ""} publiée${decisions.length > 1 ? "s" : ""} en données ouvertes par la Cour de cassation, où cette société figure parmi les parties. Le rapprochement se fait sur la dénomination et la forme juridique : en cas de doute, la décision n’est pas rattachée.`,
+                )}
+              </p>
+
+              <div className="rfe-decisions" style={{ marginTop: 20 }}>
+                {decisions.map((d) => (
+                  <article key={d.id} className="rfe-decision">
+                    <span className="rfe-decision__jur">{typo(d.juridiction)}</span>
+                    <span className="rfe-decision__date">{formatDateLongue(d.date)}</span>
+                    {d.numero ? <span className="rfe-decision__num">{typo(`n° ${d.numero}`)}</span> : null}
+                    <span className="rfe-decision__role">
+                      {d.role === "demandeur" ? "Partie demanderesse" : "Partie défenderesse"}
+                    </span>
+                    <a
+                      href={`https://www.courdecassation.fr/decision/${d.judilibreId}`}
+                      className="rfe-decision__lien"
+                      target="_blank"
+                      rel="noopener nofollow"
+                    >
+                      {typo("Lire la décision")}
+                      <Fleche taille={15} />
+                    </a>
+                    {d.solution ? (
+                      <span className="rfe-decision__sol">
+                        <strong style={{ color: "var(--p-navy)", fontWeight: 600 }}>{typo("Dispositif :")}</strong>{" "}
+                        {typo(d.solution)}
+                      </span>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+
+              <p className="rfe-aide" style={{ marginTop: 16, maxWidth: "86ch", display: "flex", gap: 9, alignItems: "flex-start" }}>
+                <Info taille={16} style={{ flex: "none", color: "var(--p-desactive)", marginTop: 1 }} />
+                <span>
+                  {typo(
+                    "Figurer comme partie à une instance ne signifie ni avoir tort, ni avoir été condamné : une décision peut ordonner une expertise, trancher un incident de procédure ou débouter celui qui l’a engagée. Le dispositif est repris tel que le juge l’a rendu. Une décision peut par ailleurs être frappée d’appel ou cassée depuis sa publication.",
                   )}
                 </span>
               </p>

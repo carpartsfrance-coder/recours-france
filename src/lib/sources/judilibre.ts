@@ -75,7 +75,7 @@ type ReponseDecision = {
 
 export async function chercher(
   requete: string,
-  options: { taille?: number; page?: number } = {},
+  options: { taille?: number; page?: number; juridictions?: string[]; depuis?: string } = {},
 ): Promise<{ id: string; date: string | null; juridiction: string | null }[]> {
   if (!judilibreConfigure()) return [];
   const url = new URL(`${BASE}/search`);
@@ -86,6 +86,12 @@ export async function chercher(
   url.searchParams.set("operator", "exact");
   url.searchParams.set("page_size", String(options.taille ?? 20));
   url.searchParams.set("page", String(options.page ?? 0));
+  // Les décisions de la Cour de cassation ne portent pas de zone `introduction`
+  // et ne nomment pas leurs parties dans un en-tête : elles sont rédigées « sur
+  // le pourvoi formé par… ». L'extraction ne vaut que pour les juridictions du
+  // fond, dont l'en-tête est structuré.
+  for (const j of options.juridictions ?? ["tj", "tcom", "ca"]) url.searchParams.append("jurisdiction", j);
+  if (options.depuis) url.searchParams.set("date_start", options.depuis);
 
   const data = await appelJson<{ results?: { id?: string; decision_date?: string; jurisdiction?: string }[] }>(
     url.toString(),
@@ -178,10 +184,40 @@ export function normaliserDenomination(brut: string): string {
   );
 }
 
+/**
+ * Les intitulés qui ouvrent un bloc de parties.
+ *
+ * Ils varient d'une juridiction à l'autre, et c'est ce qui rend l'extraction
+ * fragile : « DEMANDEUR » au tribunal judiciaire, « APPELANTES » en cour
+ * d'appel, « PARTIE(S) EN DEMANDE » au tribunal de commerce. En manquer un ne
+ * produit pas d'erreur visible — juste une décision qui n'est rattachée à
+ * personne, ce qui se remarque beaucoup moins qu'un faux rattachement.
+ */
 const ROLES: { motif: RegExp; role: Role }[] = [
-  { motif: /^\s*(DEMANDEUR|DEMANDERESSE|DEMANDEURS|DEMANDERESSES|REQUERANT|REQUERANTE|REQUERANTS)\b/i, role: "demandeur" },
-  { motif: /^\s*(DEFENDEUR|DEFENDERESSE|DEFENDEURS|DEFENDERESSES|INTIME|INTIMEE|INTIMES|INTIMEES)\b/i, role: "defendeur" },
+  {
+    motif: /^\s*(DEMANDEUR|DEMANDERESSE|REQUERANT|REQUERANTE|APPELANT|APPELANTE|PARTIES? +EN +DEMANDE)S?\b/i,
+    role: "demandeur",
+  },
+  {
+    motif: /^\s*(DEFENDEUR|DEFENDERESSE|INTIME|INTIMEE|PARTIES? +EN +DEFENSE)S?\b/i,
+    role: "defendeur",
+  },
 ];
+
+/**
+ * Les lignes qui désignent un représentant, jamais une partie.
+ *
+ * « représentée et assistée par Me Nathalie TIMOTEI de la SELARL TIMOTEI ET
+ * ASSOCIES, avocat au barreau de ROUEN » — sans ce filtre, le cabinet d'avocats
+ * était rattaché comme défendeur. Sur données réelles, c'est l'erreur la plus
+ * fréquente et la plus grave : elle accuse d'un litige celui qui plaidait.
+ *
+ * Le filtre porte sur la ligne, pas sur la forme juridique : une SELARL peut
+ * parfaitement être partie à une instance, c'est sa position dans la phrase qui
+ * en décide.
+ */
+const REPRESENTATION =
+  /repr[eé]sent[ée]|assist[ée]|substitu[ée]|plaidant|comparant par|\bavocat|\bbarreau\b|\bMe\s|conseil de/i;
 
 /**
  * Les personnes morales désignées comme parties, avec leur rôle.
@@ -214,6 +250,7 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
       if (r.motif.test(ligne)) role = r.role;
     }
     if (!role) continue;
+    if (REPRESENTATION.test(ligne)) continue;
 
     for (const m of ligne.matchAll(motif)) {
       const forme = normaliserForme(m[1]);
