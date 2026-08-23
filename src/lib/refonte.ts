@@ -191,6 +191,18 @@ export const SITUATIONS_PLAN = [
 export function faqRefonte(nom: string) {
   return [
     {
+      // La première question est celle que le chercheur a tapée — « avis X »
+      // est la requête d'entrée de ces fiches. La réponse ne prétend jamais
+      // que des avis notés existent : elle dit ce que la fiche porte vraiment,
+      // et en quoi c'est différent. Servir l'intention sans trahir le produit.
+      cle: "f0",
+      q: `Peut-on lire des avis sur ${nom} ?`,
+      r: [
+        `Recours France ne publie pas d’avis notés — aucune étoile, aucune note moyenne. Ce que vous lisez sur cette fiche sont des signalements : des expériences déclarées par des consommateurs, datées, avec la solution demandée et l’état du litige.`,
+        `C’est une matière plus étroite qu’un avis, mais plus vérifiable dans sa forme : chaque signalement peut être contesté par ${nom}, et son auteur peut déclarer ultérieurement le litige résolu. Rien n’est généré ni recopié d’ailleurs pour étoffer la fiche.`,
+      ],
+    },
+    {
       cle: "f1",
       q: "Combien coûte la publication d’un signalement ?",
       r: [

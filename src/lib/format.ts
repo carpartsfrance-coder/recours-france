@@ -381,3 +381,23 @@ export function masquerEmail(email: string): string {
   const visible = locale.slice(0, Math.min(2, locale.length));
   return `${visible}${"•".repeat(Math.max(2, locale.length - 2))}@${domaine}`;
 }
+
+/**
+ * Une commune en casse de titre : « FOS-SUR-MER » → « Fos-sur-Mer ».
+ *
+ * Les libellés Sirene sont intégralement en capitales. Dans un titre de page —
+ * la première chose que le chercheur lit dans les résultats — les capitales
+ * crient et font négligé. Les particules restent en minuscules, sauf en tête.
+ */
+export function communeEnTitre(commune: string): string {
+  const PARTICULES = new Set(["de", "du", "des", "la", "le", "les", "sur", "sous", "en", "et", "aux", "au", "lès", "d", "l"]);
+  return commune
+    .toLowerCase()
+    .split(/([\s'-])/)
+    .map((m, i) => {
+      if (/^[\s'-]$/.test(m) || m === "") return m;
+      if (i > 0 && PARTICULES.has(m)) return m;
+      return m.charAt(0).toUpperCase() + m.slice(1);
+    })
+    .join("");
+}

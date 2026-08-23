@@ -40,6 +40,7 @@ import {
 } from "@/lib/maillage";
 import {
   LIBELLES_DEMANDE,
+  communeEnTitre,
   LIBELLES_ETAT_PRO,
   adressePostale,
   formatDateLongue,
@@ -86,17 +87,26 @@ export async function generateMetadata({
   });
   const nom = base.denomination;
 
+  // La commune entre dans le titre, et ce n'est pas cosmétique. Sur le seul
+  // nom, 3 728 730 fiches portaient un titre strictement identique à au moins
+  // une autre — 1,3 million de SARL homonymes. « JK AUTO (Fos-sur-Mer) »
+  // distingue, et sert la requête telle qu'on la tape : « avis jk auto fos ».
+  const lieu = base.commune ? ` (${communeEnTitre(base.commune)})` : "";
+
   return {
     // Une société radiée ou une société civile n'a pas à paraître dans les
     // résultats : la page lui demande de réagir à un litige de consommation,
     // ce qui n'a pas de sens dans le premier cas et est impossible dans le
     // second. Le `follow` reste, pour que le maillage traverse la page.
     ...(ficheIndexable(base) ? {} : { robots: { index: false, follow: true } }),
-    title: `${nom} : avis, problèmes, remboursements et litiges`,
+    title: `${nom}${lieu} : avis, signalements et litiges`,
+    // La description répond à la question que le chercheur a réellement posée —
+    // « avis X » — sans prétendre que des avis notés existent : elle l'invite à
+    // consulter ce que la fiche porte vraiment, des signalements déclarés.
     description:
       total > 0
-        ? `${formatNombre(total)} signalement${total > 1 ? "s" : ""} publié${total > 1 ? "s" : ""} concernant ${nom}. Consultez les problèmes rencontrés par des consommateurs et les démarches possibles en cas de remboursement, de livraison ou de SAV.`
-        : `Problèmes rencontrés avec ${nom} : démarches de réclamation, remboursement, livraison, SAV et médiation. Signalez gratuitement votre situation.`,
+        ? `Vous cherchez des avis sur ${nom}${lieu} ? ${formatNombre(total)} signalement${total > 1 ? "s" : ""} de consommateurs publié${total > 1 ? "s" : ""} : problèmes rencontrés, solutions demandées, démarches de réclamation et médiation.`
+        : `Vous cherchez des avis sur ${nom}${lieu} ? Consultez sa fiche : signalements de consommateurs, démarches de réclamation, remboursement, SAV et médiation. Signalez gratuitement votre litige.`,
     alternates: { canonical: `/entreprises/${base.slug}` },
   };
 }
