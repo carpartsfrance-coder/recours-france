@@ -31,7 +31,8 @@
     "purger:demo": "tsx scripts/purger-demonstration.ts",
     "verifier:mise-en-ligne": "tsx scripts/verifier-mise-en-ligne.ts",
     "essai:courriel": "tsx scripts/essai-courriel.ts",
-    "import:domaines": "tsx scripts/import-domaines.ts"
+    "import:domaines": "tsx scripts/import-domaines.ts",
+    "essai:judilibre": "tsx scripts/essai-judilibre.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
