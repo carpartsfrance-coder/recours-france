@@ -107,14 +107,27 @@ async function main() {
         if (candidats.length === 0) {
           const cle = normaliserDenomination(p.denomination);
           if (cle.length < 4) continue;
-          // À défaut, la dénomination exacte normalisée. La base porte treize
-          // millions de noms : un rapprochement approximatif y trouverait
-          // toujours quelque chose, et ce quelque chose serait souvent faux.
-          candidats = await prisma.$queryRaw`
+
+          /**
+           * Le tri se fait en deux temps, et ce n'est pas un raffinement.
+           *
+           * La version précédente comparait `upper(unaccent(denomination))` à
+           * la clé. Une fonction appliquée à la colonne interdit tout index :
+           * Postgres balayait les treize millions de lignes, et la production,
+           * qui coupe à dix secondes, tuait la requête. En local la même
+           * requête passait — assez lentement pour qu'on ne le remarque pas.
+           *
+           * `ILIKE` sur un motif encadré de pourcents emprunte au contraire
+           * l'index trigramme déjà posé sur la colonne. Il ramène un petit
+           * ensemble, que l'égalité exacte départage ensuite en mémoire. La
+           * règle stricte est intacte ; seul le chemin pour y arriver change.
+           */
+          const approchants: Candidat[] = await prisma.$queryRaw`
             SELECT id, siren, denomination, "formeJuridique"
             FROM "Entreprise"
-            WHERE upper(unaccent(denomination)) = ${cle}
-            LIMIT 25`;
+            WHERE denomination ILIKE ${"%" + cle + "%"}
+            LIMIT 200`;
+          candidats = approchants.filter((c) => normaliserDenomination(c.denomination) === cle);
         }
 
         if (candidats.length === 0) { inconnues++; continue; }
