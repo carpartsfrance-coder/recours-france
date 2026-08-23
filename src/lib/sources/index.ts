@@ -188,8 +188,24 @@ export async function synchroniserEntreprise(
     journal.push({ source: "bodacc", statut: "erreur", message: String(e) });
   }
 
-  // Chiffres d'affaires agrégés publiés par l'API (issus des dépôts).
+  /**
+   * Chiffres agrégés publiés par l'API (issus des dépôts).
+   *
+   * Le dépôt confidentiel l'emporte sur le chiffre. Quand le BODACC annonce
+   * une déclaration de confidentialité au titre de l'article L. 232-25, la
+   * société a expressément demandé que ses comptes ne soient pas communiqués :
+   * qu'une autre source en laisse filtrer un poste ne rouvre pas ce droit, et
+   * le publier irait contre la volonté qu'elle a fait enregistrer.
+   */
+  const confidentiels = new Set(
+    (await prisma.compteAnnuel.findMany({
+      where: { entrepriseId: entreprise.id, confidentiel: true },
+      select: { exercice: true },
+    })).map((c) => c.exercice),
+  );
+
   for (const c of recherche.versComptes(base)) {
+    if (confidentiels.has(c.exercice)) continue;
     await prisma.compteAnnuel.upsert({
       where: { entrepriseId_exercice: { entrepriseId: entreprise.id, exercice: c.exercice } },
       create: {

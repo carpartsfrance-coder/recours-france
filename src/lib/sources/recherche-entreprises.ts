@@ -225,14 +225,32 @@ export function versEtablissements(r: ResultatRecherche) {
     }));
 }
 
-/** Comptes agrégés publiés par l'API (source : dépôts BODACC/INPI consolidés). */
+/**
+ * Comptes agrégés publiés par l'API (source : dépôts BODACC/INPI consolidés).
+ *
+ * Un zéro n'est pas publié : il est enregistré comme absent.
+ *
+ * L'API encode l'absence par zéro, et rien ne l'en distingue. Constaté sur
+ * DISTRIMOTOR (SIREN 432 892 412), dont les comptes sont pourtant déposés avec
+ * une déclaration de confidentialité : elle renvoie `{"ca": 0,
+ * "resultat_net": 350542}`. Un chiffre d'affaires de zéro euro accompagné d'un
+ * résultat net de trois cent cinquante mille n'est pas un état financier,
+ * c'est un champ vide.
+ *
+ * Le vrai zéro existe — une holding sans activité propre — mais il est rare, et
+ * l'arbitrage n'est pas symétrique : taire un zéro véritable ne coûte qu'une
+ * ligne manquante, publier « chiffre d'affaires : 0 € » sur une société nommée
+ * est une affirmation fausse à son sujet. C'est précisément ce que le reste du
+ * site s'interdit.
+ */
 export function versComptes(r: ResultatRecherche) {
   if (!r.finances) return [];
+  const publiable = (v: number | null | undefined) => (typeof v === "number" && v !== 0 ? v : null);
   return Object.entries(r.finances)
     .map(([exercice, valeurs]) => ({
       exercice: Number(exercice),
-      chiffreAffaires: valeurs?.ca ?? null,
-      resultatNet: valeurs?.resultat_net ?? null,
+      chiffreAffaires: publiable(valeurs?.ca),
+      resultatNet: publiable(valeurs?.resultat_net),
     }))
     .filter((c) => Number.isFinite(c.exercice));
 }
