@@ -34,7 +34,31 @@ async function main() {
 
   const juridiction = argument("juridiction", "tcom");
   const depuis = argument("depuis", "2025-01-01");
-  const requete = argument("requete", "societe");
+
+  /**
+   * `--siren=` cherche par la dénomination, pas par le numéro.
+   *
+   * Le numéro d'immatriculation s'écrit avec des espaces dans les jugements —
+   * « 432 892 412 » — et le moteur de recherche le découpe en trois mots. Le
+   * chercher tel quel ne ramène rien ; le chercher espacé ramène des milliers
+   * de décisions qui contiennent l'un des trois groupes. La dénomination, elle,
+   * est un vrai terme de recherche. Le SIREN sert ensuite, à la lecture du
+   * texte, pour identifier la partie sans risque d'homonyme.
+   */
+  const sirenCible = argument("siren", "").replace(/\D/g, "");
+  let requete = argument("requete", "societe");
+  if (sirenCible) {
+    const cible = await prisma.entreprise.findFirst({
+      where: { siren: sirenCible },
+      select: { denomination: true },
+    });
+    if (!cible) {
+      console.error(`Aucune entreprise au SIREN ${sirenCible}.`);
+      process.exit(1);
+    }
+    requete = cible.denomination;
+    console.log(`SIREN ${sirenCible} → recherche « ${requete} »`);
+  }
   const lots = Number(argument("lots", "3"));
   const taille = Number(argument("taille", "20"));
   const appliquer = process.argv.includes("--appliquer");

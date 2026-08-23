@@ -48,7 +48,7 @@ case "$CHOIX" in
     echo "── Décisions de justice ──"
     for J in tj tcom ca; do
       npx tsx scripts/collecter-decisions.ts \
-        --juridiction="$J" --requete="$SIREN" --depuis=2000-01-01 \
+        --juridiction="$J" --siren="$SIREN" --depuis=2000-01-01 \
         --lots=1 --taille=20 --appliquer
     done
     ;;
