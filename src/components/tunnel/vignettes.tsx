@@ -23,9 +23,9 @@ import type { ReactElement } from "react";
  */
 
 /** Palette : les bleus de la charte, plus un sable qui réchauffe sans jurer. */
-const BLEU = "#1B3FA0";
-const PROFOND = "#12256B";
-const CLAIR = "#E7EEFF";
+const BLEU = "#0956B9";
+const PROFOND = "#063777";
+const CLAIR = "#EDF2F9";
 const SABLE = "#E8D5BC";
 const PALE = "#C6D6F5";
 
