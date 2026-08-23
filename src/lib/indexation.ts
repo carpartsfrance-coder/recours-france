@@ -100,30 +100,41 @@ export function ouPlanDeSite(): Prisma.EntrepriseWhereInput {
 }
 
 /**
- * Une boutique ne s'ouvre aux moteurs qu'une fois qu'elle a quelque chose à dire.
+ * Les boutiques sont indexables — décision de l'éditeur, prise en connaissance
+ * de cause.
  *
- * Le référentiel des boutiques sert d'abord le produit : rattacher un
- * signalement au bon domaine quand un consommateur déclare un litige avec une
- * boutique en ligne. Publier chacune de ces fiches est une autre affaire.
+ * La mesure qui l'a précédée : une page boutique comptait six cent
+ * soixante-dix-sept mots, dont DIX lui appartenaient. J'ai recommandé de ne
+ * publier que celles portant une déclaration ; l'éditeur a tranché autrement,
+ * et il a une raison que la mesure ne dit pas — « avis maboutique.fr » est
+ * exactement la requête d'un consommateur qui hésite avant de commander, et
+ * cette page est la seule au monde qui puisse lui répondre.
  *
- * Mesuré sur une page boutique réelle : six cent soixante-dix-sept mots, dont
- * DIX lui appartiennent — 98,5 % de gabarit. C'est le modèle le plus mince du
- * site. En publier cent quarante mille de cette nature ferait exactement ce
- * qu'on cherche à éviter depuis le début : noyer les pages qui méritent d'être
- * lues sous des pages qui n'apprennent rien, et faire juger le domaine sur sa
- * moyenne.
+ * Le compromis n'est donc pas d'indexer moins, mais de publier davantage : la
+ * page porte désormais l'identité de la société quand elle est connue, la
+ * dernière activité constatée du domaine, et les démarches propres à un litige
+ * en ligne. Un index qui ne coûte rien à qui le lit.
  *
- * Le critère est donc le même que pour les fiches d'entreprise, et il est
- * automatique : dès qu'une boutique porte un signalement, elle a du contenu
- * propre, elle devient indexable et rejoint le plan de site. Aucune décision à
- * reprendre à la main.
+ * Restent exclues les boutiques éteintes : un domaine sans activité depuis
+ * plus de trois ans n'a plus de client à renseigner, et sa page dirait
+ * seulement qu'elle ne sait rien.
  */
-export function boutiqueIndexable(b: { signalements?: unknown[]; _count?: { signalements: number } }): boolean {
-  if (typeof b._count?.signalements === "number") return b._count.signalements > 0;
-  return Array.isArray(b.signalements) && b.signalements.length > 0;
+const INACTIVITE_MAX_ANNEES = 3;
+
+function limiteActivite(): Date {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - INACTIVITE_MAX_ANNEES);
+  return d;
+}
+
+export function boutiqueIndexable(b: { derniereActivite?: Date | null }): boolean {
+  // Une date inconnue ne condamne pas : elle signifie seulement que la source
+  // ne l'a pas fournie, pas que le site est mort.
+  if (!b.derniereActivite) return true;
+  return b.derniereActivite >= limiteActivite();
 }
 
 /** La même règle, côté base. */
 export const OU_BOUTIQUE_INDEXABLE: Prisma.BoutiqueWhereInput = {
-  signalements: { some: { moderation: "PUBLIE" } },
+  OR: [{ derniereActivite: null }, { derniereActivite: { gte: limiteActivite() } }],
 };

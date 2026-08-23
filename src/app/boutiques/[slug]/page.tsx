@@ -5,7 +5,7 @@ import { Page } from "@/components/chrome";
 import { Dossiers } from "@/components/fiche/dossiers";
 import { prisma } from "@/lib/db";
 import { versDossier } from "@/lib/dossiers";
-import { formatNombre, formatSiren, formatDateLongue } from "@/lib/format";
+import { adressePostale, formatDateLongue, formatNombre, formatSiren } from "@/lib/format";
 import { litigesPubliables, SEUIL_PUBLICATION_LITIGES } from "@/lib/scoring";
 import { construireGuide } from "@/lib/demarches";
 import { DonneesStructurees, organisationJsonLd } from "@/components/donnees-structurees";
@@ -47,13 +47,40 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
   const boutique = await prisma.boutique.findUnique({
     where: { slug },
     include: {
-      entreprise: { select: { slug: true, denomination: true, siren: true } },
+      entreprise: {
+        select: {
+          slug: true, denomination: true, siren: true, formeJuridique: true,
+          adresseSiege: true, codePostal: true, commune: true, secteur: true,
+          naf: true, dateImmatriculation: true, etatAdministratif: true,
+        },
+      },
       signalements: { where: { moderation: "PUBLIE" }, orderBy: { creeLe: "desc" }, take: 40 },
     },
   });
   if (!boutique) notFound();
 
   await prisma.boutique.update({ where: { id: boutique.id }, data: { vues: { increment: 1 } } });
+
+  /**
+   * Boutiques voisines, pour que la page ne soit pas un cul-de-sac.
+   *
+   * Le critère est l'exploitant quand il est connu — les autres sites d'une
+   * même société —, sinon l'extension du domaine. Ce n'est pas un classement
+   * et rien ne les rapproche par la qualité : c'est un chemin d'exploration,
+   * et c'est ainsi qu'un annuaire de cette taille se fait parcourir.
+   */
+  const extension = boutique.domaine.slice(boutique.domaine.lastIndexOf("."));
+  const voisines = await prisma.boutique.findMany({
+    where: {
+      id: { not: boutique.id },
+      ...(boutique.entrepriseId
+        ? { entrepriseId: boutique.entrepriseId }
+        : { domaine: { endsWith: extension }, derniereActivite: { not: null } }),
+    },
+    select: { slug: true, domaine: true, nom: true },
+    orderBy: boutique.entrepriseId ? { domaine: "asc" } : { derniereActivite: "desc" },
+    take: 12,
+  });
 
   const total = boutique.signalements.length;
   // Quelqu'un qui cherche « litige bergamotte.com » veut savoir quoi faire,
@@ -88,6 +115,13 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
         </h1>
         <p className="rf-texte rf-texte--fort rf-mt-8">
           Boutique en ligne <strong>{boutique.domaine}</strong>
+          {boutique.derniereActivite ? (
+            <>
+              {" · "}
+              dernière activité constatée en{" "}
+              {boutique.derniereActivite.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </>
+          ) : null}
         </p>
 
         {/* ── Exploitant, quand il est établi ─────────────────────────────── */}
@@ -99,6 +133,36 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
                 <Link href={`/entreprises/${boutique.entreprise.slug}`}>{boutique.entreprise.denomination}</Link> —
                 SIREN {formatSiren(boutique.entreprise.siren)}
               </p>
+              {/* Tout ce que les registres savent de l'exploitant. C'est la
+                  seule matière réellement propre à cette page, et c'est aussi
+                  ce que cherche quelqu'un qui veut savoir à qui il a affaire
+                  avant de commander — ou à qui écrire après. */}
+              <div className="rf-mt-12" style={{ display: "grid", gap: 4, fontSize: 14 }}>
+                {boutique.entreprise.formeJuridique ? (
+                  <div>Forme juridique : {boutique.entreprise.formeJuridique}</div>
+                ) : null}
+                {adressePostale(boutique.entreprise) ? (
+                  <div>Siège social : {adressePostale(boutique.entreprise)}</div>
+                ) : null}
+                {boutique.entreprise.dateImmatriculation ? (
+                  <div>
+                    Immatriculée le {formatDateLongue(boutique.entreprise.dateImmatriculation)}, soit{" "}
+                    {Math.max(
+                      0,
+                      new Date().getFullYear() - boutique.entreprise.dateImmatriculation.getFullYear(),
+                    )}{" "}
+                    ans d’existence
+                  </div>
+                ) : null}
+                <div>
+                  État administratif :{" "}
+                  {boutique.entreprise.etatAdministratif === "ACTIVE" ? (
+                    "en activité"
+                  ) : (
+                    <strong>cessée — la société qui exploitait ce site n’est plus en activité</strong>
+                  )}
+                </div>
+              </div>
               <p className="rf-legende rf-mt-8">
                 Rattachement établi le {formatDateLongue(boutique.rattachementLe)} · source :{" "}
                 {SOURCES[boutique.rattachementSource ?? ""] ?? boutique.rattachementSource}.{" "}
@@ -108,11 +172,23 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
               </p>
             </>
           ) : (
+            <>
             <p className="rf-texte rf-mt-8" style={{ fontSize: 15 }}>
               <strong>Non établi.</strong> La société qui exploite ce site n’a pas été identifiée avec
               certitude. Aucune personne morale n’est mise en cause : les déclarations ci-dessous portent sur
               la boutique, telle que les consommateurs l’ont connue.
             </p>
+            {/* Quand l'exploitant est inconnu, c'est justement le signal le
+                plus utile : un site qui ne dit pas qui l'édite manque à
+                l'article 6 III de la LCEN, et c'est ce que le consommateur
+                doit savoir avant de payer. */}
+            <p className="rf-legende rf-mt-8">
+              Tout site marchand est tenu de publier l’identité de son éditeur — dénomination, adresse et
+              numéro d’immatriculation — au titre de l’article 6 III de la loi pour la confiance dans
+              l’économie numérique. Une boutique qui n’en publie aucune est un signal à prendre au sérieux
+              avant de commander.
+            </p>
+            </>
           )}
         </div>
 
@@ -147,6 +223,37 @@ export default async function FicheBoutique({ params }: { params: Promise<{ slug
         )}
 
         {/* ── Que faire en cas de litige ──────────────────────────────────── */}
+        {/* ── Boutiques voisines : le maillage ──────────────────────────── */}
+        {voisines.length > 0 ? (
+          <>
+            <h2 className="rf-h2 rf-mt-32">
+              {boutique.entreprise
+                ? `Autres sites exploités par ${boutique.entreprise.denomination}`
+                : `Autres boutiques en ${extension}`}
+            </h2>
+            <p className="rf-texte rf-mt-10" style={{ fontSize: 13.5, maxWidth: 760 }}>
+              {boutique.entreprise
+                ? "Ces sites sont rattachés à la même société dans nos données. Le rapprochement vient des registres publics, il ne constitue ni un classement ni une comparaison."
+                : "Rapprochement par extension de domaine uniquement. Ce n’est ni un classement, ni un jugement sur ces boutiques."}
+            </p>
+            <div
+              className="rf-mt-16"
+              style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+            >
+              {voisines.map((v) => (
+                <Link
+                  key={v.slug}
+                  href={`/boutiques/${v.slug}`}
+                  className="rf-carte"
+                  style={{ padding: "10px 13px", fontSize: 14, textDecoration: "none" }}
+                >
+                  {v.domaine}
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : null}
+
         <h2 className="rf-h2 rf-mt-32">Un litige avec {boutique.domaine} : les démarches</h2>
         <p className="rf-texte rf-mt-10" style={{ fontSize: 14, maxWidth: 760 }}>
           Ces démarches sont gratuites et s’effectuent dans cet ordre. Chacune conditionne la suivante : une

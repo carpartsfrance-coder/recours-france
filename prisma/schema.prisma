@@ -852,6 +852,13 @@ model Boutique {
   rattachementSource String?
   rattachementLe     DateTime?
 
+  /// Dernière activité constatée du domaine, telle qu'elle figure dans la
+  /// source d'import. C'est la seule donnée propre à chaque boutique quand
+  /// aucune société n'est identifiée : elle distingue un site vivant d'une
+  /// coquille abandonnée, et c'est précisément ce qu'un consommateur veut
+  /// savoir avant d'y commander.
+  derniereActivite DateTime?
+
   vues   Int      @default(0)
   creeLe DateTime @default(now())
   majLe  DateTime @updatedAt
