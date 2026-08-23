@@ -42,7 +42,7 @@ async function main() {
   console.log(`Juridiction ${juridiction}, depuis le ${depuis}, ${lots} page(s) de ${taille}.`);
   console.log(appliquer ? "Écriture en base activée.\n" : "Simulation : rien ne sera écrit (--appliquer pour exécuter).\n");
 
-  let vues = 0, avecParties = 0, rattachees = 0, ambigues = 0, inconnues = 0;
+  let vues = 0, avecParties = 0, rattachees = 0, ambigues = 0, inconnues = 0, parSiren = 0;
 
   for (let page = 0; page < lots; page++) {
     const hits = await chercher(requete, { taille, page, juridictions: [juridiction], depuis });
@@ -59,17 +59,29 @@ async function main() {
       avecParties++;
 
       for (const p of parties) {
-        const cle = normaliserDenomination(p.denomination);
-        if (cle.length < 4) continue;
+        // Quand la décision donne le numéro d'immatriculation, il suffit :
+        // une requête sur clé unique, et plus aucune question d'homonymie.
+        let candidats: Candidat[] = [];
+        if (p.siren) {
+          candidats = await prisma.entreprise.findMany({
+            where: { siren: p.siren },
+            select: { id: true, siren: true, denomination: true, formeJuridique: true },
+          });
+          if (candidats.length) parSiren++;
+        }
 
-        // On ne compare que sur la dénomination exacte normalisée : la base
-        // porte treize millions de noms, un rapprochement approximatif y
-        // trouverait toujours quelque chose.
-        const candidats: Candidat[] = await prisma.$queryRaw`
-          SELECT id, siren, denomination, "formeJuridique"
-          FROM "Entreprise"
-          WHERE upper(unaccent(denomination)) = ${cle}
-          LIMIT 25`;
+        if (candidats.length === 0) {
+          const cle = normaliserDenomination(p.denomination);
+          if (cle.length < 4) continue;
+          // À défaut, la dénomination exacte normalisée. La base porte treize
+          // millions de noms : un rapprochement approximatif y trouverait
+          // toujours quelque chose, et ce quelque chose serait souvent faux.
+          candidats = await prisma.$queryRaw`
+            SELECT id, siren, denomination, "formeJuridique"
+            FROM "Entreprise"
+            WHERE upper(unaccent(denomination)) = ${cle}
+            LIMIT 25`;
+        }
 
         if (candidats.length === 0) { inconnues++; continue; }
         const retenu = rapprocher(p, candidats);
@@ -98,6 +110,7 @@ async function main() {
   console.log(`\ndécisions lues        : ${vues}`);
   console.log(`avec personne morale  : ${avecParties}`);
   console.log(`rattachées            : ${rattachees}`);
+  console.log(`   dont par SIREN     : ${parSiren}`);
   console.log(`écartées, homonymie   : ${ambigues}`);
   console.log(`hors référentiel      : ${inconnues}`);
 }

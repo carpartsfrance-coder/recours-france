@@ -7,7 +7,7 @@
  * Rattacher ces trois-là reviendrait à publier « poursuivie » sur des sociétés
  * qui ne sont pas parties à l'instance.
  */
-import { partiesMorales, rapprocher, normaliserDenomination, type DecisionJudilibre, type Candidat } from "../src/lib/sources/judilibre";
+import { partiesMorales, rapprocher, normaliserDenomination, sirenValide, type DecisionJudilibre, type Candidat } from "../src/lib/sources/judilibre";
 
 const TEXTE = `T R I B U N A L J U D I C I A I R E
 D E D R A G U I G N A N
@@ -92,6 +92,25 @@ if (partie) {
   verifier("aucun candidat : rien", rapprocher(partie, []) === null);
   verifier("nom voisin mais différent : rien",
     rapprocher(partie, [{ id: "d", siren: "777777777", denomination: "AUTO SERVICE VAROIS", formeJuridique: "SAS" }]) === null);
+}
+
+console.log();
+verifier("clé de Luhn : un vrai SIREN passe", sirenValide("432892412"));
+verifier("clé de Luhn : un numéro de RG ne passe pas", !sirenValide("260369800"));
+verifier("clé de Luhn : refuse ce qui n'a pas neuf chiffres", !sirenValide("4328924"));
+
+{
+  // Le SIREN doit primer sur le nom, y compris quand deux homonymes existent.
+  const avecSiren = { denomination: "AUTO SERVICE VAROIS AS 83", forme: "SAS", role: "defendeur" as const, siren: "454066481" };
+  const deux: Candidat[] = [
+    { id: "a", siren: "454066481", denomination: "AUTO SERVICE VAROIS AS 83", formeJuridique: "SAS" },
+    { id: "b", siren: "999999999", denomination: "AUTO SERVICE VAROIS AS 83", formeJuridique: "SAS" },
+  ];
+  verifier("le SIREN tranche là où le nom renonçait", rapprocher(avecSiren, deux)?.siren === "454066481");
+
+  const siretInconnu = { ...avecSiren, siren: "000000000" };
+  verifier("SIREN absent du référentiel : on retombe sur le nom, donc on renonce",
+    rapprocher(siretInconnu, deux) === null);
 }
 
 console.log();
