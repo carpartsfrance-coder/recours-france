@@ -129,6 +129,29 @@ function ecrireEtat(e: Etat) {
 
 const jour = (d: Date) => d.toISOString().slice(0, 10);
 
+/**
+ * Réessaie un appel qui a échoué de façon passagère.
+ *
+ * La passerelle de l'État rend parfois un 400 isolé sur une requête qui,
+ * rejouée telle quelle, répond 200 — constaté au lot trois d'une tranche dont
+ * les lots deux et quatre passaient. Une collecte de nuit ne doit pas mourir
+ * là-dessus : six tentatives espacées couvrent une indisponibilité de quatre
+ * minutes. Le 416 n'est jamais réessayé, c'est la fin normale de pagination.
+ */
+async function avecReprises<T>(appel: () => Promise<T>): Promise<T> {
+  const attentes = [2_000, 5_000, 15_000, 30_000, 60_000, 120_000];
+  for (let essai = 0; ; essai++) {
+    try {
+      return await appel();
+    } catch (e) {
+      const statut = (e as { statut?: number }).statut;
+      if (statut === 416 || essai >= attentes.length) throw e;
+      console.log(`  [réessai ${essai + 1}/${attentes.length} dans ${attentes[essai] / 1000} s — ${statut ?? e}]`);
+      await dormir(attentes[essai]);
+    }
+  }
+}
+
 async function moissonner(depuis: string, appliquer: boolean) {
   const etat = lireEtat();
   const aujourdhui = new Date();
@@ -148,9 +171,9 @@ async function moissonner(depuis: string, appliquer: boolean) {
       for (;;) {
         let recolte;
         try {
-          recolte = await exporter({
+          recolte = await avecReprises(() => exporter({
             juridiction, depuis: jour(curseur), jusqua: jour(borne), taille: 50, lot,
-          });
+          }));
         } catch (e) {
           // Le plafond de pagination répond 416 : la tranche est épuisée.
           if ((e as { statut?: number }).statut === 416) break;
