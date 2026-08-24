@@ -108,14 +108,38 @@ export default async function sitemap({
     ];
   }
 
+  /**
+   * Les couples secteur × département sont lus, non recomptés.
+   *
+   * Cette tranche agrégeait les treize millions de lignes pour n'en tirer que
+   * mille sept cents couples : dix secondes mesurées en production. Google
+   * abandonne un plan de site qui répond si lentement, et celui-ci est le
+   * deuxième fichier de l'index — le premier que le robot ouvre après les
+   * pages fixes.
+   *
+   * `CompteurAnnuaire` contient exactement ces couples, écrits chaque nuit par
+   * `scripts/compteurs-annuaire.ts` avec la même agrégation. On les relit.
+   * L'agrégation reste en secours : sur une base fraîchement installée la
+   * table est vide, et un plan de site vide vaut moins qu'un plan de site lent.
+   */
   if (rangDemande === RANG_DEPARTEMENTS) {
-    const peuples = await prisma.entreprise.groupBy({
-      by: ["secteur", "departement"],
-      where: { etatAdministratif: "ACTIVE", departement: { not: null } },
-      _count: { _all: true },
+    const compteurs = await prisma.compteurAnnuaire.findMany({
+      where: { departement: { not: "" } },
+      select: { secteur: true, departement: true },
     });
-    return peuples.flatMap((d) => {
-      const href = d.secteur ? cheminDepartement(d.secteur, d.departement!) : null;
+    const couples =
+      compteurs.length > 0
+        ? compteurs
+        : (
+            await prisma.entreprise.groupBy({
+              by: ["secteur", "departement"],
+              where: { etatAdministratif: "ACTIVE", departement: { not: null } },
+              _count: { _all: true },
+            })
+          ).map((d) => ({ secteur: d.secteur, departement: d.departement }));
+
+    return couples.flatMap((d) => {
+      const href = d.secteur && d.departement ? cheminDepartement(d.secteur, d.departement) : null;
       return href
         ? [{ url: `${b}${href}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 }]
         : [];
@@ -140,16 +164,30 @@ export default async function sitemap({
     }));
   }
 
+  /**
+   * Le regroupement porte sur `communeSlug`, non sur `commune`.
+   *
+   * L'adresse produite est la même — `cheminCommune` réduit de toute façon la
+   * valeur en fragment d'URL — mais l'index qui existe déjà porte sur
+   * `(secteur, departement, communeSlug, etatAdministratif)`. Grouper sur le
+   * nom brut le rendait inutilisable : Postgres relisait la table par le seul
+   * index de département, soit sept gigaoctets pour Paris et vingt secondes
+   * mesurées. Sur le slug, il balaie l'index seul — trois secondes et demie
+   * pour Paris, moins d'une pour tous les autres départements.
+   *
+   * Deux noms qui se réduisent au même fragment se trouvent fusionnés, ce qui
+   * est exactement ce qu'il faut : ils désignaient déjà la même page.
+   */
   if (rangDemande < RANG_SIGNAL) {
     const departement = DEPARTEMENTS[rangDemande - RANG_COMMUNES]?.code;
     if (!departement) return [];
     const communes = await prisma.entreprise.groupBy({
-      by: ["secteur", "commune"],
-      where: { etatAdministratif: "ACTIVE", departement, commune: { not: null } },
+      by: ["secteur", "communeSlug"],
+      where: { etatAdministratif: "ACTIVE", departement, communeSlug: { not: null } },
       _count: { _all: true },
     });
     return communes.flatMap((c) => {
-      const href = c.secteur ? cheminCommune(c.secteur, departement, c.commune!) : null;
+      const href = c.secteur ? cheminCommune(c.secteur, departement, c.communeSlug!) : null;
       return href
         ? [{ url: `${b}${href}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 }]
         : [];
