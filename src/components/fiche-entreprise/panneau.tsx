@@ -37,8 +37,16 @@ export function Panneau({
         aria-controls={id}
         onClick={() => setOuvert((v) => !v)}
       >
-        <span className="rfe-panneau__t">{typo(titre)}</span>
-        <span className="rfe-panneau__n">{typo(`— ${compte}`)}</span>
+        <span>
+          {/* Le compte passe au-dessus du titre, en capitales : c'est le
+              registre de la page, où la structure s'annonce avant le libellé. */}
+          <span className="rfe-caps" style={{ display: "block" }}>
+            {typo(compte)}
+          </span>
+          <span className="rfe-panneau__titre" style={{ display: "block", marginTop: 4 }}>
+            {typo(titre)}
+          </span>
+        </span>
         <Chevron taille={18} className="rfe-panneau__chev" />
       </button>
       <div id={id} hidden={!ouvert}>

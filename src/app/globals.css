@@ -5013,755 +5013,542 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   .rfp-nature { min-height: 150px; }
 }
 
+
 /* ==========================================================================
-   Fiche entreprise — couche « rfe »
-   Même charte que le parcours de dépôt : les jetons sont partagés plus haut,
-   ce qui règle le point ouvert du handoff — « aligner l'ensemble sur ce bleu ».
-   Ne vivent ici que les formes propres à la fiche : hero à deux colonnes,
-   onglets d'ancrage, cartes de signalement à liseré, cartes financières.
+   Fiche entreprise — couche « rfe », version institutionnelle
+   La charte est dérivée du logo : navy du logotype, bleu de la bulle
+   secondaire, rouge de son arête basse. Le registre est celui d'un rapport
+   officiel — géométrie carrée, filets plutôt que cartes, sections numérotées,
+   capitales espacées pour la structure, données en tableaux réglés.
+
+   Le rouge est un signal, pas une couleur d'interface : il ne paraît que dans
+   le filet tricolore et dans le tiret des sur-titres. Jamais sur un bouton,
+   jamais sur du texte.
+
+   Aucun dégradé, aucune ombre, aucune animation : la page doit peser le moins
+   possible, et le registre s'en accommode.
    ========================================================================== */
 
-.rfe-conteneur {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-inline: clamp(18px, 2.4cqw, 32px);
-}
-.rfe-section { padding: clamp(30px, 3.2cqw, 50px) 0; scroll-margin-top: 80px; }
-.rfe-section--alt { background: var(--p-alterne); }
+.rfe {
+  --e-navy: #0B2C6B;
+  --e-bleu: #1152C4;
+  --e-rouge: #E1000F;
+  --e-navy-pied: #08214F;
+  --e-navy-sep: #17396B;
+  --e-sur-navy: #C9D6EC;
+  --e-sur-navy-2: #A9BDD8;
+  --e-sur-navy-3: #A9C0E4;
+  --e-sur-navy-faible: #8098B8;
+  --e-bulle-claire: #7FA6E0;
 
-/* ── Titres ─────────────────────────────────────────────────────────────── */
+  --e-bleu-pale: #EDF2FA;
+  --e-bleu-pale-bord: #C9D9F2;
+  --e-survol: #F7F9FD;
+  --e-gris: #F5F7FA;
+  --e-alterne: #FAFBFD;
+
+  --e-bord: #D8DEE7;
+  --e-bord-champ: #C6CFDC;
+  --e-filet: #E3E8EF;
+
+  --e-encre: #1B2536;
+  --e-texte: #2B3648;
+  --e-second: #3E4A5D;
+  --e-tertiaire: #5C6779;
+  --e-mention: #7C8798;
+  --e-numero: #A8B2C0;
+
+  --e-vert: #12693C;
+  --e-vert-fond: #EAF6EE;
+  --e-vert-bord: #BFE0CC;
+  --e-ambre: #9A5A0B;
+  --e-ambre-filet: #C2801A;
+  --e-ambre-texte: #7A4808;
+  --e-ambre-fond: #FBF3E3;
+  --e-ambre-bord: #EBDCBC;
+
+  container-type: inline-size;
+  overflow-x: hidden;
+  background: #fff;
+  color: var(--e-texte);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+
+.rfe :where(a) { color: var(--e-bleu); }
+.rfe :focus-visible { outline: 2px solid var(--e-bleu); outline-offset: 2px; }
+
+.rfe-conteneur { max-width: 1220px; margin: 0 auto; padding-inline: clamp(16px, 2.2cqw, 30px); }
+
+/* Le filet tricolore : trois segments égaux de 4 px, en tête de page et en
+   clôture du pied. Jamais accompagné d'un emblème ni d'une devise. */
+.rfe-tricolore { display: flex; height: 4px; }
+.rfe-tricolore i { flex: 1; }
+
+/* Les barres qui défilent horizontalement masquent leur ascenseur : sans cela
+   un liseré sombre traverse le sommaire collant. */
+.rfe-scroll { overflow-x: auto; scrollbar-width: none; }
+.rfe-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Titres et libellés de structure ────────────────────────────────────── */
 .rfe-h1 {
-  font-size: clamp(27px, 2.1cqw + 10px, 38px);
+  font-size: clamp(30px, 2.4cqw + 11px, 44px);
   font-weight: 800;
-  line-height: 1.18;
-  letter-spacing: -0.022em;
-  color: var(--p-navy);
-  max-width: 22ch;
+  line-height: 1.08;
+  letter-spacing: -0.028em;
+  color: var(--e-navy);
 }
-.rfe-h2 {
-  font-size: clamp(21px, 1.6cqw + 8px, 27px);
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  color: var(--p-navy-titre, var(--p-navy));
-}
-.rfe-h3 { font-size: 19px; font-weight: 700; line-height: 1.35; color: var(--p-navy); }
-.rfe-titre-carte { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--p-navy); }
-.rfe-intro { font-size: 16.5px; line-height: 1.6; color: var(--p-texte); max-width: 52ch; }
-.rfe-texte { font-size: 16px; line-height: 1.6; color: var(--p-texte); }
-.rfe-second { font-size: 15px; line-height: 1.5; color: var(--p-second); }
-.rfe-aide { font-size: 14px; line-height: 1.5; color: var(--p-tertiaire); }
-.rfe-chiffre { font-size: clamp(26px, 1.4cqw + 16px, 30px); font-weight: 800; line-height: 1.1; color: var(--p-bleu); }
+.rfe-h1__sous { font-size: clamp(17px, .7cqw + 10px, 20px); font-weight: 500; line-height: 1.35; max-width: 34ch; color: var(--e-second); }
+.rfe-h2 { font-size: 20px; font-weight: 800; line-height: 1.25; letter-spacing: -0.012em; color: var(--e-navy); }
+.rfe-h3 { font-size: 17px; font-weight: 700; line-height: 1.35; color: var(--e-navy); }
+.rfe-texte { font-size: 15.5px; line-height: 1.6; color: var(--e-texte); }
+.rfe-note { font-size: 14px; line-height: 1.5; color: var(--e-tertiaire); }
+.rfe-legende { font-size: 13px; line-height: 1.5; color: var(--e-mention); }
 
-.rfe-eyebrow {
-  font-size: 12.5px;
+/* Le registre institutionnel tient largement à ces capitales espacées : elles
+   servent la structure — nav, sur-titres, clés de tableau — jamais le texte. */
+.rfe-caps {
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .09em;
   text-transform: uppercase;
+  color: var(--e-mention);
 }
-
-/* ── En-tête et fil d'Ariane ────────────────────────────────────────────── */
-.rfe-entete { background: #fff; border-bottom: 1px solid var(--p-bord-chrome); }
-.rfe-entete__piste {
-  min-height: 70px;
-  display: flex;
-  align-items: center;
-  gap: clamp(14px, 2cqw, 30px);
-}
-.rfe-nav { display: flex; align-items: center; gap: clamp(14px, 2cqw, 28px); margin-left: auto; }
-.rfe-nav a {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--p-texte);
-  text-decoration: none;
-  min-height: 44px;
+.rfe-surtitre {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--e-tertiaire);
+}
+.rfe-surtitre::before { content: ""; width: 20px; height: 2px; background: var(--e-rouge); flex: none; }
+.rfe-surtitre--clair { color: var(--e-sur-navy-3); }
+
+/* ── Bandeau, en-tête, fil d'Ariane ─────────────────────────────────────── */
+.rfe-bandeau { background: var(--e-navy); color: var(--e-sur-navy); font-size: 12.5px; text-align: center; padding: 8px 0; }
+.rfe-entete { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--e-bord); }
+.rfe-entete__piste { min-height: 70px; display: flex; align-items: center; gap: clamp(14px, 2cqw, 28px); }
+.rfe-nav { display: flex; align-items: center; gap: clamp(12px, 1.8cqw, 26px); }
+.rfe-nav a {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-second);
+  text-decoration: none;
   white-space: nowrap;
 }
-.rfe-nav a:hover { color: var(--p-bleu); }
+.rfe-nav a:hover { color: var(--e-navy); }
 
-.rfe-logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; flex: none; }
-.rfe-logo__med {
-  width: 40px;
-  height: 40px;
-  flex: none;
-  border-radius: 8px;
-  background: var(--p-pale);
-  color: var(--p-bleu);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.rfe-recherche { flex: 1 1 280px; min-width: 0; position: relative; display: flex; align-items: center; }
+.rfe-recherche input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px 0 40px;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--e-encre);
+  background: #fff;
 }
-.rfe-logo__filet { width: 2px; height: 30px; background: var(--p-rouge); flex: none; border-radius: 1px; }
-.rfe-logo__nom { font-size: 17px; font-weight: 800; letter-spacing: -0.015em; color: var(--p-navy); line-height: 1.2; }
-.rfe-logo__base { font-size: 12px; color: var(--p-second); line-height: 1.2; }
+.rfe-recherche svg { position: absolute; left: 13px; color: var(--e-tertiaire); pointer-events: none; }
 
-.rfe-fil { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 14px 0; font-size: 14px; }
-.rfe-fil a { color: var(--p-bleu); text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
-.rfe-fil span { color: var(--p-texte); }
-.rfe-fil svg { color: var(--p-desactive); flex: none; }
-
-/* ── Hero ───────────────────────────────────────────────────────────────── */
-.rfe-hero {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(22px, 3cqw, 46px);
-  background: var(--p-hero);
-  border-radius: 12px;
-  padding: clamp(24px, 3cqw, 40px);
-}
-.rfe-hero__g { flex: 1 1 520px; min-width: min(100%, 300px); }
-.rfe-hero__d { flex: 0 1 420px; min-width: min(100%, 300px); }
-
-.rfe-identite { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 15.5px; color: var(--p-texte); }
-.rfe-identite span { display: inline-flex; align-items: center; gap: 7px; }
-.rfe-identite svg { color: var(--p-bleu); flex: none; }
-
-.rfe-mentions { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14.5px; color: var(--p-second); }
-.rfe-mentions span { display: inline-flex; align-items: center; gap: 7px; }
-.rfe-mentions svg { color: var(--p-second); flex: none; }
-
-.rfe-obtenu { background: #fff; border-radius: 12px; padding: 6px 20px; }
-.rfe-obtenu__l { display: flex; gap: 13px; align-items: flex-start; padding: 16px 0; border-top: 1px solid var(--p-filet); }
-.rfe-obtenu__l:first-child { border-top: 0; }
-.rfe-obtenu__l svg { flex: none; color: var(--p-bleu); margin-top: 2px; }
-.rfe-obtenu__t { font-size: 15.5px; font-weight: 700; color: var(--p-navy); line-height: 1.35; }
-.rfe-obtenu__d { font-size: 14.5px; color: var(--p-second); line-height: 1.45; margin-top: 2px; }
+.rfe-fil { background: var(--e-gris); border-bottom: 1px solid var(--e-filet); }
+.rfe-fil__piste { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding: 10px 0; font-size: 13px; }
+.rfe-fil a { color: var(--e-tertiaire); text-decoration: none; }
+.rfe-fil a:hover { color: var(--e-bleu); }
+.rfe-fil span[aria-hidden] { color: var(--e-numero); }
+.rfe-fil strong { color: var(--e-navy); font-weight: 600; }
 
 /* ── Boutons ────────────────────────────────────────────────────────────── */
 .rfe-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  min-height: 54px;
+  gap: 10px;
+  min-height: 50px;
   padding: 0 22px;
-  border: 1px solid var(--p-bleu);
-  border-radius: 6px;
-  background: var(--p-bleu);
+  border: 1px solid var(--e-navy);
+  border-radius: 3px;
+  background: var(--e-navy);
   color: #fff;
   font: inherit;
-  font-size: 16.5px;
+  font-size: 15px;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: center;
 }
-.rfe-btn:hover { background: var(--p-bleu-survol); border-color: var(--p-bleu-survol); color: #fff; text-decoration: none; }
-.rfe-btn--2 {
+.rfe-btn:hover { background: var(--e-bleu); border-color: var(--e-bleu); color: #fff; }
+.rfe-btn--sm { min-height: 44px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; padding: 0 18px; }
+.rfe-btn--plein { width: 100%; }
+/* Sur fond navy, l'inverse : blanc sur navy. */
+.rfe-btn--inverse { background: #fff; border-color: #fff; color: var(--e-navy); }
+.rfe-btn--inverse:hover { background: var(--e-bleu-pale); border-color: var(--e-bleu-pale); color: var(--e-navy); }
+.rfe-btn--neutre {
   background: #fff;
-  border-color: var(--p-bord-bouton);
-  color: var(--p-bleu);
-  font-weight: 600;
-  min-height: 50px;
-  font-size: 16px;
+  border-color: var(--e-bord-champ);
+  color: var(--e-navy);
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
-.rfe-btn--2:hover { background: var(--p-pale); border-color: var(--p-bleu); color: var(--p-bleu); }
-.rfe-btn--sm { min-height: 46px; font-size: 15px; padding: 0 18px; }
+.rfe-btn--neutre:hover { background: var(--e-gris); border-color: var(--e-navy); color: var(--e-navy); }
 
-/* ── Onglets d'ancrage ──────────────────────────────────────────────────── */
-.rfe-onglets { border-bottom: 1px solid var(--p-bord-chrome); background: #fff; }
-.rfe-onglets__piste { display: flex; gap: clamp(4px, 1.2cqw, 18px); overflow-x: auto; white-space: nowrap; }
-.rfe-onglet {
-  flex: none;
+.rfe-action {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 15px 10px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--p-second);
+  min-height: 36px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-bleu);
   text-decoration: none;
-  border-bottom: 2px solid transparent;
-  min-height: 44px;
 }
-.rfe-onglet svg { color: var(--p-desactive); flex: none; }
-.rfe-onglet:hover { color: var(--p-bleu); text-decoration: none; }
-.rfe-onglet[aria-current="true"] { color: var(--p-bleu); font-weight: 700; border-bottom-color: var(--p-bleu); }
-.rfe-onglet[aria-current="true"] svg { color: var(--p-bleu); }
+.rfe-action:hover { text-decoration: underline; }
 
-/* ── Compteurs ──────────────────────────────────────────────────────────── */
-.rfe-compteurs { display: flex; flex-wrap: wrap; gap: 12px; }
-.rfe-compteur {
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.rfe-hero { display: flex; flex-wrap: wrap; gap: clamp(24px, 3cqw, 52px); padding: clamp(26px, 3cqw, 44px) 0; }
+.rfe-hero__g { flex: 1 1 560px; min-width: min(100%, 300px); }
+/* Le panneau ne grandit pas : sinon le H1 casse sur trois lignes déséquilibrées. */
+.rfe-hero__d { flex: 0 1 330px; min-width: min(100%, 300px); }
+
+.rfe-statut { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.rfe-badge {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   white-space: nowrap;
-  border-radius: 8px;
-  padding: 12px 18px;
-  background: var(--p-pale);
-  border: 1px solid var(--p-pale-bord);
+  border-radius: 3px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--e-vert-fond);
+  border: 1px solid var(--e-vert-bord);
+  color: var(--e-vert);
 }
-.rfe-compteur b { font-size: 22px; font-weight: 800; color: var(--p-bleu); }
-.rfe-compteur span { font-size: 14.5px; font-weight: 600; color: var(--p-texte); }
-.rfe-compteur--vert { background: var(--p-vert-fond); border-color: var(--p-vert-bord); }
-.rfe-compteur--vert b { color: var(--p-vert); }
-.rfe-compteur--rouge { background: var(--p-rouge-fond); border-color: var(--p-rouge-bord); }
-.rfe-compteur--rouge b { color: var(--p-rouge); }
+.rfe-badge--ambre { background: var(--e-ambre-fond); border-color: var(--e-ambre-bord); color: var(--e-ambre); }
+.rfe-pastille { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.rfe-pastille--7 { width: 7px; height: 7px; }
 
-/* ── Cartes de signalement ──────────────────────────────────────────────── */
-.rfe-signalement {
+/* Le chapô est mis en retrait derrière un filet : c'est la seule mise en
+   valeur d'un paragraphe sur toute la page. */
+.rfe-chapo { border-left: 2px solid var(--e-bord); padding-left: 16px; font-size: 15.5px; line-height: 1.6; color: var(--e-second); max-width: 62ch; }
+
+.rfe-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--e-bord);
+  border-radius: 3px;
+  overflow: hidden;
+}
+/* Même filet par ombre portée que les grilles de section : cinq données dans
+   une rangée de deux laissaient sinon une case grise au bout. */
+.rfe-meta > div { background: #fff; padding: 12px 14px; box-shadow: 0 0 0 1px var(--e-filet); }
+.rfe-meta__k { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
+.rfe-meta__v { margin-top: 5px; font-size: 14.5px; font-weight: 600; color: var(--e-encre); line-height: 1.35; }
+
+.rfe-panneau-action { border: 1px solid var(--e-navy); border-radius: 3px; background: #fff; }
+.rfe-panneau-action__tete { background: var(--e-navy); color: #fff; padding: 16px 18px; }
+.rfe-panneau-action__titre { margin-top: 8px; font-size: 16.5px; font-weight: 700; line-height: 1.3; color: #fff; }
+.rfe-panneau-action__corps { padding: 16px 18px; }
+.rfe-promesse { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--e-texte); }
+.rfe-promesse + .rfe-promesse { margin-top: 11px; }
+.rfe-promesse svg { flex: none; color: var(--e-bleu); margin-top: 2px; }
+.rfe-panneau-action__pied { border-top: 1px solid var(--e-filet); padding: 12px 18px; }
+
+/* ── Sommaire collant ───────────────────────────────────────────────────── */
+.rfe-sommaire { position: sticky; top: 70px; z-index: 40; background: var(--e-gris); border-bottom: 1px solid var(--e-bord); }
+.rfe-sommaire__piste { display: flex; gap: clamp(10px, 1.6cqw, 26px); white-space: nowrap; }
+.rfe-sommaire a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 2px;
+  border-bottom: 3px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-tertiaire);
+  text-decoration: none;
+}
+.rfe-sommaire a:hover { color: var(--e-navy); border-bottom-color: var(--e-sur-navy-3); }
+.rfe-sommaire a[aria-current="true"] { color: var(--e-navy); border-bottom-color: var(--e-navy); }
+.rfe-sommaire__n { font-size: 10.5px; color: var(--e-numero); }
+
+/* ── Motif de section : pas des cartes, des blocs séparés par un filet ──── */
+.rfe-section {
   display: flex;
   flex-wrap: wrap;
-  border: 1px solid var(--p-bord);
-  border-left: 4px solid var(--p-bleu);
-  border-radius: 10px;
+  gap: clamp(20px, 2.6cqw, 44px);
+  padding: clamp(28px, 3cqw, 46px) 0;
+  border-bottom: 1px solid var(--e-filet);
+  scroll-margin-top: 122px;
+}
+.rfe-section__t { flex: 0 1 228px; min-width: min(100%, 200px); }
+.rfe-section__n { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; color: var(--e-numero); }
+.rfe-section__t h2 { margin-top: 6px; }
+.rfe-section__t p { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--e-tertiaire); }
+.rfe-section__c { flex: 1 1 560px; min-width: min(100%, 280px); }
+
+/* ── Le quadrillage : un filet obtenu par le gap ─────────────────────────
+   `gap:1px` sur un fond gris avec des cellules blanches donne un trait d'un
+   pixel sans doubler les bordures. C'est ce qui produit le rendu tableau
+   plutôt que le rendu carte. */
+/* Le filet intérieur ne vient pas du fond de la grille mais d'une ombre portée
+   d'un pixel sur chaque cellule, que le vide d'une fin de rangée ne porte pas.
+   Un fond gris tenu par la grille elle-même trahissait le nombre de cellules :
+   quatre postes financiers dans une rangée de trois, ou vingt-trois voisines
+   dans des rangées de cinq, laissaient derrière eux deux cases grises que rien
+   ne remplissait. Les ombres des cellules voisines se recouvrent dans
+   l'interstice et forment le même filet continu ; `overflow: hidden` retient
+   celles du pourtour contre la bordure. */
+.rfe-grille {
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--e-bord);
+  border-radius: 3px;
   overflow: hidden;
-  background: #fff;
 }
-.rfe-signalement__g { flex: 1 1 380px; min-width: min(100%, 280px); padding: 22px 24px; }
-.rfe-signalement__d {
-  flex: 0 1 300px;
-  min-width: min(100%, 240px);
-  padding: 22px 24px;
-  background: var(--p-alterne);
-  border-left: 1px solid var(--p-filet);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.rfe-grille > * { background: #fff; box-shadow: 0 0 0 1px var(--e-filet); }
+/* La synthèse n'est pas encadrée, à la différence des autres grilles : le
+   handoff la pose sur un simple filet supérieur, chaque cellule fermée par un
+   filet bas. Six cellules dans une grille encadrée laissaient deux cases vides
+   grises en fin de rangée — ici il n'y a rien à laisser vide. */
+.rfe-grille--synthese {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--e-bord);
+  border-radius: 0;
 }
-.rfe-pilule {
+.rfe-grille--synthese > .rfe-cellule { padding: 18px 20px 18px 0; border-bottom: 1px solid var(--e-filet); box-shadow: none; }
+
+/* Les panneaux de documents portent déjà leur propre bordure : ils sont
+   posés côte à côte, pas enfermés dans une grille réglée. */
+.rfe-grille--panneaux { border: 0; border-radius: 0; overflow: visible; gap: 14px; }
+.rfe-grille--panneaux > * { box-shadow: none; }
+.rfe-grille--problemes { grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+/* Quatre postes, quatre colonnes tant que la place le permet : à 240 px de
+   colonne minimale, la grille n'en tenait que trois et la quatrième cellule
+   laissait deux cases vides grises derrière elle. */
+.rfe-grille--finances { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.rfe-grille--panneaux { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.rfe-grille--voisines { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+
+.rfe-cellule { padding: 16px 18px; }
+.rfe-cellule__k { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
+.rfe-cellule__n { margin-top: 9px; font-size: 26px; font-weight: 800; line-height: 1.05; color: var(--e-navy); }
+.rfe-cellule__n--fin { font-size: 22px; line-height: 1.15; }
+.rfe-cellule__note { margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: var(--e-tertiaire); }
+.rfe-etiquette {
   display: inline-block;
-  background: var(--p-pale);
-  color: var(--p-bleu);
-  border-radius: 999px;
-  padding: 5px 13px;
-  font-size: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+  background: var(--e-ambre-fond);
+  border: 1px solid var(--e-ambre-bord);
+  color: var(--e-ambre-texte);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
-.rfe-statut {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-.rfe-statut--attente { background: var(--p-rouge-fond); color: var(--p-rouge); }
-.rfe-statut--resolu { background: var(--p-vert-fond); color: var(--p-vert); }
 
-/* ── Cartes de problème ─────────────────────────────────────────────────── */
-.rfe-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-.rfe-carte {
+/* Cellule cliquable : le focus se pose à l'intérieur, pour ne pas casser le
+   quadrillage d'un pixel. */
+.rfe-cellule--lien { display: flex; flex-direction: column; text-decoration: none; color: inherit; min-height: 100%; }
+.rfe-cellule--lien:hover { background: var(--e-survol); }
+.rfe-cellule--lien:focus-visible { outline: 2px solid var(--e-bleu); outline-offset: -2px; }
+.rfe-cellule__titre { margin-top: 12px; font-size: 15px; font-weight: 700; color: var(--e-encre); line-height: 1.3; }
+.rfe-cellule__desc { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--e-tertiaire); }
+.rfe-cellule__pied { margin-top: auto; padding-top: 14px; }
+
+/* ── Encarts à filet gauche ─────────────────────────────────────────────── */
+.rfe-encart { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--e-bord); border-left-width: 3px; border-radius: 3px; font-size: 14.5px; line-height: 1.55; }
+.rfe-encart svg { flex: none; margin-top: 2px; }
+.rfe-encart--ambre { background: var(--e-ambre-fond); border-color: var(--e-ambre-bord); border-left-color: var(--e-ambre-filet); color: var(--e-ambre-texte); }
+.rfe-encart--bleu { background: var(--e-bleu-pale); border-color: var(--e-bleu-pale-bord); border-left-color: var(--e-bleu); color: var(--e-texte); }
+.rfe-encart--gris { background: var(--e-gris); border-color: var(--e-filet); border-left-color: var(--e-numero); color: var(--e-texte); }
+.rfe-encart strong { color: inherit; font-weight: 700; }
+
+/* ── Signalement ────────────────────────────────────────────────────────── */
+.rfe-signalement { border: 1px solid var(--e-bord); border-left: 3px solid var(--e-navy); border-radius: 3px; }
+.rfe-signalement + .rfe-signalement { margin-top: 12px; }
+.rfe-signalement__tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  background: var(--e-gris);
+  border-bottom: 1px solid var(--e-filet);
+  padding: 10px 16px;
+  font-size: 12px;
+}
+.rfe-signalement__cat { font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-navy); }
+.rfe-signalement__sep { color: var(--e-numero); }
+.rfe-signalement__date { color: var(--e-tertiaire); }
+.rfe-signalement__statut { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.rfe-signalement__corps { padding: 16px; }
+.rfe-signalement__pied { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--e-filet); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-size: 14px; }
+
+/* ── Tableau d'identité ─────────────────────────────────────────────────── */
+.rfe-table { border: 1px solid var(--e-bord); border-radius: 3px; overflow: hidden; }
+.rfe-table__l { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 11px 16px; min-height: 44px; background: #fff; }
+.rfe-table__l:nth-child(even) { background: var(--e-alterne); }
+.rfe-table__k { flex: 0 0 168px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
+.rfe-table__v { font-size: 14.5px; font-weight: 600; color: var(--e-encre); min-width: 0; }
+
+.rfe-copier {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
   background: #fff;
-  border: 1px solid var(--p-bord);
-  border-radius: 10px;
-  padding: 22px 24px;
-}
-.rfe-probleme {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color .12s, background .12s;
-}
-.rfe-probleme:hover { border-color: var(--p-bleu); background: var(--p-pale-carte); color: inherit; text-decoration: none; }
-.rfe-probleme__med {
-  width: 44px;
-  height: 44px;
-  flex: none;
-  border-radius: 8px;
-  background: var(--p-pale);
-  color: var(--p-bleu);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rfe-probleme__pied {
-  margin-top: auto;
-  padding-top: 8px;
+  color: var(--e-tertiaire);
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--p-bleu);
-}
-
-/* ── Finances ───────────────────────────────────────────────────────────── */
-.rfe-finances { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-.rfe-finance__k { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600; color: var(--p-second); }
-.rfe-finance__k svg { color: var(--p-bleu); flex: none; }
-.rfe-finance__v { margin-top: 12px; }
-.rfe-finance__n { font-size: 26px; font-weight: 800; line-height: 1.15; color: var(--p-navy); }
-.rfe-finance__n--absent { font-size: 21px; color: var(--p-second); }
-.rfe-finance__l { margin-top: 6px; font-size: 13.5px; color: var(--p-tertiaire); line-height: 1.45; }
-
-.rfe-anciennes { display: flex; flex-wrap: wrap; gap: clamp(16px, 2.4cqw, 34px); }
-.rfe-anciennes > div { flex: 1 1 220px; min-width: min(100%, 200px); }
-.rfe-chip-ambre {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--p-ambre-fond-2);
-  border: 1px solid var(--p-ambre-bord);
-  color: var(--p-ambre);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-}
-
-/* ── Plan d'action ──────────────────────────────────────────────────────── */
-.rfe-plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-.rfe-plan__n {
-  width: 34px;
-  height: 34px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--p-bleu);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
+.rfe-copier:hover { border-color: var(--e-bleu); background: var(--e-survol); color: var(--e-bleu); }
+.rfe-copie { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-vert); }
 
-/* ── Coordonnées ────────────────────────────────────────────────────────── */
-.rfe-cols { display: flex; flex-wrap: wrap; gap: clamp(16px, 2.4cqw, 34px); }
-.rfe-cols > * { flex: 1 1 380px; min-width: min(100%, 280px); }
-.rfe-ligne {
+/* ── Panneaux de documents ──────────────────────────────────────────────── */
+.rfe-panneau { display: flex; flex-direction: column; border: 1px solid var(--e-bord); border-radius: 3px; overflow: hidden; }
+.rfe-panneau__tete {
+  width: 100%;
+  text-align: left;
+  background: var(--e-gris);
+  border: 0;
+  border-bottom: 1px solid var(--e-filet);
+  padding: 12px 16px;
+  font: inherit;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 0;
-  border-top: 1px solid var(--p-filet);
-  font-size: 15.5px;
-}
-.rfe-ligne:first-child { border-top: 0; }
-.rfe-ligne__k { color: var(--p-second); flex: 0 0 auto; min-width: 130px; }
-.rfe-ligne__v { color: var(--p-navy); font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
-.rfe-copier {
-  margin-left: auto;
-  flex: none;
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  color: var(--p-desactive);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13.5px;
-}
-.rfe-copier:hover { color: var(--p-bleu); background: var(--p-pale); }
-
-/* ── Comparables ────────────────────────────────────────────────────────── */
-.rfe-comparables { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.rfe-comparable {
-  display: block;
-  background: #fff;
-  border: 1px solid var(--p-bord);
-  border-radius: 10px;
-  padding: 16px 18px;
-  text-decoration: none;
-  transition: border-color .12s, background .12s;
-}
-.rfe-comparable:hover { border-color: var(--p-bleu); background: var(--p-pale-carte); text-decoration: none; }
-.rfe-comparable__n { font-size: 15.5px; font-weight: 700; color: var(--p-navy); line-height: 1.35; }
-.rfe-comparable__d { font-size: 13.5px; color: var(--p-second); margin-top: 4px; }
-
-/* ── Bandeaux ───────────────────────────────────────────────────────────── */
-.rfe-bandeau {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 24px;
-  background: var(--p-hero);
-  border-radius: 10px;
-  padding: 20px 24px;
-}
-.rfe-bandeau__t { flex: 1 1 320px; min-width: min(100%, 260px); }
-.rfe-final { background: var(--p-hero); border-radius: 12px; padding: clamp(24px, 3cqw, 40px); text-align: center; }
-
-/* ── Pied de page ───────────────────────────────────────────────────────── */
-.rfe-pied { background: var(--p-navy-bandeau); color: #C6D4E4; padding: clamp(30px, 3.2cqw, 46px) 0 0; font-size: 14.5px; }
-.rfe-pied__cols { display: flex; flex-wrap: wrap; gap: 26px clamp(24px, 3cqw, 60px); }
-.rfe-pied__marque { flex: 1 1 300px; min-width: min(100%, 260px); }
-.rfe-pied .rfe-logo__med { background: #12345C; color: #fff; }
-.rfe-pied .rfe-logo__nom { color: #fff; }
-.rfe-pied .rfe-logo__base { color: #9FB2C8; }
-.rfe-pied__t { font-size: 13px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #9FB2C8; }
-.rfe-pied__liens { display: flex; flex-direction: column; gap: 9px; margin-top: 12px; }
-.rfe-pied__liens a { color: #C6D4E4; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
-.rfe-pied__liens a:hover { color: #fff; text-decoration: underline; }
-.rfe-pied__barre {
-  margin-top: clamp(24px, 2.6cqw, 36px);
-  border-top: 1px solid #1D3F68;
-  padding: 16px 0 22px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 22px;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13.5px;
-}
-.rfe-pied__barre nav { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
-.rfe-pied__barre a { color: #C6D4E4; text-decoration: none; }
-.rfe-pied__barre a:hover { color: #fff; text-decoration: underline; }
-.rfe-distinguo { margin-top: 18px; font-size: 13.5px; color: #9FB2C8; line-height: 1.55; }
-
-/* ── Barre collante, écrans étroits ─────────────────────────────────────── */
-.rfe-barre {
-  display: none;
-  position: sticky;
-  bottom: 0;
-  z-index: 40;
-  background: #fff;
-  border-top: 1px solid var(--p-bord);
-  box-shadow: 0 -2px 10px rgba(10, 37, 64, .08);
-  padding: 10px clamp(18px, 2.4cqw, 32px) calc(10px + env(safe-area-inset-bottom));
-}
-.rfe-barre .rfe-btn { width: 100%; }
-
-@container (max-width: 860px) {
-  .rfe-nav { display: none; }
-  .rfe-entete__cta { display: none; }
-  .rfe-barre { display: block; }
-}
-
-/* ── Publications officielles ───────────────────────────────────────────── */
-.rfe-publications { display: grid; gap: 14px; }
-.rfe-pub__groupe { border: 1px solid var(--p-bord); border-radius: 10px; background: #fff; overflow: hidden; }
-.rfe-pub__tete {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--p-filet);
-}
-.rfe-pub__med {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  border-radius: 8px;
-  background: var(--p-pale);
-  color: var(--p-bleu);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rfe-pub__n {
-  margin-left: auto;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--p-second);
-  white-space: nowrap;
-}
-.rfe-pub__expl { padding: 0 20px 14px; font-size: 14px; line-height: 1.5; color: var(--p-tertiaire); }
-.rfe-pub__l {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  padding: 13px 20px;
-  border-top: 1px solid var(--p-filet);
-  font-size: 15px;
   min-height: 44px;
 }
-.rfe-pub__date { flex: 0 0 auto; min-width: 120px; color: var(--p-second); font-size: 14px; }
-.rfe-pub__t { color: var(--p-navy); font-weight: 600; }
-.rfe-pub__d { color: var(--p-texte); min-width: 0; }
-.rfe-pub__lien {
-  margin-left: auto;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--p-bleu);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.rfe-pub__lien:hover { text-decoration: underline; }
-.rfe-pub__l--collective { background: var(--p-rouge-fond); }
-.rfe-pub__plus { padding: 13px 20px; border-top: 1px solid var(--p-filet); font-size: 14px; color: var(--p-tertiaire); }
+.rfe-panneau__tete:hover { background: var(--e-bleu-pale); }
+.rfe-panneau__tete:focus-visible { outline: 2px solid var(--e-bleu); outline-offset: -2px; }
+.rfe-panneau__titre { font-size: 15px; font-weight: 700; color: var(--e-navy); line-height: 1.3; }
+.rfe-panneau__chev { margin-left: auto; color: var(--e-tertiaire); flex: none; }
+.rfe-panneau__tete[aria-expanded="true"] .rfe-panneau__chev { transform: rotate(180deg); }
+.rfe-panneau__l { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 11px 16px; border-top: 1px solid var(--e-filet); font-size: 14px; }
+.rfe-panneau__l:first-child { border-top: 0; }
+.rfe-panneau__date { font-weight: 700; color: var(--e-navy); flex: none; font-size: 13.5px; }
+.rfe-panneau__d { color: var(--e-tertiaire); min-width: 0; font-size: 13.5px; }
+.rfe-panneau__pied { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--e-filet); }
 
-/* ── Décisions de justice ───────────────────────────────────────────────── */
-.rfe-decisions { display: grid; gap: 10px; }
-.rfe-decision {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 15px 20px;
-  background: #fff;
-  border: 1px solid var(--p-bord);
-  border-radius: 10px;
-  font-size: 15px;
-}
-.rfe-decision__jur { font-weight: 700; color: var(--p-navy); }
-.rfe-decision__date { color: var(--p-second); font-size: 14px; }
-.rfe-decision__num { color: var(--p-tertiaire); font-size: 14px; }
-.rfe-decision__role {
-  border-radius: 999px;
-  padding: 4px 11px;
-  font-size: 12.5px;
+/* ── Tableau des décisions ──────────────────────────────────────────────── */
+.rfe-decisions { width: 100%; border-collapse: collapse; border: 1px solid var(--e-bord); border-radius: 3px; font-size: 13.5px; }
+.rfe-decisions th {
+  background: var(--e-gris);
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
   font-weight: 700;
-  background: var(--p-medaillon);
-  color: var(--p-second);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-mention);
+  border-bottom: 1px solid var(--e-filet);
 }
-.rfe-decision__sol { flex-basis: 100%; color: var(--p-texte); font-size: 14.5px; }
-.rfe-decision__lien {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--p-bleu);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.rfe-decision__lien:hover { text-decoration: underline; }
+.rfe-decisions td { padding: 12px 14px; border-top: 1px solid var(--e-filet); color: var(--e-texte); vertical-align: top; }
+.rfe-decisions td:first-child { font-weight: 600; color: var(--e-navy); }
+.rfe-decisions th:last-child, .rfe-decisions td:last-child { width: 86px; text-align: right; }
 
-/* ── Fiche entreprise v2 : hero, résumé, identité, panneaux ─────────────────
-   Le handoff du 24 août fait évoluer la fiche : un avatar et des chips
-   d'identité au hero, un résumé de six indicateurs en tête, l'identité en
-   liste de définitions à lignes alternées, et les documents en panneaux
-   dépliables. Le reste de la couche « rfe » est inchangé. */
-
-.rfe-avatar {
-  width: 62px;
-  height: 62px;
+/* ── Étapes ─────────────────────────────────────────────────────────────── */
+.rfe-etape { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid var(--e-filet); }
+.rfe-etape:first-child { border-top: 0; padding-top: 0; }
+.rfe-etape__n {
+  width: 30px;
+  height: 30px;
   flex: none;
-  border-radius: 12px;
-  background: var(--p-pale);
-  border: 1px solid var(--p-pale-bord);
-  color: var(--p-bleu);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  font-weight: 800;
-}
-
-.rfe-badge-actif {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  /* Sans quoi le badge casse sur deux lignes à 1440 px — le handoff l'exige. */
-  white-space: nowrap;
-  background: #EAF9EF;
-  border: 1px solid #BBF0CB;
-  color: #166534;
-  border-radius: 6px;
-  padding: 5px 11px;
+  border: 1px solid var(--e-navy);
+  border-radius: 3px;
+  color: var(--e-navy);
   font-size: 13px;
   font-weight: 700;
-}
-.rfe-badge-actif--cesse { background: #FDF6E9; border-color: #F2E2C0; color: #8A5A12; }
-
-.rfe-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.rfe-chip-id {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  white-space: nowrap;
-  border: 1px solid #E1E7EF;
-  border-radius: 6px;
-  padding: 6px 11px;
-  font-size: 13.5px;
-  color: var(--p-texte);
-  background: #fff;
-}
-.rfe-chip-id svg { color: var(--p-second); flex: none; }
-
-/* ── Résumé de la fiche ─────────────────────────────────────────────────── */
-.rfe-apercu { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 12px; }
-.rfe-apercu__c {
-  background: #fff;
-  border: 1px solid var(--p-bord);
-  border-radius: 10px;
-  padding: 16px 18px;
-}
-.rfe-apercu__k { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--p-texte); }
-.rfe-apercu__med {
-  width: 32px;
-  height: 32px;
-  flex: none;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.rfe-apercu__n { font-size: 27px; font-weight: 800; line-height: 1.1; color: var(--p-navy); margin-top: 10px; }
-.rfe-apercu__l { font-size: 13px; color: var(--p-second); margin-top: 4px; line-height: 1.45; }
-.rfe-apercu__badge {
-  display: inline-block;
-  margin-left: 8px;
-  background: #FEF6E7;
-  border: 1px solid #F5E6C3;
-  color: #8A5A12;
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 12.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-.rfe-pilule-verte {
-  display: inline-block;
-  background: #DCFCE7;
-  color: #166534;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 15px;
-  font-weight: 700;
-}
+.rfe-etape__t { font-size: 15.5px; font-weight: 700; color: var(--e-navy); line-height: 1.35; }
+.rfe-etape__d { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--e-tertiaire); }
 
-/* ── Identité : liste de définitions à lignes alternées ─────────────────── */
-.rfe-def { border: 1px solid var(--p-bord); border-radius: 10px; overflow: hidden; }
-.rfe-def__l {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 14px;
-  padding: 12px 16px;
-  font-size: 15px;
-  min-height: 44px;
-  background: #fff;
-}
-.rfe-def__l:nth-child(even) { background: #FBFCFE; }
-.rfe-def__k { flex: 0 0 152px; color: var(--p-second); }
-.rfe-def__v { font-weight: 500; color: var(--p-encre); min-width: 0; }
-
-/* ── Panneaux dépliables ────────────────────────────────────────────────── */
-.rfe-panneaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 12px; }
-.rfe-panneau { border: 1px solid var(--p-bord); border-radius: 10px; overflow: hidden; background: #fff; }
-.rfe-panneau__tete {
+/* ── Questions fréquentes ───────────────────────────────────────────────── */
+.rfe-faq__l { border-top: 1px solid var(--e-filet); }
+.rfe-faq__l:first-child { border-top: 0; }
+.rfe-faq__b {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 16px;
-  background: #F8FAFD;
-  border: 0;
-  border-bottom: 1px solid var(--p-filet);
-  font: inherit;
-  font-size: 15px;
-  cursor: pointer;
-  text-align: left;
-  color: var(--p-navy);
-  min-height: 44px;
-}
-.rfe-panneau__tete:hover { background: #F1F5FB; }
-.rfe-panneau__tete:focus-visible { outline: 2px solid var(--p-bleu); outline-offset: -2px; }
-.rfe-panneau__t { font-weight: 700; }
-.rfe-panneau__n { color: var(--p-second); font-weight: 400; }
-.rfe-panneau__chev { margin-left: auto; color: var(--p-second); flex: none; transition: transform .12s; }
-.rfe-panneau__tete[aria-expanded="true"] .rfe-panneau__chev { transform: rotate(180deg); }
-.rfe-panneau__l {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-  padding: 11px 16px;
-  font-size: 14.5px;
-  border-top: 1px solid var(--p-filet);
-}
-.rfe-panneau__l:first-of-type { border-top: 0; }
-.rfe-panneau__date { color: var(--p-navy); font-weight: 600; flex: 0 0 auto; }
-.rfe-panneau__d { color: var(--p-texte); min-width: 0; }
-.rfe-panneau__lien {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--p-bleu);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 14px;
-  white-space: nowrap;
-}
-.rfe-panneau__lien:hover { text-decoration: underline; }
-.rfe-panneau__pied { padding: 12px 16px; border-top: 1px solid var(--p-filet); }
-
-.rfe-lien-fleche {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--p-bleu);
-  text-decoration: none;
-}
-.rfe-lien-fleche:hover { text-decoration: underline; }
-/* La colonne droite du hero ne grandit pas : sinon le H1 casse mal. */
-.rfe-hero__d { align-self: start; }
-
-/* ── Motif de section du handoff v2 ────────────────────────────────────────
-   À partir du résumé, chaque section est une carte blanche posée sur le fond
-   gris de la page, en deux colonnes : le titre et sa description à gauche sur
-   220 px, le contenu à droite. Onze sections suivent ce motif dans le
-   prototype. J'avais fait des bandes pleine largeur à fonds alternés — la
-   page se lisait, mais ce n'était pas ce dessin. */
-.rfe-page { background: #F7F9FC; }
-.rfe-pile {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 14px clamp(16px, 2.2cqw, 28px) clamp(28px, 3cqw, 48px);
-  display: flex;
-  flex-direction: column;
   gap: 14px;
+  padding: 16px 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--e-navy);
+  font-size: 15.5px;
+  font-weight: 600;
+  min-height: 44px;
 }
-.rfe-bloc {
-  background: #fff;
-  border: 1px solid var(--p-bord);
-  border-radius: 12px;
-  padding: clamp(20px, 2.2cqw, 28px);
+.rfe-faq__b:hover { color: var(--e-bleu); }
+/* L'indicateur est un carré bordé portant + ou −, jamais un chevron : la
+   géométrie carrée est le parti pris de toute la page. */
+.rfe-faq__signe {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(18px, 2.4cqw, 36px);
-  scroll-margin-top: 86px;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--e-tertiaire);
+  line-height: 1;
 }
-.rfe-bloc__t { flex: 0 1 220px; min-width: min(100%, 200px); }
-.rfe-bloc__t h2 { font-size: 19px; font-weight: 700; color: var(--p-navy); line-height: 1.3; }
-.rfe-bloc__t p { margin-top: 8px; font-size: 14px; color: var(--p-second); line-height: 1.5; }
-.rfe-bloc__c { flex: 1 1 560px; min-width: min(100%, 260px); }
+.rfe-faq__r { padding: 0 0 18px; font-size: 15px; line-height: 1.6; color: var(--e-texte); max-width: 74ch; }
 
-/* ── Entreprises du même secteur : du maillage, pas du contenu ───────────
-   Elle sert le robot, pas le lecteur : la densité de liens fiche→fiche fait
-   explorer un annuaire de treize millions de pages. En cartes, elle pesait
-   plus lourd à l'écran que les signalements qu'elle suit. En liste de liens
-   sobres, elle garde tous ses chemins et rend sa place. */
-.rfe-voisines {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 clamp(16px, 2.2cqw, 28px) clamp(24px, 3cqw, 40px);
+/* ── Bandeau d'appel, pied de page ──────────────────────────────────────── */
+.rfe-appel { background: var(--e-navy); color: #fff; padding: clamp(28px, 3cqw, 44px) 0; }
+.rfe-appel__piste { display: flex; flex-wrap: wrap; align-items: center; gap: 22px clamp(24px, 3cqw, 48px); }
+.rfe-appel h2 { font-size: clamp(21px, 1.2cqw + 13px, 27px); font-weight: 800; line-height: 1.25; color: #fff; letter-spacing: -0.015em; }
+.rfe-appel p { margin-top: 8px; font-size: 14.5px; color: var(--e-sur-navy); }
+
+.rfe-pied { background: var(--e-navy-pied); color: var(--e-sur-navy-2); font-size: 14px; }
+.rfe-pied__cols { display: flex; flex-wrap: wrap; gap: 28px clamp(24px, 3cqw, 56px); padding: clamp(28px, 3cqw, 44px) 0; }
+.rfe-pied__ident { flex: 1 1 320px; min-width: min(100%, 260px); }
+.rfe-pied__col { flex: 0 1 190px; }
+.rfe-pied__t { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #fff; }
+.rfe-pied__liens { margin-top: 12px; display: grid; gap: 9px; }
+.rfe-pied a { color: var(--e-sur-navy-2); text-decoration: none; font-size: 13.5px; }
+.rfe-pied a:hover { color: #fff; text-decoration: underline; }
+.rfe-pied__faible { color: var(--e-sur-navy-faible); font-size: 12.5px; line-height: 1.5; }
+.rfe-pied__barre { border-top: 1px solid var(--e-navy-sep); padding: 14px 0; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; font-size: 12.5px; color: var(--e-sur-navy-faible); }
+
+/* ── Barre collante, écrans étroits ─────────────────────────────────────── */
+.rfe-barre { display: none; position: sticky; bottom: 0; z-index: 45; background: #fff; border-top: 1px solid var(--e-bord); padding: 10px clamp(16px, 2.2cqw, 30px) calc(10px + env(safe-area-inset-bottom)); }
+
+@container (max-width: 900px) {
+  .rfe-recherche, .rfe-nav, .rfe-entete__cta { display: none; }
+  .rfe-barre { display: block; }
 }
-.rfe-voisines h2 { font-size: 15px; font-weight: 700; color: var(--p-second); }
-.rfe-voisines > p { margin-top: 4px; font-size: 13px; color: var(--p-tertiaire); max-width: 74ch; }
-.rfe-voisines ul {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  list-style: none;
-  padding: 0;
-}
-.rfe-voisines li { font-size: 13px; line-height: 1.5; }
-.rfe-voisines a { color: var(--p-second); text-decoration: none; }
-.rfe-voisines a:hover { color: var(--p-bleu); text-decoration: underline; }
-/* La ville et le décompte s'effacent derrière la raison sociale, qui est
-   l'ancre utile. Sans le séparateur explicite ils se collaient au nom. */
-.rfe-voisines a span { color: var(--p-desactive); }
