@@ -149,13 +149,44 @@ export default async function sitemap({
   // Les fiches qui portent un signal — une déclaration de consommateur ou un
   // site rattaché — passent avant le gros du répertoire. Le budget
   // d'exploration est fini : autant qu'il commence par ce qui a du contenu.
+  /**
+   * Les deux critères sont interrogés séparément, non par un `OR`.
+   *
+   * Réunis dans une même clause, aucun index ne s'applique : Postgres relisait
+   * les treize millions de lignes — sept gigaoctets, douze secondes mesurées en
+   * production — pour n'en retenir que quatre-vingt-six mille. Passé les dix
+   * secondes que la base s'accorde, la requête était interrompue et cette
+   * tranche répondait 500. Celle qui porte les meilleures fiches du site,
+   * priorité 0,9, était donc vide depuis toujours.
+   *
+   * Séparés, chacun trouve son index — l'index partiel sur les sociétés ayant
+   * un site pour le premier, la clé étrangère pour le second. Une seconde à
+   * eux deux.
+   *
+   * Les fiches portant un signalement passent en tête et échappent au plafond
+   * de cinquante mille : elles sont une poignée, et ce sont les seules pages du
+   * site à porter un récit.
+   */
   if (rangDemande === RANG_SIGNAL) {
-    const fiches = await prisma.entreprise.findMany({
-      where: { ...OU_INDEXABLE, OR: [{ signalements: { some: {} } }, { siteWeb: { not: null } }] },
-      select: { slug: true, majLe: true },
-      orderBy: { majLe: "desc" },
-      take: PAR_FICHIER,
-    });
+    const [avecSignalement, avecSite] = await Promise.all([
+      prisma.entreprise.findMany({
+        where: { ...OU_INDEXABLE, signalements: { some: {} } },
+        select: { slug: true, majLe: true },
+        orderBy: { majLe: "desc" },
+        take: PAR_FICHIER,
+      }),
+      prisma.entreprise.findMany({
+        where: { ...OU_INDEXABLE, siteWeb: { not: null } },
+        select: { slug: true, majLe: true },
+        orderBy: { majLe: "desc" },
+        take: PAR_FICHIER,
+      }),
+    ]);
+    const vus = new Set(avecSignalement.map((e) => e.slug));
+    const fiches = [...avecSignalement, ...avecSite.filter((e) => !vus.has(e.slug))].slice(
+      0,
+      PAR_FICHIER,
+    );
     return fiches.map((e) => ({
       url: `${b}/entreprises/${e.slug}`,
       lastModified: e.majLe,
