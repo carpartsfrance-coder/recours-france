@@ -27,3 +27,4 @@ public/_maquettes/
 
 # État de reprise du transfert vers la production.
 .transfert-etat
+.collecte-etat.json

@@ -412,3 +412,55 @@ export function rapprocher(partie: PartieMorale, candidats: Candidat[]): Candida
   const retenus = memeForme.length > 0 ? memeForme : exacts;
   return retenus.length === 1 ? retenus[0] : null;
 }
+
+/**
+ * Moisson en masse, par le point d'export prévu pour cela.
+ *
+ * `/search` plafonne à dix mille résultats par requête — la page deux cents
+ * répond 416, quel que soit le nombre réel de décisions. `/export` est le
+ * point conçu pour la récupération exhaustive : il rend les décisions
+ * complètes, texte et zones compris, ce qui épargne aussi l'appel individuel
+ * à `/decision` — le poste principal du temps de collecte.
+ *
+ * Le plafond n'a pas disparu pour autant : il se contourne en découpant par
+ * tranches de dates assez courtes pour rester sous la limite.
+ */
+export async function exporter(options: {
+  juridiction: string;
+  depuis: string;
+  jusqua: string;
+  taille?: number;
+  lot?: number;
+}): Promise<{ total: number; decisions: DecisionJudilibre[] }> {
+  if (!judilibreConfigure()) return { total: 0, decisions: [] };
+  const url = new URL(`${BASE}/export`);
+  url.searchParams.set("jurisdiction", options.juridiction);
+  url.searchParams.set("date_start", options.depuis);
+  url.searchParams.set("date_end", options.jusqua);
+  url.searchParams.set("date_type", "creation");
+  url.searchParams.set("batch_size", String(options.taille ?? 50));
+  url.searchParams.set("batch", String(options.lot ?? 0));
+  url.searchParams.set("order", "asc");
+
+  const data = await appelJson<{ total?: number; results?: ReponseDecision[] }>(
+    url.toString(),
+    "judilibre",
+    { headers: entetes(), timeoutMs: 45_000 },
+  );
+  const decisions = (data.results ?? [])
+    .filter((d) => d.id && d.text)
+    .map((d) => ({
+      id: d.id!,
+      juridiction: d.jurisdiction ?? null,
+      chambre: d.chamber ?? null,
+      numero: d.number ?? null,
+      ecli: d.ecli ?? null,
+      date: d.decision_date ? new Date(d.decision_date) : null,
+      solution: d.solution ?? null,
+      solutionLibelle: d.solution_alt ?? null,
+      nac: d.nac ?? null,
+      texte: d.text!,
+      zones: d.zones ?? null,
+    }));
+  return { total: data.total ?? 0, decisions };
+}

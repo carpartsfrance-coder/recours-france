@@ -59,15 +59,10 @@ case "$CHOIX" in
     ANNEE=$(printf '%s' "$ANNEE" | tr -cd '0-9')
     [ -z "$ANNEE" ] && ANNEE=2023
     echo
-    echo "Collecte depuis le 01/01/$ANNEE. Laissez tourner ; Ctrl-C pour arrêter,"
-    echo "ce qui est déjà rattaché reste en base."
-    for J in tcom tj ca; do
-      echo
-      echo "── $J ──"
-      npx tsx scripts/collecter-decisions.ts \
-        --juridiction="$J" --requete=societe --depuis="$ANNEE-01-01" \
-        --lots=2000 --taille=50 --appliquer
-    done
+    echo "Collecte depuis le 01/01/$ANNEE, semaine par semaine."
+    echo "Ctrl-C pour arrêter : la progression est notée dans .collecte-etat.json,"
+    echo "et la relance reprend exactement où vous en étiez."
+    npx tsx scripts/collecter-decisions.ts --tout --depuis="$ANNEE-01-01" --appliquer
     ;;
   *)
     echo "Choix inconnu."; exit 1
