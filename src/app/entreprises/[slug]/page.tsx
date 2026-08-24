@@ -283,13 +283,17 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           une serait faux et exposerait à une pénalité. */}
       <DonneesStructurees donnees={faqJsonLd(questions.map((q) => ({ q: typo(q.q), a: typo(q.r.join(" ")) })))} />
 
-      {/* ── 1. Bandeau d'indépendance ───────────────────────────────── */}
-      <div className="rfp-bandeau" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        <Info taille={15} />
-        {typo("Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec l’État.")}
-      </div>
+      {/* Le bandeau d'indépendance a été retiré de cette page.
+          La mention subsiste dans le pied de la fiche — « plateforme privée et
+          indépendante », l'éditeur nommé, et la distinction explicite entre lui
+          et la société tierce dont la fiche parle — ainsi que dans les mentions
+          légales. L'exigence de ne jamais se faire passer pour un organisme
+          public reste donc tenue ; c'est sa répétition en tête d'écran qui
+          cesse. Le parcours de dépôt la garde, lui : c'est là qu'on publie une
+          mise en cause, et le régime de la plateforme y décide de la portée du
+          geste. */}
 
-      {/* ── 2. En-tête ──────────────────────────────────────────────── */}
+      {/* ── En-tête ─────────────────────────────────────────────────── */}
       <header className="rfe-entete">
         <div className="rfe-conteneur rfe-entete__piste">
           <Link href="/" className="rfe-logo" aria-label="Recours France — accueil">
