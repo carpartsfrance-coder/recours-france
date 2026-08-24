@@ -42,22 +42,28 @@ function conteneur(habillage: Habillage): string {
 }
 
 /**
- * Bandeau d'indépendance — doit rester visible sur TOUTES les pages
- * (contrainte juridique du handoff, non contournable).
+ * Bandeau de démonstration.
+ *
+ * Il portait aussi la mention d'indépendance en tête de chaque page. Celle-ci
+ * a été retirée sur décision : elle figure toujours dans le pied de page, qui
+ * nomme l'éditeur et le distingue des sociétés dont le site parle, ainsi que
+ * dans les mentions légales et les conditions générales. L'exigence de ne pas
+ * se faire passer pour un organisme public reste donc tenue par écrit ; c'est
+ * son rappel permanent en haut d'écran qui cesse.
+ *
+ * Ne subsiste ici que l'avertissement de démonstration, qui ne s'affiche que
+ * lorsque la variable est armée — jamais en production. Le retirer aurait fait
+ * passer des données d'essai pour des données réelles.
  */
-export function BandeauIndependance({ habillage = "standard" }: { habillage?: Habillage }) {
+export function BandeauDemonstration({ habillage = "standard" }: { habillage?: Habillage }) {
+  if (!DEMO) return null;
   return (
     <div className="rf-bandeau-independance">
       <div className={conteneur(habillage)}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-          {/* Formulation imposée par le handoff, au mot près. */}
           <Info taille={16} style={{ flex: "none", color: "var(--rf-sur-marine-attenue)" }} />
-          Plateforme privée et indépendante d’aide aux litiges de consommation — sans lien avec
-          l’État.
+          Démonstration — données fictives
         </span>
-        {DEMO ? (
-          <span style={{ color: "var(--rf-sur-nuit-attenue)" }}>Démonstration — données fictives</span>
-        ) : null}
       </div>
     </div>
   );
@@ -309,7 +315,7 @@ export function Page({
 }) {
   return (
     <div className={habillage === "institutionnel" ? "rfi" : undefined}>
-      <BandeauIndependance habillage={habillage} />
+      <BandeauDemonstration habillage={habillage} />
       <Entete {...entete} habillage={habillage} />
       {fil ? <FilAriane items={fil} habillage={habillage} /> : null}
       <main id="contenu">{children}</main>

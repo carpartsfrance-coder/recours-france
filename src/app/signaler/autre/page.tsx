@@ -86,8 +86,6 @@ export default async function CibleLibre({
 
   return (
     <div className="rfp">
-      <div className="rfp-bandeau">{typo("Plateforme privée et indépendante, sans lien avec l’État.")}</div>
-
       <header className="rfp-entete">
         <div className="rfp-conteneur rfp-conteneur--1000 rfp-entete__piste">
           <Link href="/" className="rfp-logo" aria-label="Recours France — accueil">
