@@ -94,6 +94,34 @@ if (partie) {
     rapprocher(partie, [{ id: "d", siren: "777777777", denomination: "AUTO SERVICE VAROIS", formeJuridique: "SAS" }]) === null);
 }
 
+{
+  // L'en-tête accentué d'Annecy, tel qu'il est réellement rédigé : le titre
+  // « DÉFENDERESSES » doit être reconnu malgré l'accent, sans quoi le rôle
+  // du bloc précédent — demandeur — s'applique à la partie qui se défend.
+  const texteAccentue = `DEMANDEUR
+Monsieur [D] [V]
+représenté par Maître Christophe TRABBIA, avocat
+
+DÉFENDERESSES
+
+Société ANP (AUTO NET PROTECH),
+immatriculée au RCS de [Localité 2] sous le numéro 927 453 555,
+
+Société DISTRIMOTOR,
+immatriculée au RCS d'[Localité 3] sous le numéro B 432 892 412`;
+  const dA: DecisionJudilibre = {
+    id: "essai-accents", juridiction: "tj", chambre: null, numero: "26/00166",
+    ecli: null, date: new Date("2026-05-18"), solution: null, solutionLibelle: null,
+    nac: null, texte: texteAccentue,
+    zones: { introduction: [{ start: 0, end: texteAccentue.length }] },
+  };
+  const pA = partiesMorales(dA);
+  const distri = pA.find((x) => /DISTRIMOTOR/.test(x.denomination));
+  verifier("« DÉFENDERESSES » accentué est reconnu comme un titre", pA.every((x) => x.role === "defendeur"),
+    pA.map((x) => `${x.denomination}:${x.role}`).join(", "));
+  verifier("DISTRIMOTOR y est défenderesse, avec son SIREN", distri?.role === "defendeur" && distri?.siren === "432892412");
+}
+
 console.log();
 verifier("clé de Luhn : un vrai SIREN passe", sirenValide("432892412"));
 verifier("clé de Luhn : un numéro de RG ne passe pas", !sirenValide("260369800"));

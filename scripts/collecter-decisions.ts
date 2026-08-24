@@ -234,6 +234,21 @@ async function main() {
 
   await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS unaccent").catch(() => undefined);
 
+  const appliquerNettoyage = process.argv.includes("--appliquer");
+  if (appliquerNettoyage) {
+    // Répare les dégâts des versions précédentes, avant d'écrire quoi que ce
+    // soit de neuf. Des mots de procédure — « DEMANDE », découpé de « PARTIE
+    // EN DEMANDE » — avaient été rattachés à des sociétés qui portent
+    // réellement ce nom au répertoire ; et des rôles inversés subsistent des
+    // en-têtes accentués. Les upserts corrigeront les rôles au fil de la
+    // moisson ; les rattachements fantômes, eux, ne reviendront jamais dans le
+    // flux et doivent être retirés ici.
+    const fantomes = await prisma.$executeRaw`
+      DELETE FROM "DecisionJustice"
+      WHERE upper("denominationCitee") = ANY(${[...PROCEDURE]})`;
+    if (fantomes > 0) console.log(`nettoyage : ${fantomes} rattachement(s) fantôme(s) retiré(s)`);
+  }
+
   const appliquer = process.argv.includes("--appliquer");
   const depuis = argument("depuis", "2023-01-01");
   console.log(appliquer ? "Écriture en base activée." : "Simulation : rien ne sera écrit (--appliquer pour exécuter).");

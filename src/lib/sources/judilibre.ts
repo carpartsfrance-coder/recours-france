@@ -256,13 +256,27 @@ export function normaliserDenomination(brut: string): string {
  * produit pas d'erreur visible — juste une décision qui n'est rattachée à
  * personne, ce qui se remarque beaucoup moins qu'un faux rattachement.
  */
+/**
+ * Les intitulés sont comparés une fois les accents retirés.
+ *
+ * Les greffes accentuent ou non leurs titres selon leur usage : Draguignan
+ * écrit « DEFENDERESSE », Annecy « DÉFENDERESSES ». Le détecteur ne
+ * connaissait que la forme nue — il ratait le titre accentué, gardait le rôle
+ * du bloc précédent, et DISTRIMOTOR, défenderesse à Annecy, était publiée
+ * demanderesse. Se tromper de côté n'est pas une coquille : c'est dire d'une
+ * société qu'elle attaque quand elle se défend.
+ */
+function sansAccents(texte: string): string {
+  return texte.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 const ROLES: { motif: RegExp; role: Role }[] = [
   {
     motif: /^\s*\*?\s*(DEMANDEURE?|DEMANDERESSE|REQUERANTE?|APPELANTE?|PARTIE\(?S?\)? +EN +DEMANDE)S?\b/i,
     role: "demandeur",
   },
   {
-    motif: /^\s*\*?\s*(DEFENDEURE?|DEFENDERESSE|INTIMEE?|PARTIE\(?S?\)? +EN +D[EÉ]FENSE)S?\b/i,
+    motif: /^\s*\*?\s*(DEFENDEURE?|DEFENDERESSE|INTIMEE?|PARTIE\(?S?\)? +EN +DEFENSE)S?\b/i,
     role: "defendeur",
   },
 ];
@@ -331,7 +345,7 @@ export function partiesMorales(d: DecisionJudilibre): PartieMorale[] {
   let role: Role | null = null;
 
   for (const ligne of entete.split(/\n/)) {
-    const marqueurs = ROLES.filter((r) => r.motif.test(ligne));
+    const marqueurs = ROLES.filter((r) => r.motif.test(sansAccents(ligne)));
     if (marqueurs.length === 1) role = marqueurs[0].role;
     else if (marqueurs.length > 1) role = "partie";
     if (!role) continue;
