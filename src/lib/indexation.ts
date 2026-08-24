@@ -43,6 +43,29 @@ const SOCIETES_CIVILES = ["6540", "6588"];
  */
 const SECTEURS_GRAND_PUBLIC_EXCLUS = ["autre", "immobilier"];
 
+/**
+ * Les personnes morales de droit public administratif, hors du plan de site.
+ *
+ * La catégorie juridique 7 rassemble l'État, les collectivités territoriales
+ * et les établissements publics administratifs : préfectures, mairies, lycées,
+ * collèges. Elles figuraient au plan de site pour la seule raison qu'elles ont
+ * un site internet — quatorze mille huit cent quatre-vingt-quatre fiches, soit
+ * un sixième de ce qui est proposé à l'exploration.
+ *
+ * Personne ne cherche « avis collège Robert Schuman », et un différend avec un
+ * établissement scolaire ne relève pas du droit de la consommation mais du
+ * recours administratif. Les proposer dilue le budget d'exploration sur des
+ * pages qui ne répondront jamais à une requête.
+ *
+ * Les établissements publics à caractère industriel et commercial ne sont pas
+ * concernés : ils relèvent de la catégorie 4, et un litige avec eux est bien
+ * un litige de consommation.
+ *
+ * Ces fiches restent indexables et atteignables par le maillage : c'est leur
+ * proposition au robot qui cesse, pas leur existence.
+ */
+const DROIT_PUBLIC_ADMINISTRATIF = "7";
+
 export type PourIndexation = {
   etatAdministratif: string;
   categorieJuridique: string | null;
@@ -87,10 +110,15 @@ export const PALIER_OUVERT = Math.min(3, Math.max(1, Number(process.env.SEO_PALI
 export function ouPlanDeSite(): Prisma.EntrepriseWhereInput {
   if (PALIER_OUVERT >= 3) return OU_INDEXABLE;
   if (PALIER_OUVERT === 2) {
-    return { ...OU_INDEXABLE, secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS } };
+    return {
+      ...OU_INDEXABLE,
+      NOT: { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
+      secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS },
+    };
   }
   return {
     ...OU_INDEXABLE,
+    NOT: { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
     OR: [
       { siteWeb: { not: null } },
       { boutiques: { some: {} } },
