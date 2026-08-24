@@ -314,7 +314,8 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </div>
       </header>
 
-      <main id="contenu">
+      <main id="contenu" className="rfe-page">
+        <div className="rfe-pile">
         {/* ── 3. Fil d'Ariane ───────────────────────────────────────── */}
         <div className="rfe-conteneur">
           <nav className="rfe-fil" aria-label="Fil d’Ariane">
@@ -425,12 +426,14 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             qui suivent : elle est assumée. Un visiteur arrivé par « avis X »
             doit savoir en cinq secondes ce que la page contient, sans faire
             défiler huit sections pour le découvrir. */}
-        <section id="apercu" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Résumé de la fiche de ${nom}`)}</h2>
-            <p className="rfe-second" style={{ marginTop: 8 }}>
+        <section id="apercu" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Résumé de la fiche de ${nom}`)}</h2>
+            <p>
               {typo(`Les principales informations disponibles sur ${nom}.`)}
             </p>
+          </div>
+          <div className="rfe-bloc__c">
 
             <div className="rfe-apercu" style={{ marginTop: 20 }}>
               <div className="rfe-apercu__c">
@@ -524,11 +527,12 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 6. Signalements publics ───────────────────────────────── */}
-        <section id="signalements" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Signalements publics concernant ${nom}`)}</h2>
-
-            {total === 0 ? (
+        <section id="signalements" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Signalements publics concernant ${nom}`)}</h2>
+            
+          </div>
+          <div className="rfe-bloc__c">{total === 0 ? (
               <div className="rfe-carte" style={{ marginTop: 20 }}>
                 <div className="rfe-h3">
                   {typo(`Aucun signalement public concernant ${nom} pour le moment.`)}
@@ -636,14 +640,16 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 7. Quel problème rencontrez-vous ? ────────────────────── */}
-        <section id="problemes" className="rfe-section rfe-section--alt">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo("Quel problème rencontrez-vous ?")}</h2>
-            <p className="rfe-second" style={{ marginTop: 10, maxWidth: "64ch" }}>
+        <section id="problemes" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo("Quel problème rencontrez-vous ?")}</h2>
+            <p>
               {typo(
                 "Choisissez la situation la plus proche de la vôtre : la réclamation et les démarches sont adaptées à votre choix.",
               )}
             </p>
+          </div>
+          <div className="rfe-bloc__c">
 
             <div className="rfe-grille" style={{ marginTop: 20 }}>
               {problemes.map((p) => {
@@ -667,11 +673,12 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 8. Informations financières ───────────────────────────── */}
-        <section id="finances" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Informations financières de ${nom}`)}</h2>
-
-            <div className="rfe-finances" style={{ marginTop: 20 }}>
+        <section id="finances" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Informations financières de ${nom}`)}</h2>
+            
+          </div>
+          <div className="rfe-bloc__c"><div className="rfe-finances" style={{ marginTop: 20 }}>
               <div className="rfe-carte">
                 <div className="rfe-finance__k">
                   <Graphique taille={18} />
@@ -763,12 +770,14 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             Ajout au handoff : il n'a pas de section pour cela, et la demande
             est venue après. Elle se pose ici, juste après les finances, parce
             que le dépôt de comptes est ce qui les atteste. */}
-        <section id="identite" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Identité de ${nom}`)}</h2>
-            <p className="rfe-second" style={{ marginTop: 8 }}>
+        <section id="identite" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Identité de ${nom}`)}</h2>
+            <p>
               {typo("Informations officielles permettant d’identifier précisément l’entreprise.")}
             </p>
+          </div>
+          <div className="rfe-bloc__c">
 
             {/* Une liste de définitions à lignes alternées plutôt que deux
                 cartes côte à côte : l'identité se lit de haut en bas, une clé
@@ -844,14 +853,16 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
 
         {/* ── 11. Entreprises comparables ───────────────────────────── */}
         {comparables.length > 0 ? (
-          <section className="rfe-section rfe-section--alt">
-            <div className="rfe-conteneur">
-              <h2 className="rfe-h2">{typo("Entreprises du même secteur")}</h2>
-              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
+          <section className="rfe-bloc">
+            <div className="rfe-bloc__t">
+              <h2>{typo("Entreprises du même secteur")}</h2>
+              <p>
                 {typo(
-                  "Rapprochement par activité et par département, à partir des registres publics. Ce n’est ni un classement, ni une comparaison de qualité, ni une recommandation.",
+                  "Rapprochement par activité et par département. Ce n’est ni un classement, ni une comparaison de qualité.",
                 )}
               </p>
+            </div>
+            <div className="rfe-bloc__c">
               <div className="rfe-comparables" style={{ marginTop: 18 }}>
                 {comparables.map((c) => (
                   <Link key={c.slug} href={`/entreprises/${c.slug}`} className="rfe-comparable">
@@ -870,14 +881,16 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
 
         {/* ── FAQ — l'onglet du handoff n'avait pas de section ───────── */}
         {publications.length > 0 ? (
-          <section id="documents" className="rfe-section rfe-section--alt">
-            <div className="rfe-conteneur">
-              <h2 className="rfe-h2">{typo(`Documents et publications officielles de ${nom}`)}</h2>
-              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
+          <section id="documents" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Documents et publications officielles de ${nom}`)}</h2>
+            <p>
                 {typo(
                   `${formatNombre(totalPublications)} annonce${totalPublications > 1 ? "s" : ""} publiée${totalPublications > 1 ? "s" : ""} au Bulletin officiel des annonces civiles et commerciales. Chaque annonce renvoie à sa page officielle, qui seule fait foi.`,
                 )}
               </p>
+          </div>
+          <div className="rfe-bloc__c">
 
               {/* Deux panneaux dépliables, ouverts au départ : la liste des
                   dépôts est le contenu de la section, pas un détail qu'on
@@ -949,14 +962,16 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             et le texte n'est pas recopié — il est lié à sa source, qui fait
             foi. */}
         {decisions.length > 0 ? (
-          <section id="justice" className="rfe-section">
-            <div className="rfe-conteneur">
-              <h2 className="rfe-h2">{typo(`Décisions de justice citant ${nom}`)}</h2>
-              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "72ch" }}>
+          <section id="justice" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Décisions de justice citant ${nom}`)}</h2>
+            <p>
                 {typo(
                   `${formatNombre(decisions.length)} décision${decisions.length > 1 ? "s" : ""} publiée${decisions.length > 1 ? "s" : ""} en données ouvertes par la Cour de cassation, où cette société figure parmi les parties. Le rapprochement se fait sur la dénomination et la forme juridique : en cas de doute, la décision n’est pas rattachée.`,
                 )}
               </p>
+          </div>
+          <div className="rfe-bloc__c">
 
               <div className="rfe-decisions" style={{ marginTop: 20 }}>
                 {decisions.map((d) => (
@@ -1003,14 +1018,16 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         ) : null}
 
         {/* ── 9. Plan d'action ──────────────────────────────────────── */}
-        <section id="plan" className="rfe-section rfe-section--alt">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Litige avec ${nom} : le plan d’action`)}</h2>
-            <p className="rfe-second" style={{ marginTop: 10, maxWidth: "64ch" }}>
+        <section id="plan" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Litige avec ${nom} : le plan d’action`)}</h2>
+            <p>
               {typo(
                 "Ces démarches sont gratuites et s’effectuent dans cet ordre. Chacune conditionne la suivante : une médiation saisie sans réclamation écrite préalable est déclarée irrecevable.",
               )}
             </p>
+          </div>
+          <div className="rfe-bloc__c">
 
             <div className="rfe-plan" style={{ marginTop: 20 }}>
               {etapes.map((e, i) => (
@@ -1048,10 +1065,12 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 10. Coordonnées et informations légales ───────────────── */}
-        <section id="faq" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Questions fréquentes sur ${nom} et sur Recours France`)}</h2>
-            <div style={{ display: "grid", gap: 12, marginTop: 20, maxWidth: "82ch" }}>
+        <section id="faq" className="rfe-bloc">
+          <div className="rfe-bloc__t">
+            <h2>{typo(`Questions fréquentes sur ${nom} et sur Recours France`)}</h2>
+            
+          </div>
+          <div className="rfe-bloc__c"><div style={{ display: "grid", gap: 12, marginTop: 20, maxWidth: "82ch" }}>
               {questions.map((q) => (
                 <details key={q.cle} className="rfe-carte">
                   <summary
@@ -1085,6 +1104,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
               {typo("Rendre mon litige visible")}
             </Link>
           </div>
+        </div>
         </div>
       </main>
 

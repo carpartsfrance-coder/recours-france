@@ -5708,3 +5708,33 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-lien-fleche:hover { text-decoration: underline; }
 /* La colonne droite du hero ne grandit pas : sinon le H1 casse mal. */
 .rfe-hero__d { align-self: start; }
+
+/* ── Motif de section du handoff v2 ────────────────────────────────────────
+   À partir du résumé, chaque section est une carte blanche posée sur le fond
+   gris de la page, en deux colonnes : le titre et sa description à gauche sur
+   220 px, le contenu à droite. Onze sections suivent ce motif dans le
+   prototype. J'avais fait des bandes pleine largeur à fonds alternés — la
+   page se lisait, mais ce n'était pas ce dessin. */
+.rfe-page { background: #F7F9FC; }
+.rfe-pile {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px clamp(16px, 2.2cqw, 28px) clamp(28px, 3cqw, 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rfe-bloc {
+  background: #fff;
+  border: 1px solid var(--p-bord);
+  border-radius: 12px;
+  padding: clamp(20px, 2.2cqw, 28px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(18px, 2.4cqw, 36px);
+  scroll-margin-top: 86px;
+}
+.rfe-bloc__t { flex: 0 1 220px; min-width: min(100%, 200px); }
+.rfe-bloc__t h2 { font-size: 19px; font-weight: 700; color: var(--p-navy); line-height: 1.3; }
+.rfe-bloc__t p { margin-top: 8px; font-size: 14px; color: var(--p-second); line-height: 1.5; }
+.rfe-bloc__c { flex: 1 1 560px; min-width: min(100%, 260px); }
