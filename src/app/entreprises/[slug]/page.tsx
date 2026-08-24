@@ -150,6 +150,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   const commune = entreprise.commune ?? null;
   const adresse = adressePostale(entreprise);
   const lienDepartement = entreprise.departement ? cheminDepartement(secteur, entreprise.departement) : null;
+  const lienSecteur = cheminSecteur(secteur);
   const lienCommune =
     entreprise.departement && entreprise.communeSlug
       ? cheminCommune(secteur, entreprise.departement, entreprise.communeSlug)
@@ -851,34 +852,6 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           </div>
         </section>
 
-        {/* ── 11. Entreprises comparables ───────────────────────────── */}
-        {comparables.length > 0 ? (
-          <section className="rfe-bloc">
-            <div className="rfe-bloc__t">
-              <h2>{typo("Entreprises du même secteur")}</h2>
-              <p>
-                {typo(
-                  "Rapprochement par activité et par département. Ce n’est ni un classement, ni une comparaison de qualité.",
-                )}
-              </p>
-            </div>
-            <div className="rfe-bloc__c">
-              <div className="rfe-comparables" style={{ marginTop: 18 }}>
-                {comparables.map((c) => (
-                  <Link key={c.slug} href={`/entreprises/${c.slug}`} className="rfe-comparable">
-                    <span className="rfe-comparable__n">{c.denomination}</span>
-                    <span className="rfe-comparable__d">
-                      {[c.commune ? communeEnTitre(c.commune) : null, `${formatNombre(c.signalements)} signalement${c.signalements > 1 ? "s" : ""}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
         {/* ── FAQ — l'onglet du handoff n'avait pas de section ───────── */}
         {publications.length > 0 ? (
           <section id="documents" className="rfe-bloc">
@@ -1105,7 +1078,51 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             </Link>
           </div>
         </div>
-        </div>
+  
+        {/* ── Entreprises du même secteur ────────────────────────────────
+            Cette section n'existe que pour le maillage interne : c'est la
+            densité de liens fiche→fiche qui fait explorer un annuaire de
+            treize millions de pages, pas le plan de site. Elle n'apprend rien
+            au visiteur — d'où une liste de liens sobres en fin de page plutôt
+            que des cartes, qui pesaient plus lourd que les signalements.
+
+            Tous les voisins sont listés, pas quatre : chaque lien retiré est
+            un chemin d'exploration en moins. */}
+        {comparables.length > 0 ? (
+          <section className="rfe-voisines">
+            <h2>{typo("Entreprises du même secteur")}</h2>
+            <p>
+              {typo(
+                "Rapprochement par activité et par département. Ce n’est ni un classement, ni une comparaison de qualité.",
+              )}
+            </p>
+            <ul>
+              {comparables.map((c) => (
+                <li key={c.slug}>
+                  <Link href={`/entreprises/${c.slug}`}>
+                    {c.denomination}
+                    {c.commune ? <span> · {communeEnTitre(c.commune)}</span> : null}
+                    {c.signalements > 0 ? (
+                      <span>
+                        {" · "}
+                        {formatNombre(c.signalements)} signalement{c.signalements > 1 ? "s" : ""}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {lienSecteur ? (
+              <p style={{ marginTop: 12 }}>
+                <Link href={lienSecteur} className="rfe-lien-fleche">
+                  {typo("Voir toutes les entreprises similaires")}
+                  <Fleche taille={14} />
+                </Link>
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
       </main>
 
       {/* ── 13. Pied de page ────────────────────────────────────────── */}
