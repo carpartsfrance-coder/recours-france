@@ -36,7 +36,8 @@
     "cle:judilibre": "bash scripts/cle-judilibre.sh",
     "collecter:decisions": "tsx scripts/collecter-decisions.ts",
     "synchro:prod": "bash scripts/synchro-prod.sh",
-    "verifier:prod": "bash scripts/verifier-prod.sh"
+    "verifier:prod": "bash scripts/verifier-prod.sh",
+    "avancement": "node scripts/avancement.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
