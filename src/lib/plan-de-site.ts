@@ -13,7 +13,17 @@ import { DEPARTEMENTS } from "@/lib/referentiels/naf";
 import { ADRESSE } from "./adresse";
 
 export const PAR_FICHIER = 50_000;
-export const LONGUEUR_PREFIXE = 4;
+/**
+ * Trois chiffres, non quatre.
+ *
+ * Le préfixe borne chaque tranche par l'index unique du SIREN. Sa longueur
+ * décide du nombre de tranches publiées : quatre chiffres en font dix mille,
+ * dont la grande majorité seraient vides puisque les SIREN ne se répartissent
+ * pas uniformément. Trois en font mille — quatre-vingt-six fiches chacune au
+ * palier d'ouverture actuel, huit mille neuf cents si l'on ouvrait tout, ce
+ * qui reste sous le plafond de cinquante mille URL par fichier.
+ */
+export const LONGUEUR_PREFIXE = 3;
 export const DUREE_CACHE = 86_400;
 
 /** Tranches réservées avant les fiches : pages fixes, puis regroupements. */
@@ -28,27 +38,41 @@ export function base(): string {
 }
 
 /**
- * Préfixes de SIREN effectivement peuplés. Publier des tranches vides
- * gaspillerait le budget d'exploration sur des fichiers sans contenu.
+ * Préfixes de SIREN, énumérés plutôt que relevés.
  *
- * Le relevé balaie toute la table : on le garde en mémoire une journée. Sans
- * cela il serait refait à chaque tranche demandée, soit plusieurs milliers de
- * balayages complets pour un seul passage de robot.
+ * Cette fonction interrogeait la base : `SELECT DISTINCT left(siren, 3)`. Une
+ * expression sur la colonne, donc aucun index utilisable, donc un balayage des
+ * treize millions de lignes — huit secondes mesurées. La production coupe à
+ * dix : l'index du plan de site répondait 500, et Google, incapable de le
+ * lire, n'a indexé que ce qui lui était soumis à la main.
+ *
+ * Un préfixe de trois chiffres ne prend que mille valeurs, et elles sont
+ * connues d'avance. Les énumérer coûte zéro requête et ne peut pas échouer.
+ *
+ * Le prix est une poignée de tranches vides — sur huit millions neuf cent mille
+ * sociétés actives, presque tous les préfixes sont peuplés. Un fichier vide
+ * coûte une requête au robot ; un index en erreur lui coûte le site entier.
  */
-let memo: { calcule: number; valeur: string[] } | null = null;
-
 export async function prefixes(): Promise<string[]> {
-  if (memo && Date.now() - memo.calcule < DUREE_CACHE * 1000) return memo.valeur;
-  // Le cast est indispensable : Prisma transmet le nombre en bigint, et
-  // Postgres ne connaît pas de left(text, bigint).
-  const lignes = await prisma.$queryRaw<{ p: string }[]>`
-    SELECT DISTINCT left(siren, ${LONGUEUR_PREFIXE}::int) AS p FROM "Entreprise" ORDER BY 1
-  `;
-  memo = { calcule: Date.now(), valeur: lignes.map((l) => l.p) };
-  return memo.valeur;
+  const total = 10 ** LONGUEUR_PREFIXE;
+  return Array.from({ length: total }, (_, i) => String(i).padStart(LONGUEUR_PREFIXE, "0"));
 }
 
+/**
+ * Le nombre de boutiques est estimé, non compté.
+ *
+ * `count(*)` balaie la table. Un plan de site n'a pas besoin d'exactitude au
+ * près : il lui faut le nombre de tranches, et `reltuples` — la statistique
+ * que Postgres tient à jour — le donne instantanément. Une tranche de trop ou
+ * de moins se corrige au prochain passage.
+ */
 export async function nombreDeTranches(): Promise<number> {
-  const [p, nbBoutiques] = await Promise.all([prefixes(), prisma.boutique.count()]);
+  const [p, estimation] = await Promise.all([
+    prefixes(),
+    prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT GREATEST(reltuples, 0)::bigint AS n FROM pg_class WHERE relname = 'Boutique'
+    `,
+  ]);
+  const nbBoutiques = Number(estimation[0]?.n ?? 0);
   return RANG_ENTREPRISES + p.length + Math.max(1, Math.ceil(nbBoutiques / PAR_FICHIER));
 }
