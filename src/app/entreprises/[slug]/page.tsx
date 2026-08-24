@@ -15,6 +15,7 @@ import { ficheIndexable } from "@/lib/indexation";
 import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
 import { Logo } from "@/components/fiche-entreprise/logo";
 import { Sommaire } from "@/components/fiche-entreprise/sommaire";
+import { MenuMobile } from "@/components/fiche-entreprise/menu";
 import { Question } from "@/components/fiche-entreprise/question";
 import { BoutonCopier } from "@/components/fiche-entreprise/copier";
 import { Panneau } from "@/components/fiche-entreprise/panneau";
@@ -322,6 +323,10 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
           <Link href={tunnel} className="rfe-btn rfe-btn--sm rfe-entete__cta">
             {typo("Commencer mes démarches")}
           </Link>
+
+          {/* Sous neuf cents pixels, la recherche, la navigation et l'appel à
+              l'action cèdent la place à ce seul bouton. */}
+          <MenuMobile />
         </div>
       </header>
 
@@ -908,7 +913,49 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                   </span>
                 </p>
 
-                <div className="rfe-scroll" style={{ marginTop: 14 }}>
+                {/* En étroit, un bloc par décision : juridiction en titre, puis
+                    des paires libellé-valeur. Les colonnes du tableau, laissées
+                    à `flex-wrap`, se disloquaient en une suite de valeurs sans
+                    étiquette — on ne savait plus laquelle était la date et
+                    laquelle le numéro de dossier. */}
+                <ul className="rfe-decisions-blocs">
+                  {decisions.slice(0, 10).map((d) => (
+                    <li key={d.id}>
+                      <div className="rfe-decisions-blocs__jur">{typo(d.juridiction)}</div>
+                      <dl className="rfe-decisions-blocs__paires">
+                        <div>
+                          <dt>Date</dt>
+                          <dd>{formatDateLongue(d.date)}</dd>
+                        </div>
+                        <div>
+                          <dt>Dossier</dt>
+                          <dd>{d.numero ? typo(`n° ${d.numero}`) : "—"}</dd>
+                        </div>
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <dt>{typo("Qualité")}</dt>
+                          <dd>
+                            {d.role === "demandeur"
+                              ? "Partie demanderesse"
+                              : d.role === "defendeur"
+                                ? "Partie défenderesse"
+                                : "Partie à l’instance"}
+                          </dd>
+                        </div>
+                      </dl>
+                      <a
+                        href={`https://www.courdecassation.fr/decision/${d.judilibreId}`}
+                        className="rfe-action rfe-action--large"
+                        target="_blank"
+                        rel="noopener nofollow"
+                      >
+                        {typo("Lire la décision")}
+                        <Fleche taille={12} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="rfe-scroll rfe-decisions-table" style={{ marginTop: 14 }}>
                   <table className="rfe-decisions">
                     <thead>
                       <tr>

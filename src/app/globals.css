@@ -5130,7 +5130,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 /* ── Bandeau, en-tête, fil d'Ariane ─────────────────────────────────────── */
 .rfe-bandeau { background: var(--e-navy); color: var(--e-sur-navy); font-size: 12.5px; text-align: center; padding: 8px 0; }
 .rfe-entete { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--e-bord); }
-.rfe-entete__piste { min-height: 70px; display: flex; align-items: center; gap: clamp(14px, 2cqw, 28px); }
+.rfe-entete__piste { min-height: clamp(58px, 4.9cqw, 70px); display: flex; align-items: center; gap: clamp(14px, 2cqw, 28px); }
 .rfe-nav { display: flex; align-items: center; gap: clamp(12px, 1.8cqw, 26px); }
 .rfe-nav a {
   font-size: 12px;
@@ -5245,7 +5245,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 .rfe-meta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(140px, 9cqw), 1fr));
   gap: 1px;
   border: 1px solid var(--e-bord);
   border-radius: 3px;
@@ -5267,7 +5267,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-panneau-action__pied { border-top: 1px solid var(--e-filet); padding: 12px 18px; }
 
 /* ── Sommaire collant ───────────────────────────────────────────────────── */
-.rfe-sommaire { position: sticky; top: 70px; z-index: 40; background: var(--e-gris); border-bottom: 1px solid var(--e-bord); }
+.rfe-sommaire { position: sticky; top: clamp(58px, 4.9cqw, 70px); z-index: 40; background: var(--e-gris); border-bottom: 1px solid var(--e-bord); }
 .rfe-sommaire__piste { display: flex; gap: clamp(10px, 1.6cqw, 26px); white-space: nowrap; }
 .rfe-sommaire a {
   display: inline-flex;
@@ -5293,7 +5293,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   gap: clamp(20px, 2.6cqw, 44px);
   padding: clamp(28px, 3cqw, 46px) 0;
   border-bottom: 1px solid var(--e-filet);
-  scroll-margin-top: 122px;
+  scroll-margin-top: clamp(112px, 8.5cqw, 122px);
 }
 .rfe-section__t { flex: 0 1 228px; min-width: min(100%, 200px); }
 .rfe-section__n { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; color: var(--e-numero); }
@@ -5326,7 +5326,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    filet bas. Six cellules dans une grille encadrée laissaient deux cases vides
    grises en fin de rangée — ici il n'y a rien à laisser vide. */
 .rfe-grille--synthese {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(150px, 17cqw), 1fr));
   gap: 0;
   background: transparent;
   border: 0;
@@ -5339,13 +5339,13 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    posés côte à côte, pas enfermés dans une grille réglée. */
 .rfe-grille--panneaux { border: 0; border-radius: 0; overflow: visible; gap: 14px; }
 .rfe-grille--panneaux > * { box-shadow: none; }
-.rfe-grille--problemes { grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+.rfe-grille--problemes { grid-template-columns: repeat(auto-fit, minmax(max(150px, 17cqw), 1fr)); }
 /* Quatre postes, quatre colonnes tant que la place le permet : à 240 px de
    colonne minimale, la grille n'en tenait que trois et la quatrième cellule
    laissait deux cases vides grises derrière elle. */
-.rfe-grille--finances { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.rfe-grille--panneaux { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-.rfe-grille--voisines { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+.rfe-grille--finances { grid-template-columns: repeat(auto-fit, minmax(max(160px, 24cqw), 1fr)); }
+.rfe-grille--panneaux { grid-template-columns: repeat(auto-fit, minmax(max(280px, 24cqw), 1fr)); }
+.rfe-grille--voisines { grid-template-columns: repeat(auto-fit, minmax(max(150px, 14cqw), 1fr)); }
 
 .rfe-cellule { padding: 16px 18px; }
 .rfe-cellule__k { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
@@ -5545,10 +5545,128 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-pied__faible { color: var(--e-sur-navy-faible); font-size: 12.5px; line-height: 1.5; }
 .rfe-pied__barre { border-top: 1px solid var(--e-navy-sep); padding: 14px 0; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; font-size: 12.5px; color: var(--e-sur-navy-faible); }
 
-/* ── Barre collante, écrans étroits ─────────────────────────────────────── */
+/* ══ Écrans étroits ═══════════════════════════════════════════════════════
+   Le mobile n'est pas une adaptation dégradée. Cinq éléments changent de
+   nature — l'en-tête, le sommaire, les panneaux de documents, le tableau des
+   décisions, l'appel à l'action permanent — et tout le reste se remet en page
+   seul, par les unités de conteneur des grilles ci-dessus.
+
+   Le total du chrome collant descend de 118 à 106 px : soit treize pour cent
+   d'un écran de 844 px, et c'est déjà beaucoup. */
+
+/* ── Menu des écrans étroits ────────────────────────────────────────────── */
+.rfe-menu {
+  display: none;
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--e-navy);
+  cursor: pointer;
+}
+.rfe-menu:hover { border-color: var(--e-navy); background: var(--e-gris); }
+.rfe-menu__panneau {
+  display: none;
+  flex-basis: 100%;
+  padding: 4px 0 14px;
+  border-top: 1px solid var(--e-filet);
+}
+.rfe-menu__panneau a {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--e-second);
+  text-decoration: none;
+  border-bottom: 1px solid var(--e-filet);
+}
+.rfe-menu__panneau a:hover { color: var(--e-bleu); }
+.rfe-recherche--menu { flex: 1 1 auto; margin: 10px 0 8px; }
+
+/* ── Sommaire replié ────────────────────────────────────────────────────── */
+.rfe-sommaire__bascule {
+  display: none;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.rfe-sommaire__bascule:focus-visible { outline: 2px solid var(--e-bleu); outline-offset: -2px; }
+.rfe-sommaire__amorce { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.rfe-sommaire__tiret { width: 16px; height: 2px; background: var(--e-rouge); flex: none; }
+.rfe-sommaire__mot { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--e-navy); }
+.rfe-sommaire__compte { font-size: 11.5px; font-weight: 700; color: var(--e-mention); white-space: nowrap; }
+.rfe-sommaire__chev { color: var(--e-navy); flex: none; }
+.rfe-sommaire__bascule[aria-expanded="true"] .rfe-sommaire__chev { transform: rotate(180deg); }
+
+.rfe-sommaire__grille { display: none; }
+.rfe-sommaire__grille li { border-bottom: 1px solid var(--e-filet); border-right: 1px solid var(--e-filet); }
+.rfe-sommaire__grille a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--e-texte);
+  text-decoration: none;
+  border-bottom: 0;
+}
+.rfe-sommaire__grille a:hover { color: var(--e-bleu); background: var(--e-survol); }
+
+/* ── Décisions en blocs ─────────────────────────────────────────────────── */
+.rfe-decisions-blocs { display: none; margin-top: 14px; border: 1px solid var(--e-bord); border-radius: 3px; overflow: hidden; }
+.rfe-decisions-blocs li { padding: 14px 16px; border-bottom: 1px solid var(--e-filet); }
+.rfe-decisions-blocs li:last-child { border-bottom: 0; }
+.rfe-decisions-blocs__jur { font-size: 14.5px; font-weight: 700; color: var(--e-encre); line-height: 1.3; }
+.rfe-decisions-blocs__paires { margin: 10px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.rfe-decisions-blocs__paires dt { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
+.rfe-decisions-blocs__paires dd { margin: 2px 0 0; font-size: 13.5px; color: var(--e-texte); }
+.rfe-action--large { min-height: 44px; margin-top: 10px; letter-spacing: .05em; }
+
+/* ── Barre d'action permanente ──────────────────────────────────────────── */
 .rfe-barre { display: none; position: sticky; bottom: 0; z-index: 45; background: #fff; border-top: 1px solid var(--e-bord); padding: 10px clamp(16px, 2.2cqw, 30px) calc(10px + env(safe-area-inset-bottom)); }
 
 @container (max-width: 900px) {
   .rfe-recherche, .rfe-nav, .rfe-entete__cta { display: none; }
+  .rfe-entete__piste { flex-wrap: wrap; }
+  .rfe-menu { display: flex; }
+  /* Le panneau ne se déploie que là où son bouton existe : élargir la fenêtre
+     pendant qu'il est ouvert ne doit pas le laisser sous une barre qui a
+     retrouvé sa recherche et sa navigation. */
+  .rfe-menu__panneau:not([hidden]) { display: grid; gap: 2px; }
+  .rfe-recherche--menu { display: flex; }
+
+  .rfe-sommaire__piste { display: none; }
+  .rfe-sommaire__bascule { display: flex; }
+  /* Neuf entrées sur deux colonnes, à quarante-huit pixels de haut : le pouce
+     n'a pas à viser. */
+  .rfe-sommaire__grille:not([hidden]) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--e-filet);
+    background: #fff;
+  }
+
+  .rfe-decisions-table { display: none; }
+  .rfe-decisions-blocs { display: block; }
+
   .rfe-barre { display: block; }
 }
