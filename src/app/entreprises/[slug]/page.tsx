@@ -15,12 +15,14 @@ import { ficheIndexable } from "@/lib/indexation";
 import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
 import { Onglets } from "@/components/fiche-entreprise/onglets";
 import { BoutonCopier } from "@/components/fiche-entreprise/copier";
+import { Panneau } from "@/components/fiche-entreprise/panneau";
 import { typo } from "@/lib/typographie";
 import { EDITEUR, siegeSocial } from "@/lib/editeur";
 import {
   Alerte, Bouclier, Branchement, Bulle, Camembert, Carte, CercleCoche,
   Chevron, Cloche, Colis, Document, Epingle, Fleche, Graphique, Groupe,
   Horloge, Immeuble, Info, Oeil, Presse, Question, Remboursement,
+  Balance, Calendrier, Mallette,
 } from "@/components/refonte/icones";
 import { GUIDES, declarationPublique } from "@/lib/observatoire";
 import {
@@ -112,6 +114,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   if (!entreprise) notFound();
 
   const nom = entreprise.denomination;
+  const active = entreprise.etatAdministratif === "ACTIVE";
 
   const [signalements, total, resolus] = await Promise.all([
     prisma.signalement.findMany({
@@ -195,20 +198,29 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   const ca = valeurFinance("chiffreAffaires");
   const rn = valeurFinance("resultatNet");
 
-  const lignesLegales = [
+  /**
+   * Les lignes d'identité, dans l'ordre du handoff.
+   *
+   * Le SIREN et le SIRET portent un bouton de copie, l'état administratif une
+   * pilule colorée. Une ligne absente n'est pas affichée vide : le registre ne
+   * renseigne pas tout pour toutes les sociétés, et « Non renseigné » répété
+   * six fois ferait passer une fiche incomplète pour une fiche vide.
+   */
+  const lignesIdentite: { k: string; v: string; copiable?: boolean; pilule?: boolean }[] = [
     { k: "Raison sociale", v: nom },
-    { k: "SIREN", v: formatSiren(entreprise.siren) },
-    entreprise.siretSiege ? { k: "SIRET du siège", v: formatSiret(entreprise.siretSiege) } : null,
-    entreprise.formeJuridique ? { k: "Forme juridique", v: entreprise.formeJuridique } : null,
-    entreprise.dateImmatriculation
-      ? { k: "Immatriculation", v: formatDateLongue(entreprise.dateImmatriculation) }
-      : null,
-    entreprise.naf ? { k: "Code d’activité", v: entreprise.naf } : null,
-    {
-      k: "État administratif",
-      v: entreprise.etatAdministratif === "ACTIVE" ? "En activité" : "Cessée",
-    },
-  ].filter((l): l is { k: string; v: string } => l !== null);
+    { k: "SIREN", v: formatSiren(entreprise.siren), copiable: true },
+    ...(entreprise.siretSiege
+      ? [{ k: "SIRET du siège", v: formatSiret(entreprise.siretSiege), copiable: true }]
+      : []),
+    ...(entreprise.formeJuridique ? [{ k: "Forme juridique", v: entreprise.formeJuridique }] : []),
+    { k: "État administratif", v: active ? "En activité" : "Cessée", pilule: true },
+    ...(entreprise.nafLibelle ? [{ k: "Activité", v: entreprise.nafLibelle }] : []),
+    ...(adresse ? [{ k: "Adresse", v: adresse, copiable: true }] : []),
+    ...(entreprise.dateImmatriculation
+      ? [{ k: "Création", v: formatDateLongue(entreprise.dateImmatriculation) }]
+      : []),
+  ];
+
 
   // Une clé, jamais le composant : la frontière serveur/client ne sérialise
   // pas les fonctions, et un composant React en est une.
@@ -227,8 +239,12 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
   const totalPublications = publications.reduce((n, f) => n + f.lignes.length, 0);
 
   const onglets = [
+    { href: "#apercu", libelle: "Aperçu", icone: "liste" as const },
     { href: "#signalements", libelle: total > 0 ? `Signalements (${formatNombre(total)})` : "Signalements", icone: "liste" as const },
-    { href: "#types", libelle: "Types de litiges", icone: "etiquette" as const },
+    // Le handoff laisse en point ouvert l'absence d'onglet vers la section qui
+    // porte la conversion. On l'ajoute : une section qu'aucun onglet ne
+    // désigne n'est atteinte que par ceux qui font défiler toute la page.
+    { href: "#problemes", libelle: "Signaler un problème", icone: "etiquette" as const },
     { href: "#finances", libelle: "Finances", icone: "graphique" as const },
     ...(totalPublications > 0
       ? [{ href: "#documents", libelle: "Documents officiels", icone: "document" as const }]
@@ -236,8 +252,8 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
     ...(decisions.length > 0
       ? [{ href: "#justice", libelle: "Décisions de justice", icone: "balance" as const }]
       : []),
+    { href: "#identite", libelle: "Identité", icone: "epingle" as const },
     { href: "#plan", libelle: "Plan d’action", icone: "coche" as const },
-    { href: "#coordonnees", libelle: "Coordonnées", icone: "epingle" as const },
     { href: "#faq", libelle: "FAQ", icone: "question" as const },
   ];
 
@@ -315,84 +331,197 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         <div className="rfe-conteneur" style={{ paddingBottom: "clamp(20px, 2.4cqw, 32px)" }}>
           <div className="rfe-hero">
             <div className="rfe-hero__g">
-              <h1 className="rfe-h1">{typo(`${nom} : litiges et signalements publics`)}</h1>
+              <div className="rfe-avatar" aria-hidden="true" style={{ marginBottom: 16 }}>
+                {nom.trim().charAt(0).toUpperCase()}
+              </div>
+
+              <h1 className="rfe-h1">{typo(`${nom} : avis, litiges et informations publiques`)}</h1>
+
+              <p className="rfe-second" style={{ marginTop: 8 }}>
+                {typo("Rapport public sur l’entreprise")}
+              </p>
+
+              <p style={{ marginTop: 14 }}>
+                <span className={`rfe-badge-actif${active ? "" : " rfe-badge-actif--cesse"}`}>
+                  <CercleCoche taille={15} />
+                  {typo(active ? "Entreprise active" : "Entreprise cessée")}
+                </span>
+              </p>
 
               <p className="rfe-intro" style={{ marginTop: 14 }}>
                 {typo(
-                  `Vous recherchez des avis sur ${nom} ? Recours France ne publie pas de notes commerciales : consultez les situations déclarées, leur statut et les solutions demandées.`,
+                  `Recours France ne publie pas de notes commerciales : consultez les situations déclarées et les informations officielles.`,
                 )}
               </p>
 
-              <div className="rfe-identite" style={{ marginTop: 16 }}>
-                <span>
-                  <Immeuble taille={18} />
-                  <strong style={{ fontWeight: 700, color: "var(--p-navy)" }}>{nom}</strong>
+              {/* Les chips d'identité, sur deux rangs. `white-space: nowrap`
+                  est porté par la classe : sans lui, « Commerce de détail
+                  d'équipements automobiles » casse en deux à 1440 px. */}
+              <div className="rfe-chips" style={{ marginTop: 16 }}>
+                <span className="rfe-chip-id">
+                  <Carte taille={15} />
+                  {typo(`SIREN ${formatSiren(entreprise.siren)}`)}
                 </span>
-                <span>{typo(`SIREN ${formatSiren(entreprise.siren)}`)}</span>
+                {entreprise.formeJuridique ? (
+                  <span className="rfe-chip-id">{entreprise.formeJuridique}</span>
+                ) : null}
                 {commune ? (
-                  <span>
-                    <Epingle taille={18} />
+                  <span className="rfe-chip-id">
+                    <Epingle taille={15} />
                     {communeEnTitre(commune)}
+                  </span>
+                ) : null}
+                {entreprise.nafLibelle ? (
+                  <span className="rfe-chip-id">
+                    <Mallette taille={15} />
+                    {entreprise.nafLibelle}
+                  </span>
+                ) : null}
+                {entreprise.dateImmatriculation ? (
+                  <span className="rfe-chip-id">
+                    <Calendrier taille={15} />
+                    {typo(`Créée en ${new Date(entreprise.dateImmatriculation).getFullYear()}`)}
                   </span>
                 ) : null}
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 20 }}>
-                <Link href={tunnel} className="rfe-btn">
-                  {typo("Rendre mon litige visible")}
-                </Link>
-                {total > 0 ? (
-                  <a href="#signalements" className="rfe-btn rfe-btn--2">
-                    {typo(
-                      total > 1
-                        ? `Voir les ${formatNombre(total)} signalements publics`
-                        : "Voir le signalement public (1)",
-                    )}
-                  </a>
-                ) : null}
-              </div>
-
-              <div className="rfe-mentions" style={{ marginTop: 18 }}>
-                <span>
-                  <Remboursement taille={16} />
-                  {typo("Publication gratuite")}
-                </span>
-                <span>
-                  <Horloge taille={16} />3 minutes
-                </span>
-                <span>
-                  <Bouclier taille={16} />
-                  {typo("Vous gardez le contrôle")}
-                </span>
-              </div>
             </div>
 
+            {/* Colonne droite : l'action, et rien d'autre. Le handoff v2 y
+                remplace la liste « ce que vous obtenez » par le seul bouton —
+                elle expliquait le service à qui avait déjà décidé de s'en
+                servir, et repoussait le clic d'un écran. */}
             <div className="rfe-hero__d">
-              <div className="rfe-obtenu">
-                {[
-                  { i: Oeil, t: "Votre litige devient visible", d: "Votre situation est consultable publiquement." },
-                  { i: Cloche, t: "L’entreprise peut être alertée", d: "Après vérification de vos coordonnées." },
-                  { i: Document, t: "Votre réclamation est préparée", d: "Des modèles et conseils adaptés." },
-                  { i: Branchement, t: "Vos prochaines étapes sont expliquées", d: "Relance, médiation ou recours adapté." },
-                ].map((l) => {
-                  const Icone = l.i;
-                  return (
-                    <div key={l.t} className="rfe-obtenu__l">
-                      <Icone taille={20} />
-                      <div>
-                        <div className="rfe-obtenu__t">{typo(l.t)}</div>
-                        <div className="rfe-obtenu__d">{typo(l.d)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <Link href={tunnel} className="rfe-btn" style={{ width: "100%", minHeight: 50 }}>
+                {typo("Rendre mon litige visible")}
+              </Link>
+
+              <p style={{ marginTop: 14, textAlign: "center" }}>
+                <a href={total > 0 ? "#signalements" : "#plan"} className="rfe-lien-fleche">
+                  {typo(
+                    total > 1
+                      ? `Voir les ${formatNombre(total)} signalements publics`
+                      : total === 1
+                        ? "Voir le signalement public"
+                        : "Voir les démarches adaptées",
+                  )}
+                  <Fleche taille={15} />
+                </a>
+              </p>
+
+              <p className="rfe-aide" style={{ marginTop: 12, textAlign: "center" }}>
+                {typo("Gratuit • 3 minutes • Publication immédiate")}
+              </p>
             </div>
           </div>
         </div>
 
         {/* ── 5. Onglets ────────────────────────────────────────────── */}
         <Onglets liens={onglets} />
+
+        {/* ── Résumé de la fiche ────────────────────────────────────────
+            Les six indicateurs se déduisent des données, jamais saisis. Le
+            handoff s'interroge lui-même sur leur redondance avec les sections
+            qui suivent : elle est assumée. Un visiteur arrivé par « avis X »
+            doit savoir en cinq secondes ce que la page contient, sans faire
+            défiler huit sections pour le découvrir. */}
+        <section id="apercu" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Résumé de la fiche de ${nom}`)}</h2>
+            <p className="rfe-second" style={{ marginTop: 8 }}>
+              {typo(`Les principales informations disponibles sur ${nom}.`)}
+            </p>
+
+            <div className="rfe-apercu" style={{ marginTop: 20 }}>
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "#FEF6E7", color: "#C2751A" }}>
+                    <Document taille={17} />
+                  </span>
+                  {typo("Signalements publics")}
+                </div>
+                <div className="rfe-apercu__n">
+                  {formatNombre(total)}
+                  {enAttente > 0 ? (
+                    <span className="rfe-apercu__badge">
+                      {typo(`${formatNombre(enAttente)} en attente`)}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="rfe-apercu__l">
+                  {typo(total > 0 ? "Situations déclarées sur Recours France" : "Aucune situation déclarée à ce jour")}
+                </div>
+              </div>
+
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "#F1F5FB", color: "var(--p-second)" }}>
+                    <CercleCoche taille={17} />
+                  </span>
+                  {typo("Litiges résolus")}
+                </div>
+                <div className="rfe-apercu__n">{formatNombre(resolus)}</div>
+                <div className="rfe-apercu__l">
+                  {typo(resolus > 0 ? "Signalements indiqués comme résolus" : "Aucun signalement indiqué comme résolu")}
+                </div>
+              </div>
+
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "#EAF9EF", color: "#16A34A" }}>
+                    <CercleCoche taille={17} />
+                  </span>
+                  {typo("État de l’entreprise")}
+                </div>
+                <div className="rfe-apercu__n" style={{ fontSize: 20 }}>
+                  <span className="rfe-pilule-verte" style={active ? undefined : { background: "#FDF6E9", color: "#8A5A12" }}>
+                    {active ? "Active" : "Cessée"}
+                  </span>
+                </div>
+                <div className="rfe-apercu__l">{typo("Donnée du registre")}</div>
+              </div>
+
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "var(--p-pale)", color: "var(--p-bleu)" }}>
+                    <Document taille={17} />
+                  </span>
+                  {typo("Comptes déposés")}
+                </div>
+                <div className="rfe-apercu__n">{formatNombre(comptes.length)}</div>
+                <div className="rfe-apercu__l">
+                  {typo(
+                    comptes.length > 0
+                      ? `Exercices ${comptes[comptes.length - 1].exercice} à ${comptes[0].exercice}`
+                      : "Aucun compte annuel au registre",
+                  )}
+                </div>
+              </div>
+
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "var(--p-pale)", color: "var(--p-bleu)" }}>
+                    <Document taille={17} />
+                  </span>
+                  {typo("Publications officielles")}
+                </div>
+                <div className="rfe-apercu__n">{formatNombre(totalPublications)}</div>
+                <div className="rfe-apercu__l">{typo("Annonces BODACC")}</div>
+              </div>
+
+              <div className="rfe-apercu__c">
+                <div className="rfe-apercu__k">
+                  <span className="rfe-apercu__med" style={{ background: "#F1F5FB", color: "var(--p-second)" }}>
+                    <Balance taille={17} />
+                  </span>
+                  {typo("Décisions de justice citées")}
+                </div>
+                <div className="rfe-apercu__n">{formatNombre(decisions.length)}</div>
+                <div className="rfe-apercu__l">{typo("Ne signifie pas condamnation")}</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ── 6. Signalements publics ───────────────────────────────── */}
         <section id="signalements" className="rfe-section">
@@ -507,7 +636,7 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 7. Quel problème rencontrez-vous ? ────────────────────── */}
-        <section id="types" className="rfe-section rfe-section--alt">
+        <section id="problemes" className="rfe-section rfe-section--alt">
           <div className="rfe-conteneur">
             <h2 className="rfe-h2">{typo("Quel problème rencontrez-vous ?")}</h2>
             <p className="rfe-second" style={{ marginTop: 10, maxWidth: "64ch" }}>
@@ -634,6 +763,112 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
             Ajout au handoff : il n'a pas de section pour cela, et la demande
             est venue après. Elle se pose ici, juste après les finances, parce
             que le dépôt de comptes est ce qui les atteste. */}
+        <section id="identite" className="rfe-section">
+          <div className="rfe-conteneur">
+            <h2 className="rfe-h2">{typo(`Identité de ${nom}`)}</h2>
+            <p className="rfe-second" style={{ marginTop: 8 }}>
+              {typo("Informations officielles permettant d’identifier précisément l’entreprise.")}
+            </p>
+
+            {/* Une liste de définitions à lignes alternées plutôt que deux
+                cartes côte à côte : l'identité se lit de haut en bas, une clé
+                puis sa valeur, et le SIREN comme le SIRET se recopient d'un
+                clic — neuf ou quatorze chiffres saisis à la main dans une
+                saisine de médiateur désignent vite une autre société. */}
+            <div className="rfe-def" style={{ marginTop: 20 }}>
+              {lignesIdentite.map((l) => (
+                <div key={l.k} className="rfe-def__l">
+                  <span className="rfe-def__k">{typo(l.k)}</span>
+                  <span className="rfe-def__v">
+                    {l.pilule ? (
+                      <span
+                        className="rfe-pilule-verte"
+                        style={active ? { fontSize: 13.5 } : { fontSize: 13.5, background: "#FDF6E9", color: "#8A5A12" }}
+                      >
+                        {l.v}
+                      </span>
+                    ) : (
+                      l.v
+                    )}
+                  </span>
+                  {l.copiable ? <BoutonCopier valeur={l.v} libelle={l.k.toLowerCase()} /> : null}
+                </div>
+              ))}
+            </div>
+
+            {boutique || mediateurDeclare ? (
+              <div className="rfe-def" style={{ marginTop: 12 }}>
+                {boutique ? (
+                  <div className="rfe-def__l">
+                    <span className="rfe-def__k">{typo("Site marchand")}</span>
+                    <span className="rfe-def__v">
+                      <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>
+                    </span>
+                  </div>
+                ) : null}
+                {mediateurDeclare ? (
+                  <div className="rfe-def__l">
+                    <span className="rfe-def__k">{typo("Médiateur déclaré")}</span>
+                    <span className="rfe-def__v">{mediateurDeclare.nom}</span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="rfe-aide" style={{ marginTop: 16 }}>
+              {typo(
+                "Données issues du répertoire Sirene (Insee), du Registre national des entreprises (INPI) et du BODACC (DILA), réutilisées telles que publiées.",
+              )}{" "}
+              <Link href={`/entreprises/${base.slug}/signaler-une-erreur`}>{typo("Signaler une erreur")}</Link>
+            </p>
+
+            {/* Le maillage de l'annuaire : secteur, département, commune. */}
+            <p className="rfe-second" style={{ marginTop: 14 }}>
+              {typo("Voir aussi :")}{" "}
+              <Link href={cheminSecteur(secteur)}>{libelleSecteur(secteur)}</Link>
+              {lienDepartement ? (
+                <>
+                  {" · "}
+                  <Link href={lienDepartement}>{nomDepartement(entreprise.departement!)}</Link>
+                </>
+              ) : null}
+              {lienCommune ? (
+                <>
+                  {" · "}
+                  <Link href={lienCommune}>{commune ? communeEnTitre(commune) : entreprise.communeSlug}</Link>
+                </>
+              ) : null}
+            </p>
+          </div>
+        </section>
+
+        {/* ── 11. Entreprises comparables ───────────────────────────── */}
+        {comparables.length > 0 ? (
+          <section className="rfe-section rfe-section--alt">
+            <div className="rfe-conteneur">
+              <h2 className="rfe-h2">{typo("Entreprises du même secteur")}</h2>
+              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
+                {typo(
+                  "Rapprochement par activité et par département, à partir des registres publics. Ce n’est ni un classement, ni une comparaison de qualité, ni une recommandation.",
+                )}
+              </p>
+              <div className="rfe-comparables" style={{ marginTop: 18 }}>
+                {comparables.map((c) => (
+                  <Link key={c.slug} href={`/entreprises/${c.slug}`} className="rfe-comparable">
+                    <span className="rfe-comparable__n">{c.denomination}</span>
+                    <span className="rfe-comparable__d">
+                      {[c.commune ? communeEnTitre(c.commune) : null, `${formatNombre(c.signalements)} signalement${c.signalements > 1 ? "s" : ""}`]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── FAQ — l'onglet du handoff n'avait pas de section ───────── */}
         {publications.length > 0 ? (
           <section id="documents" className="rfe-section rfe-section--alt">
             <div className="rfe-conteneur">
@@ -644,57 +879,49 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
                 )}
               </p>
 
-              <div className="rfe-publications" style={{ marginTop: 20 }}>
+              {/* Deux panneaux dépliables, ouverts au départ : la liste des
+                  dépôts est le contenu de la section, pas un détail qu'on
+                  révèle. Le repli sert à ranger une fois lu. */}
+              <div className="rfe-panneaux" style={{ marginTop: 20 }}>
                 {publications.map((f) => {
-                  const visibles = f.lignes.slice(0, 8);
+                  const visibles = f.lignes.slice(0, 3);
                   const reste = f.lignes.length - visibles.length;
                   return (
-                    <div key={f.cle} className="rfe-pub__groupe">
-                      <div className="rfe-pub__tete">
-                        <span className="rfe-pub__med">
-                          {f.cle === "comptes" ? (
-                            <Document taille={19} />
-                          ) : f.cle === "procedures" ? (
-                            <Alerte taille={19} />
-                          ) : (
-                            <Immeuble taille={19} />
-                          )}
-                        </span>
-                        <span className="rfe-titre-carte">{typo(f.titre)}</span>
-                        <span className="rfe-pub__n">
-                          {formatNombre(f.lignes.length)} annonce{f.lignes.length > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <p className="rfe-pub__expl">{typo(f.explication)}</p>
-
+                    <Panneau
+                      key={f.cle}
+                      titre={f.titre}
+                      compte={`${formatNombre(f.lignes.length)} annonce${f.lignes.length > 1 ? "s" : ""}`}
+                    >
                       {visibles.map((e) => (
                         <div
                           key={e.id}
-                          className={`rfe-pub__l${e.procedureCollective ? " rfe-pub__l--collective" : ""}`}
+                          className={`rfe-panneau__l${e.procedureCollective ? " rfe-pub__l--collective" : ""}`}
                         >
-                          <span className="rfe-pub__date">{formatDateLongue(e.date)}</span>
-                          <span className="rfe-pub__t">{typo(e.titre)}</span>
-                          {e.detail ? <span className="rfe-pub__d">{typo(e.detail)}</span> : null}
+                          <span className="rfe-panneau__date">{formatDateLongue(e.date)}</span>
+                          {e.detail ? <span className="rfe-panneau__d">{typo(e.detail)}</span> : null}
                           {e.urlSource ? (
                             <a
                               href={e.urlSource}
-                              className="rfe-pub__lien"
+                              className="rfe-panneau__lien"
                               target="_blank"
                               rel="noopener nofollow"
                             >
                               {typo("Voir l’annonce")}
-                              <Fleche taille={15} />
+                              <Fleche taille={14} />
                             </a>
                           ) : null}
                         </div>
                       ))}
-
                       {reste > 0 ? (
-                        <p className="rfe-pub__plus">
-                          {typo(`${formatNombre(reste)} annonce${reste > 1 ? "s" : ""} plus ancienne${reste > 1 ? "s" : ""} non affichée${reste > 1 ? "s" : ""}.`)}
-                        </p>
+                        <div className="rfe-panneau__pied">
+                          <span className="rfe-aide">
+                            {typo(
+                              `${formatNombre(reste)} annonce${reste > 1 ? "s" : ""} plus ancienne${reste > 1 ? "s" : ""} non affichée${reste > 1 ? "s" : ""}.`,
+                            )}
+                          </span>
+                        </div>
                       ) : null}
-                    </div>
+                    </Panneau>
                   );
                 })}
               </div>
@@ -821,116 +1048,6 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
         </section>
 
         {/* ── 10. Coordonnées et informations légales ───────────────── */}
-        <section id="coordonnees" className="rfe-section">
-          <div className="rfe-conteneur">
-            <h2 className="rfe-h2">{typo(`Coordonnées et informations légales de ${nom}`)}</h2>
-
-            <div className="rfe-cols" style={{ marginTop: 20 }}>
-              <div className="rfe-carte">
-                <div className="rfe-titre-carte" style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <Epingle taille={18} style={{ color: "var(--p-bleu)" }} />
-                  {typo("Siège social")}
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <div className="rfe-ligne">
-                    <span className="rfe-ligne__k">Adresse</span>
-                    <span className="rfe-ligne__v">{adresse || "Non renseignée"}</span>
-                    {adresse ? <BoutonCopier valeur={adresse} libelle="l’adresse" /> : null}
-                  </div>
-                  {commune ? (
-                    <div className="rfe-ligne">
-                      <span className="rfe-ligne__k">Commune</span>
-                      <span className="rfe-ligne__v">{communeEnTitre(commune)}</span>
-                    </div>
-                  ) : null}
-                  {boutique ? (
-                    <div className="rfe-ligne">
-                      <span className="rfe-ligne__k">Site marchand</span>
-                      <span className="rfe-ligne__v">
-                        <Link href={`/boutiques/${boutique.slug}`}>{boutique.domaine}</Link>
-                      </span>
-                    </div>
-                  ) : null}
-                  {mediateurDeclare ? (
-                    <div className="rfe-ligne">
-                      <span className="rfe-ligne__k">{typo("Médiateur déclaré")}</span>
-                      <span className="rfe-ligne__v">{mediateurDeclare.nom}</span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="rfe-carte">
-                <div className="rfe-titre-carte" style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <Immeuble taille={18} style={{ color: "var(--p-bleu)" }} />
-                  {typo("Informations du registre")}
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  {lignesLegales.map((l) => (
-                    <div key={l.k} className="rfe-ligne">
-                      <span className="rfe-ligne__k">{typo(l.k)}</span>
-                      <span className="rfe-ligne__v">{l.v}</span>
-                      <BoutonCopier valeur={l.v} libelle={l.k.toLowerCase()} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <p className="rfe-aide" style={{ marginTop: 16 }}>
-              {typo(
-                "Données issues du répertoire Sirene (Insee), du Registre national des entreprises (INPI) et du BODACC (DILA), réutilisées telles que publiées.",
-              )}{" "}
-              <Link href={`/entreprises/${base.slug}/signaler-une-erreur`}>{typo("Signaler une erreur")}</Link>
-            </p>
-
-            {/* Le maillage de l'annuaire : secteur, département, commune. */}
-            <p className="rfe-second" style={{ marginTop: 14 }}>
-              {typo("Voir aussi :")}{" "}
-              <Link href={cheminSecteur(secteur)}>{libelleSecteur(secteur)}</Link>
-              {lienDepartement ? (
-                <>
-                  {" · "}
-                  <Link href={lienDepartement}>{nomDepartement(entreprise.departement!)}</Link>
-                </>
-              ) : null}
-              {lienCommune ? (
-                <>
-                  {" · "}
-                  <Link href={lienCommune}>{commune ? communeEnTitre(commune) : entreprise.communeSlug}</Link>
-                </>
-              ) : null}
-            </p>
-          </div>
-        </section>
-
-        {/* ── 11. Entreprises comparables ───────────────────────────── */}
-        {comparables.length > 0 ? (
-          <section className="rfe-section rfe-section--alt">
-            <div className="rfe-conteneur">
-              <h2 className="rfe-h2">{typo("Entreprises du même secteur")}</h2>
-              <p className="rfe-second" style={{ marginTop: 10, maxWidth: "68ch" }}>
-                {typo(
-                  "Rapprochement par activité et par département, à partir des registres publics. Ce n’est ni un classement, ni une comparaison de qualité, ni une recommandation.",
-                )}
-              </p>
-              <div className="rfe-comparables" style={{ marginTop: 18 }}>
-                {comparables.map((c) => (
-                  <Link key={c.slug} href={`/entreprises/${c.slug}`} className="rfe-comparable">
-                    <span className="rfe-comparable__n">{c.denomination}</span>
-                    <span className="rfe-comparable__d">
-                      {[c.commune ? communeEnTitre(c.commune) : null, `${formatNombre(c.signalements)} signalement${c.signalements > 1 ? "s" : ""}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {/* ── FAQ — l'onglet du handoff n'avait pas de section ───────── */}
         <section id="faq" className="rfe-section">
           <div className="rfe-conteneur">
             <h2 className="rfe-h2">{typo(`Questions fréquentes sur ${nom} et sur Recours France`)}</h2>

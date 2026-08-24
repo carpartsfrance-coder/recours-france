@@ -1,6 +1,6 @@
 /* ==========================================================================
    Recours France — système de design
-   Refonte d'août 2026 : bleu institutionnel #0E2A56, bleu d'action #0956B9,
+   Refonte d'août 2026 : bleu institutionnel #0E2A56, bleu d'action #2563EB,
    Public Sans. Aucun élément du DSFR, aucune police Marianne, aucun
    bloc-marque « République Française » — le service est privé, et rien ne
    doit laisser croire le contraire.
@@ -17,8 +17,8 @@
 
 :root {
   /* Action */
-  --rf-cobalt: #0956b9;         /* bleu d'action : boutons, liens, accents */
-  --rf-cobalt-survol: #06397b;
+  --rf-cobalt: #2563eb;         /* bleu d'action : boutons, liens, accents */
+  --rf-cobalt-survol: #1d4ed8;
   --rf-cobalt-fonce: #0e2a56;   /* bleu institutionnel : titres, bandeau */
   --rf-nuit: #0a1f42;           /* pied de page */
 
@@ -47,7 +47,7 @@
   --rf-placeholder: #707b8c;
 
   /* Accents */
-  --rf-sarcelle: #0956b9;
+  --rf-sarcelle: #2563eb;
   --rf-succes: #1f7a4c;
   --rf-succes-texte: #1b5e3a;
   --rf-succes-fond: #f1f8f3;
@@ -1896,17 +1896,17 @@ button {
 
 /* ==========================================================================
    Fiche entreprise — direction artistique institutionnelle
-   Bleu d'action #0956B9 (blanc sur ce fond ≈ 6,9:1), sections en blocs
+   Bleu d'action #2563EB (blanc sur ce fond ≈ 5,2:1), sections en blocs
    encadrés introduits par une pastille de titre, navigation par onglets.
    Portée : la fiche entreprise et ses composants (préfixe .rfi-).
    ========================================================================== */
 
 :root {
-  --rfi-bleu: #0956b9;
-  --rfi-bleu-survol: #063777;
-  --rfi-lien-survol: #0b68e0;
-  --rfi-bleu-pale: #edf2f9;
-  --rfi-bandeau: #063777;
+  --rfi-bleu: #2563eb;
+  --rfi-bleu-survol: #0b2b72;
+  --rfi-lien-survol: #1451d7;
+  --rfi-bleu-pale: #eef1f8;
+  --rfi-bandeau: #0b2b72;
 
   --rfi-fond-alterne: #f8fafd;
   --rfi-bordure-bloc: #d7dce5;
@@ -1924,16 +1924,16 @@ button {
   --rfi-neutre: #5f6673;
   --rfi-neutre-fond: #f2f4f8;
 
-  --rfi-sur-bleu: #e6edf6;
-  --rfi-sur-bleu-attenue: #cbdaed;
-  --rfi-filet-bleu: #0c6fee;
+  --rfi-sur-bleu: #e6ebf6;
+  --rfi-sur-bleu-attenue: #ccd6ec;
+  --rfi-filet-bleu: #1556e5;
   --rfi-sur-bandeau: #c6d2ea;
   --rfi-sur-bandeau-attenue: #98a3be;
-  --rfi-filet-bandeau: #095ac3;
+  --rfi-filet-bandeau: #1146bb;
 
-  --rfi-barre-1: #0956b9;
-  --rfi-barre-2: #2d85f5;
-  --rfi-barre-3: #81b6f9;
+  --rfi-barre-1: #2563eb;
+  --rfi-barre-2: #356fed;
+  --rfi-barre-3: #86a8f4;
 }
 
 /* Liens de contenu et navigation. Boutons, onglets, bloc bleu et pied de page
@@ -2601,10 +2601,10 @@ button {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .rfx {
-  --x-bleu: #0956b9;
-  --x-bleu-profond: #063777;
-  --x-bleu-clair: #edf2f9;
-  --x-bleu-survol: #0b68e0;
+  --x-bleu: #2563eb;
+  --x-bleu-profond: #0b2b72;
+  --x-bleu-clair: #eef1f8;
+  --x-bleu-survol: #1451d7;
   --x-fond: #ffffff;
   --x-fond-alt: #f8fafd;
   --x-bord: #d7dce5;
@@ -2621,8 +2621,8 @@ button {
   --x-rouge: #a32a22;
   --x-rouge-fond: #fbeeec;
   --x-neutre-fond: #f2f4f8;
-  --x-sur-bleu: #e6edf6;
-  --x-sur-bleu-attenue: #cbdaed;
+  --x-sur-bleu: #e6ebf6;
+  --x-sur-bleu-attenue: #ccd6ec;
   --x-citation: #c6d2ea;
 
   color: var(--x-encre);
@@ -2734,7 +2734,7 @@ button {
 
 /* ── Histogramme ──────────────────────────────────────────────────────────── */
 .rfx-histo { display: flex; align-items: flex-end; gap: 10px; height: 190px; border-bottom: 1px solid var(--x-bleu); }
-.rfx-histo__col { flex: 1; background: #81b6f9; min-height: 2px; }
+.rfx-histo__col { flex: 1; background: #86a8f4; min-height: 2px; }
 .rfx-histo__col--recent { background: var(--x-bleu); }
 
 /* ── Signalement ──────────────────────────────────────────────────────────── */
@@ -3788,7 +3788,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 /* ==========================================================================
    Fiche boutique — couche « rfb »
    Le handoff Carpartsfrance porte sa propre charte : marine #0A2A52, bleu
-   d'action #0956B9, rayons de 6 à 10 px, conteneur de 1200 px. Ce n'est pas
+   d'action #2563EB, rayons de 6 à 10 px, conteneur de 1200 px. Ce n'est pas
    la charte de la fiche entreprise (#0E2A56, rayons 3–4 px), et les
    deux jeux de jetons ne peuvent pas cohabiter dans les mêmes variables.
 
@@ -3800,10 +3800,10 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 .rfb {
   --b-marine: #0A2A52;
-  --b-bleu: #0956B9;
-  --b-bleu-fonce: #07418C;
-  --b-bleu-pale: #E7F0FA;
-  --b-bleu-tres-pale: #EAF1FA;
+  --b-bleu: #2563EB;
+  --b-bleu-fonce: #1D4ED8;
+  --b-bleu-pale: #EAEEF7;
+  --b-bleu-tres-pale: #ECF0F8;
   --b-fond-bleu: #EFF4FB;
   --b-fond-gris: #F7F9FC;
   --b-bordure: #E3E8EF;
@@ -4278,15 +4278,15 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    que passer de 1 px à 2 px n'élargisse pas l'élément et ne fasse pas sauter
    la ligne de chips au moment du clic.
 
-   Le bleu d'action, lui, est celui du site : #0956B9, la variable globale.
+   Le bleu d’action, lui, est celui du site : #2563EB, la variable globale.
    ========================================================================== */
 
 .rfp,
 .rfe {
   --p-bleu: var(--rf-cobalt);
-  --p-bleu-survol: #07458F;
-  --p-anneau: rgba(9, 86, 185, .20);
-  --p-voile: rgba(9, 86, 185, .04);
+  --p-bleu-survol: #1D4ED8;
+  --p-anneau: rgba(37, 99, 235, .20);
+  --p-voile: rgba(37, 99, 235, .04);
 
   --p-navy-bandeau: #0A2540;
   --p-navy: #0A2A52;
@@ -5532,3 +5532,179 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   white-space: nowrap;
 }
 .rfe-decision__lien:hover { text-decoration: underline; }
+
+/* ── Fiche entreprise v2 : hero, résumé, identité, panneaux ─────────────────
+   Le handoff du 24 août fait évoluer la fiche : un avatar et des chips
+   d'identité au hero, un résumé de six indicateurs en tête, l'identité en
+   liste de définitions à lignes alternées, et les documents en panneaux
+   dépliables. Le reste de la couche « rfe » est inchangé. */
+
+.rfe-avatar {
+  width: 62px;
+  height: 62px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--p-pale);
+  border: 1px solid var(--p-pale-bord);
+  color: var(--p-bleu);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.rfe-badge-actif {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  /* Sans quoi le badge casse sur deux lignes à 1440 px — le handoff l'exige. */
+  white-space: nowrap;
+  background: #EAF9EF;
+  border: 1px solid #BBF0CB;
+  color: #166534;
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.rfe-badge-actif--cesse { background: #FDF6E9; border-color: #F2E2C0; color: #8A5A12; }
+
+.rfe-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rfe-chip-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  border: 1px solid #E1E7EF;
+  border-radius: 6px;
+  padding: 6px 11px;
+  font-size: 13.5px;
+  color: var(--p-texte);
+  background: #fff;
+}
+.rfe-chip-id svg { color: var(--p-second); flex: none; }
+
+/* ── Résumé de la fiche ─────────────────────────────────────────────────── */
+.rfe-apercu { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 12px; }
+.rfe-apercu__c {
+  background: #fff;
+  border: 1px solid var(--p-bord);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.rfe-apercu__k { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--p-texte); }
+.rfe-apercu__med {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rfe-apercu__n { font-size: 27px; font-weight: 800; line-height: 1.1; color: var(--p-navy); margin-top: 10px; }
+.rfe-apercu__l { font-size: 13px; color: var(--p-second); margin-top: 4px; line-height: 1.45; }
+.rfe-apercu__badge {
+  display: inline-block;
+  margin-left: 8px;
+  background: #FEF6E7;
+  border: 1px solid #F5E6C3;
+  color: #8A5A12;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.rfe-pilule-verte {
+  display: inline-block;
+  background: #DCFCE7;
+  color: #166534;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ── Identité : liste de définitions à lignes alternées ─────────────────── */
+.rfe-def { border: 1px solid var(--p-bord); border-radius: 10px; overflow: hidden; }
+.rfe-def__l {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 12px 16px;
+  font-size: 15px;
+  min-height: 44px;
+  background: #fff;
+}
+.rfe-def__l:nth-child(even) { background: #FBFCFE; }
+.rfe-def__k { flex: 0 0 152px; color: var(--p-second); }
+.rfe-def__v { font-weight: 500; color: var(--p-encre); min-width: 0; }
+
+/* ── Panneaux dépliables ────────────────────────────────────────────────── */
+.rfe-panneaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 12px; }
+.rfe-panneau { border: 1px solid var(--p-bord); border-radius: 10px; overflow: hidden; background: #fff; }
+.rfe-panneau__tete {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  background: #F8FAFD;
+  border: 0;
+  border-bottom: 1px solid var(--p-filet);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--p-navy);
+  min-height: 44px;
+}
+.rfe-panneau__tete:hover { background: #F1F5FB; }
+.rfe-panneau__tete:focus-visible { outline: 2px solid var(--p-bleu); outline-offset: -2px; }
+.rfe-panneau__t { font-weight: 700; }
+.rfe-panneau__n { color: var(--p-second); font-weight: 400; }
+.rfe-panneau__chev { margin-left: auto; color: var(--p-second); flex: none; transition: transform .12s; }
+.rfe-panneau__tete[aria-expanded="true"] .rfe-panneau__chev { transform: rotate(180deg); }
+.rfe-panneau__l {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 11px 16px;
+  font-size: 14.5px;
+  border-top: 1px solid var(--p-filet);
+}
+.rfe-panneau__l:first-of-type { border-top: 0; }
+.rfe-panneau__date { color: var(--p-navy); font-weight: 600; flex: 0 0 auto; }
+.rfe-panneau__d { color: var(--p-texte); min-width: 0; }
+.rfe-panneau__lien {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--p-bleu);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.rfe-panneau__lien:hover { text-decoration: underline; }
+.rfe-panneau__pied { padding: 12px 16px; border-top: 1px solid var(--p-filet); }
+
+.rfe-lien-fleche {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--p-bleu);
+  text-decoration: none;
+}
+.rfe-lien-fleche:hover { text-decoration: underline; }
+/* La colonne droite du hero ne grandit pas : sinon le H1 casse mal. */
+.rfe-hero__d { align-self: start; }

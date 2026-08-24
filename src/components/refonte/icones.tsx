@@ -361,3 +361,12 @@ export const Presse = (p: Props) => (
     <path d="M12 11.4l3-1.3v2.6c0 1.8-1.2 3.2-3 3.8-1.8-.6-3-2-3-3.8v-2.6z" />
   </Trait>
 );
+
+/** Mallette — l'activité déclarée, dans les chips d'identité de la fiche. */
+export const Mallette = (p: Props) => (
+  <Trait {...p}>
+    <rect x="3" y="7.5" width="18" height="12.5" rx="2" />
+    <path d="M8.5 7.5V5.8A1.8 1.8 0 0 1 10.3 4h3.4a1.8 1.8 0 0 1 1.8 1.8v1.7" />
+    <path d="M3 12.5h18" />
+  </Trait>
+);

@@ -32,7 +32,7 @@ const DEMO = (process.env.DEMO_BANNER ?? "").trim().toLowerCase() !== "false";
 /**
  * Deux habillages coexistent :
  *  — « standard » : charte cobalt du handoff initial (accueil, annuaire, formulaires) ;
- *  — « institutionnel » : charte bleu #0956B9 du handoff dédié à la fiche
+ *  — « institutionnel » : charte bleu #2563EB du handoff dédié à la fiche
  *    entreprise (conteneur 1180 px, logotype 38 px, blocs encadrés, onglets).
  */
 export type Habillage = "standard" | "institutionnel";
