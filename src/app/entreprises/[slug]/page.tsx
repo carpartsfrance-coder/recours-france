@@ -15,7 +15,7 @@ import { ficheIndexable } from "@/lib/indexation";
 import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
 import { Logo } from "@/components/fiche-entreprise/logo";
 import { Sommaire } from "@/components/fiche-entreprise/sommaire";
-import { MenuMobile } from "@/components/fiche-entreprise/menu";
+import { EnteteSite } from "@/components/entete-site";
 import { Question } from "@/components/fiche-entreprise/question";
 import { BoutonCopier } from "@/components/fiche-entreprise/copier";
 import { Panneau } from "@/components/fiche-entreprise/panneau";
@@ -297,38 +297,14 @@ export default async function FicheEntreprise({ params }: { params: Promise<{ sl
       </div>
 
       {/* ── 2. En-tête collant ──────────────────────────────────────────
+          C'est désormais l'en-tête du site entier, sorti d'ici pour être posé
+          sur toutes les pages. Le bouton vise le parcours de dépôt de cette
+          entreprise-ci, pas le point d'entrée générique.
+
           Le bandeau d'indépendance qui l'ouvrait a été retiré sur demande.
           Les deux mentions du pied de page restent, elles : elles nomment
           l'éditeur et le distinguent de la société dont la fiche parle. */}
-      <header className="rfe-entete">
-        <div className="rfe-conteneur rfe-entete__piste">
-          <Logo taille={38} />
-
-          <form action="/annuaire" className="rfe-recherche" role="search">
-            <Loupe taille={17} />
-            <input
-              type="search"
-              name="q"
-              placeholder="Rechercher une entreprise ou un SIREN"
-              aria-label="Rechercher une entreprise ou un SIREN"
-            />
-          </form>
-
-          <nav className="rfe-nav" aria-label="Navigation principale">
-            <Link href="/methodologie">{typo("Comment ça marche")}</Link>
-            <Link href="/annuaire">Entreprises</Link>
-            <Link href="/aide">Guides</Link>
-          </nav>
-
-          <Link href={tunnel} className="rfe-btn rfe-btn--sm rfe-entete__cta">
-            {typo("Commencer mes démarches")}
-          </Link>
-
-          {/* Sous neuf cents pixels, la recherche, la navigation et l'appel à
-              l'action cèdent la place à ce seul bouton. */}
-          <MenuMobile />
-        </div>
-      </header>
+      <EnteteSite cta={tunnel} />
 
       {/* ── 3. Fil d'Ariane ─────────────────────────────────────────────
           Séparé par une barre oblique, pas un chevron. */}

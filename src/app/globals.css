@@ -3211,7 +3211,9 @@ html { scroll-behavior: smooth; }
 
 .rfn {
   container-type: inline-size;
-  overflow-x: hidden;
+  /* `clip` et non `hidden` : `hidden` ferait de cette racine un bloc défilant
+     à elle seule, et l'en-tête collant du site s'en irait avec la page. */
+  overflow-x: clip;
   color: var(--rf-encre);
   font-size: 15.5px;
   line-height: 1.6;
@@ -4336,7 +4338,9 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   --p-alterne: #FBFCFE;
 
   container-type: inline-size;
-  overflow-x: hidden;
+  /* `clip` et non `hidden` : `hidden` ferait de cette racine un bloc défilant
+     à elle seule, et l'en-tête collant du site s'en irait avec la page. */
+  overflow-x: clip;
   color: var(--p-encre);
   font-size: 16px;
   line-height: 1.6;
@@ -5029,7 +5033,9 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    possible, et le registre s'en accommode.
    ========================================================================== */
 
-.rfe {
+/* Les jetons de la charte institutionnelle vivent sur :root : l'en-tête
+   du site les emprunte sur toutes les pages, pas seulement sur les fiches. */
+:root {
   --e-navy: #0B2C6B;
   --e-bleu: #1152C4;
   --e-rouge: #E1000F;
@@ -5067,8 +5073,15 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   --e-ambre-fond: #FBF3E3;
   --e-ambre-bord: #EBDCBC;
 
+}
+
+.rfe {
   container-type: inline-size;
-  overflow-x: hidden;
+  /* `clip` et non `hidden` : `hidden` fait de la fiche un bloc défilant à elle
+     seule, et tout ce qui est collant à l'intérieur — l'en-tête, le sommaire —
+     se cale alors sur un bloc qui ne défile jamais, donc s'en va avec la page.
+     `clip` retient les débordements sans créer ce bloc. */
+  overflow-x: clip;
   background: #fff;
   color: var(--e-texte);
   font-size: 15.5px;
@@ -5128,35 +5141,6 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-surtitre--clair { color: var(--e-sur-navy-3); }
 
 /* ── Bandeau, en-tête, fil d'Ariane ─────────────────────────────────────── */
-.rfe-bandeau { background: var(--e-navy); color: var(--e-sur-navy); font-size: 12.5px; text-align: center; padding: 8px 0; }
-.rfe-entete { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--e-bord); }
-.rfe-entete__piste { min-height: clamp(58px, 4.9cqw, 70px); display: flex; align-items: center; gap: clamp(14px, 2cqw, 28px); }
-.rfe-nav { display: flex; align-items: center; gap: clamp(12px, 1.8cqw, 26px); }
-.rfe-nav a {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--e-second);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.rfe-nav a:hover { color: var(--e-navy); }
-
-.rfe-recherche { flex: 1 1 280px; min-width: 0; position: relative; display: flex; align-items: center; }
-.rfe-recherche input {
-  width: 100%;
-  height: 42px;
-  padding: 0 14px 0 40px;
-  border: 1px solid var(--e-bord-champ);
-  border-radius: 3px;
-  font: inherit;
-  font-size: 14px;
-  color: var(--e-encre);
-  background: #fff;
-}
-.rfe-recherche svg { position: absolute; left: 13px; color: var(--e-tertiaire); pointer-events: none; }
-
 .rfe-fil { background: var(--e-gris); border-bottom: 1px solid var(--e-filet); }
 .rfe-fil__piste { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding: 10px 0; font-size: 13px; }
 .rfe-fil a { color: var(--e-tertiaire); text-decoration: none; }
@@ -5554,43 +5538,6 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    Le total du chrome collant descend de 118 à 106 px : soit treize pour cent
    d'un écran de 844 px, et c'est déjà beaucoup. */
 
-/* ── Menu des écrans étroits ────────────────────────────────────────────── */
-.rfe-menu {
-  display: none;
-  margin-left: auto;
-  width: 44px;
-  height: 44px;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--e-bord-champ);
-  border-radius: 3px;
-  background: #fff;
-  color: var(--e-navy);
-  cursor: pointer;
-}
-.rfe-menu:hover { border-color: var(--e-navy); background: var(--e-gris); }
-.rfe-menu__panneau {
-  display: none;
-  flex-basis: 100%;
-  padding: 4px 0 14px;
-  border-top: 1px solid var(--e-filet);
-}
-.rfe-menu__panneau a {
-  display: flex;
-  align-items: center;
-  min-height: 46px;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--e-second);
-  text-decoration: none;
-  border-bottom: 1px solid var(--e-filet);
-}
-.rfe-menu__panneau a:hover { color: var(--e-bleu); }
-.rfe-recherche--menu { flex: 1 1 auto; margin: 10px 0 8px; }
-
 /* ── Sommaire replié ────────────────────────────────────────────────────── */
 .rfe-sommaire__bascule {
   display: none;
@@ -5645,15 +5592,6 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-barre { display: none; position: sticky; bottom: 0; z-index: 45; background: #fff; border-top: 1px solid var(--e-bord); padding: 10px clamp(16px, 2.2cqw, 30px) calc(10px + env(safe-area-inset-bottom)); }
 
 @container (max-width: 900px) {
-  .rfe-recherche, .rfe-nav, .rfe-entete__cta { display: none; }
-  .rfe-entete__piste { flex-wrap: wrap; }
-  .rfe-menu { display: flex; }
-  /* Le panneau ne se déploie que là où son bouton existe : élargir la fenêtre
-     pendant qu'il est ouvert ne doit pas le laisser sous une barre qui a
-     retrouvé sa recherche et sa navigation. */
-  .rfe-menu__panneau:not([hidden]) { display: grid; gap: 2px; }
-  .rfe-recherche--menu { display: flex; }
-
   .rfe-sommaire__piste { display: none; }
   .rfe-sommaire__bascule { display: flex; }
   /* Neuf entrées sur deux colonnes, à quarante-huit pixels de haut : le pouce
@@ -5669,4 +5607,143 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   .rfe-decisions-blocs { display: block; }
 
   .rfe-barre { display: block; }
+}
+
+/* ==========================================================================
+   En-tête du site — couche « rfh »
+   Un seul en-tête pour toutes les pages : celui dessiné pour la fiche
+   entreprise. Il vivait dans la couche « rfe » et dépendait de la requête de
+   conteneur de la fiche ; il en est sorti pour dépendre de la largeur de la
+   fenêtre, la seule chose dont il dépende réellement — il occupe toujours
+   toute la largeur, où qu'il soit posé.
+
+   Soixante-dix pixels de haut, cinquante-huit sous neuf cents. Au-delà de ce
+   seuil, la recherche, la navigation et l'appel à l'action cèdent la place à
+   un bouton de menu qui les rouvre en dessous.
+   ========================================================================== */
+
+.rfh { position: sticky; top: 0; z-index: 50; background: #fff; border-bottom: 1px solid var(--e-bord); }
+.rfh__piste {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding-inline: clamp(16px, 2.2vw, 30px);
+  min-height: clamp(58px, 4.9vw, 70px);
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 28px);
+}
+.rfh :focus-visible { outline: 2px solid var(--e-bleu); outline-offset: 2px; }
+
+.rfh-nav { display: flex; align-items: center; gap: clamp(12px, 1.8vw, 26px); }
+.rfh-nav a {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-second);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rfh-nav a:hover { color: var(--e-navy); }
+
+.rfh-recherche { flex: 1 1 280px; min-width: 0; position: relative; display: flex; align-items: center; }
+.rfh-recherche input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px 0 40px;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--e-encre);
+  background: #fff;
+}
+.rfh-recherche svg { position: absolute; left: 13px; color: var(--e-tertiaire); pointer-events: none; }
+
+/* L'appel à l'action, et le lien de sortie qui le remplace dans le parcours de
+   dépôt : même emplacement, même hauteur, l'un plein et l'autre sobre. */
+.rfh-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--e-navy);
+  border-radius: 3px;
+  background: var(--e-navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rfh-cta:hover { background: var(--e-bleu); border-color: var(--e-bleu); color: #fff; }
+.rfh-quitter {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--e-tertiaire);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rfh-quitter:hover { color: var(--e-navy); }
+
+/* ── Menu des écrans étroits ────────────────────────────────────────────── */
+.rfh-menu {
+  display: none;
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--e-bord-champ);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--e-navy);
+  cursor: pointer;
+}
+.rfh-menu:hover { border-color: var(--e-navy); background: var(--e-gris); }
+.rfh-menu__panneau {
+  display: none;
+  flex-basis: 100%;
+  padding: 4px 0 14px;
+  border-top: 1px solid var(--e-filet);
+}
+.rfh-menu__panneau a {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--e-second);
+  text-decoration: none;
+  border-bottom: 1px solid var(--e-filet);
+}
+.rfh-menu__panneau a:hover { color: var(--e-bleu); }
+.rfh-recherche--menu { flex: 1 1 auto; margin: 10px 0 8px; }
+
+@media (max-width: 900px) {
+  .rfh-recherche, .rfh-nav, .rfh-cta { display: none; }
+  .rfh__piste { flex-wrap: wrap; }
+  .rfh-menu { display: flex; }
+  /* Le panneau ne se déploie que là où son bouton existe : élargir la fenêtre
+     pendant qu'il est ouvert ne doit pas le laisser sous une barre qui a
+     retrouvé sa recherche et sa navigation. */
+  .rfh-menu__panneau:not([hidden]) { display: grid; gap: 2px; }
+  .rfh-recherche--menu { display: flex; }
+  /* Le lien de sortie, lui, reste : c'est la seule issue du parcours de dépôt
+     tant que le menu est fermé. */
+  .rfh-quitter { margin-left: 0; margin-right: auto; }
 }

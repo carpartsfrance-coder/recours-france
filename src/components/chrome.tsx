@@ -4,20 +4,16 @@ import type { ReactNode } from "react";
 import { nomEditeur } from "@/lib/editeur";
 import { Info } from "@/components/refonte/icones";
 import { GUIDES } from "@/lib/observatoire";
+import { EnteteSite } from "@/components/entete-site";
 
 /**
- * Logotype fourni. Le verrou complet (pictogramme + nom + signature) sert là où
- * il y a de la place ; en en-tête, seul le pictogramme est repris, le nom
- * restant du texte — sinon la signature devient illisible à cette hauteur.
+ * Le verrou complet, réservé au pied de page : c'est le seul endroit qui lui
+ * laisse assez de place pour que sa signature reste lisible. L'en-tête, lui,
+ * porte le logotype de la couche institutionnelle.
  */
 const LOGO = {
-  verrou: "/recours-france.png",
   verrouBlanc: "/recours-france-blanc.png",
-  picto: "/pictogramme-rf.png",
-  pictoBlanc: "/pictogramme-rf-blanc.png",
   ratioVerrou: 1205 / 325,
-  // Pictogramme + filet tricolore : le filet fait partie de la marque.
-  ratioPicto: 352 / 309,
 };
 
 // Comparaison insensible a la casse et aux espaces. Le reglage se saisit a la
@@ -69,34 +65,6 @@ export function BandeauDemonstration({ habillage = "standard" }: { habillage?: H
   );
 }
 
-export function Logo({
-  baseline = "Signalement des litiges de consommation",
-  habillage = "standard",
-}: {
-  baseline?: string;
-  habillage?: Habillage;
-}) {
-  const institutionnel = habillage === "institutionnel";
-  const hauteur = institutionnel ? 38 : 42;
-  return (
-    <Link href="/" className={`rf-logo${institutionnel ? " rf-logo--institutionnel" : ""}`}>
-      <Image
-        src={LOGO.picto}
-        alt=""
-        aria-hidden="true"
-        width={Math.round(hauteur * LOGO.ratioPicto)}
-        height={hauteur}
-        className="rf-logo__picto"
-        priority
-      />
-      <span>
-        <span className="rf-logo__nom">Recours France</span>
-        <span className="rf-logo__baseline">{baseline}</span>
-      </span>
-    </Link>
-  );
-}
-
 type EnteteProps = {
   baseline?: string;
   /** Affiche le champ de recherche central (annuaire). */
@@ -108,66 +76,20 @@ type EnteteProps = {
   habillage?: Habillage;
 };
 
-export function Entete({ baseline, recherche, valeurRecherche, sansCta, navActive, habillage = "standard" }: EnteteProps) {
-  const institutionnel = habillage === "institutionnel";
-  return (
-    <header className={`rf-entete${institutionnel ? " rf-entete--institutionnel" : ""}`}>
-      <div className={conteneur(habillage)}>
-        <Logo baseline={baseline} habillage={habillage} />
-
-        {recherche || institutionnel ? (
-          <form
-            className={`rf-entete__recherche${institutionnel ? " rf-entete__recherche--institutionnel" : ""}`}
-            action="/entreprises"
-            role="search"
-          >
-            <label className="rf-vh" htmlFor="recherche-entete">
-              Rechercher une entreprise
-            </label>
-            <input
-              id="recherche-entete"
-              className="rf-input"
-              type="search"
-              name="q"
-              defaultValue={valeurRecherche}
-              placeholder={institutionnel ? "Nom, adresse, n° SIRET/SIREN…" : "Nom, raison sociale ou SIREN"}
-            />
-            <button type="submit" className={`rf-btn ${institutionnel ? "rf-btn--marine" : "rf-btn--primaire"}`}>
-              Rechercher
-            </button>
-          </form>
-        ) : null}
-
-        <nav className="rf-nav" aria-label="Navigation principale">
-          {recherche || institutionnel ? null : navActive === "annuaire" ? (
-            <span className="rf-nav__actif">Annuaire des entreprises</span>
-          ) : (
-            <Link href="/entreprises">Annuaire des entreprises</Link>
-          )}
-          {recherche || institutionnel ? null : navActive === "boutiques" ? (
-            <span className="rf-nav__actif">Boutiques en ligne</span>
-          ) : (
-            <Link href="/boutiques">Boutiques en ligne</Link>
-          )}
-          {institutionnel ? null : navActive === "espace" ? (
-            <span className="rf-nav__actif">Mon espace</span>
-          ) : (
-            <Link href="/mon-espace">Mon espace</Link>
-          )}
-          {navActive === "aide" ? (
-            <span className="rf-nav__actif">Aide</span>
-          ) : (
-            <Link href="/aide">Aide</Link>
-          )}
-          {sansCta ? null : (
-            <Link href="/signaler" className={`rf-btn ${institutionnel ? "rf-btn--marine" : "rf-btn--primaire"}`}>
-              Signaler un litige
-            </Link>
-          )}
-        </nav>
-      </div>
-    </header>
-  );
+/**
+ * L'en-tête, désormais unique pour tout le site.
+ *
+ * Le gabarit institutionnel de la fiche entreprise l'a emporté : trois
+ * en-têtes différents sur un même site, c'était trois marques. Les anciens
+ * réglages restent acceptés pour ne pas toucher aux trente pages qui les
+ * passent, mais seuls deux ont encore un effet — `sansCta` retire le bouton là
+ * où il renverrait à la page en cours, `valeurRecherche` remplit le champ.
+ *
+ * `baseline`, `recherche`, `navActive` et `habillage` ne servent plus : la
+ * signature ne varie plus d'une page à l'autre, c'est tout le propos.
+ */
+export function Entete({ valeurRecherche, sansCta }: EnteteProps) {
+  return <EnteteSite valeurRecherche={valeurRecherche} cta={sansCta ? null : "/signaler"} />;
 }
 
 export type MailleFil = { libelle: string; href?: string };

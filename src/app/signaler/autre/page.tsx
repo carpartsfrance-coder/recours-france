@@ -9,6 +9,7 @@ import { CIBLE_LIBRE } from "@/lib/tunnel";
 import { resoudreCible } from "@/lib/cible";
 import { typo } from "@/lib/typographie";
 import { Bouclier, FlecheGauche } from "@/components/refonte/icones";
+import { EnteteSite } from "@/components/entete-site";
 
 export const dynamic = "force-dynamic";
 
@@ -86,23 +87,9 @@ export default async function CibleLibre({
 
   return (
     <div className="rfp">
-      <header className="rfp-entete">
-        <div className="rfp-conteneur rfp-conteneur--1000 rfp-entete__piste">
-          <Link href="/" className="rfp-logo" aria-label="Recours France — accueil">
-            <span className="rfp-logo__mot">
-              Recours
-              <em>France</em>
-            </span>
-            <span className="rfp-logo__barres" aria-hidden="true">
-              <i style={{ width: 32, background: "var(--p-bleu)" }} />
-              <i style={{ width: 24, background: "#E1000F" }} />
-            </span>
-          </Link>
-          <Link href="/" className="rfp-quitter">
-            Quitter
-          </Link>
-        </div>
-      </header>
+      {/* Le même en-tête que partout ailleurs, sans son appel à l'action :
+          il renverrait ici même. */}
+      <EnteteSite cta={null} quitter="/" />
 
       <main id="contenu">
         <div className="rfp-conteneur rfp-conteneur--900" style={{ paddingTop: 30 }}>

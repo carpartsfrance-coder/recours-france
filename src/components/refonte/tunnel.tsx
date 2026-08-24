@@ -15,6 +15,7 @@ import {
   resumePublic,
 } from "@/lib/tunnel-refonte";
 import { typo } from "@/lib/typographie";
+import { EnteteSite } from "@/components/entete-site";
 import { publierSignalement } from "@/app/signaler/actions-tunnel";
 
 /**
@@ -145,23 +146,10 @@ export function Tunnel({ slug, nom, lieu, siren, familles, preselection, fiche, 
 
   return (
     <div className="rfp">
-      <header className="rfp-entete">
-        <div className="rfp-conteneur rfp-conteneur--1000 rfp-entete__piste">
-          <Link href="/" className="rfp-logo" aria-label="Recours France — accueil">
-            <span className="rfp-logo__mot">
-              Recours
-              <em>France</em>
-            </span>
-            <span className="rfp-logo__barres" aria-hidden="true">
-              <i style={{ width: 32, background: "var(--p-bleu)" }} />
-              <i style={{ width: 24, background: "#E1000F" }} />
-            </span>
-          </Link>
-          <Link href={fiche ?? "/"} className="rfp-quitter">
-            Quitter
-          </Link>
-        </div>
-      </header>
+      {/* Le même en-tête que partout ailleurs. L'appel à l'action en est
+          retiré : il renverrait ici, sur la page où l'on est déjà. « Quitter »
+          occupe son emplacement — c'est la sortie assumée du parcours. */}
+      <EnteteSite cta={null} quitter={fiche ?? "/"} />
 
       <main id="contenu">
         {/* ══ Écran 2 — Votre situation ═════════════════════════════════ */}
