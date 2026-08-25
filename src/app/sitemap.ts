@@ -1,17 +1,26 @@
+import type { Prisma } from "@prisma/client";
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
-import { OU_BOUTIQUE_INDEXABLE, OU_INDEXABLE, ouPlanDeSite } from "@/lib/indexation";
+import {
+  OU_BOUTIQUE_PLAN_DE_SITE,
+  OU_INDEXABLE,
+  PALIER_OUVERT,
+  clausesPlanDeSite,
+} from "@/lib/indexation";
 import { DEPARTEMENTS, SECTEURS, cheminCommune, cheminDepartement, cheminSecteur } from "@/lib/maillage";
 import {
+  DEPARTEMENTS_PAR_TRANCHE,
   PAR_FICHIER,
   RANG_COMMUNES,
   RANG_DEPARTEMENTS,
   RANG_ENTREPRISES,
   RANG_SIGNAL,
   RANG_STATIQUES,
+  SEUIL_COMMUNE,
   base,
   nombreDeTranches,
   prefixes,
+  tranchesSansBase,
 } from "@/lib/plan-de-site";
 
 /**
@@ -57,12 +66,18 @@ export const dynamic = "force-dynamic";
  * robots.txt désigne, et lui seul que les moteurs lisent.
  */
 export async function generateSitemaps() {
+  let total: number;
   try {
-    const total = await nombreDeTranches();
-    return Array.from({ length: total }, (_, id) => ({ id }));
+    total = await nombreDeTranches();
   } catch {
-    return [{ id: 0 }];
+    // Le repli ne renvoyait que la tranche 0. Next ne sert que les rangs
+    // énumérés ici : une base indisponible le temps d'un appel réduisait le
+    // plan de site à sa première tranche et faisait répondre 404 à toutes les
+    // autres. Le repli se calcule donc sans la base — seul le nombre de
+    // tranches de boutiques y était.
+    total = tranchesSansBase();
   }
+  return Array.from({ length: total }, (_, id) => ({ id }));
 }
 
 export default async function sitemap({
@@ -163,30 +178,46 @@ export default async function sitemap({
    * un site pour le premier, la clé étrangère pour le second. Une seconde à
    * eux deux.
    *
-   * Les fiches portant un signalement passent en tête et échappent au plafond
-   * de cinquante mille : elles sont une poignée, et ce sont les seules pages du
-   * site à porter un récit.
+   * Les fiches portant un signalement ou une décision de justice passent en
+   * tête et échappent au plafond de cinquante mille : elles sont une poignée,
+   * et ce sont les seules pages du site à porter autre chose que du registre.
    */
   if (rangDemande === RANG_SIGNAL) {
-    const [avecSignalement, avecSite] = await Promise.all([
-      prisma.entreprise.findMany({
-        where: { ...OU_INDEXABLE, signalements: { some: {} } },
-        select: { slug: true, majLe: true },
-        orderBy: { majLe: "desc" },
-        take: PAR_FICHIER,
-      }),
-      prisma.entreprise.findMany({
-        where: { ...OU_INDEXABLE, siteWeb: { not: null } },
-        select: { slug: true, majLe: true },
-        orderBy: { majLe: "desc" },
-        take: PAR_FICHIER,
-      }),
+    // Au palier d'ouverture, les tranches par préfixe contiennent déjà
+    // exactement ces fiches : reprendre les cinquante mille plus récentes en
+    // doublerait huit pour cent du plan de site sans rien y ajouter. Seules les
+    // fiches portant un signalement sont reprises — elles sont une poignée, et
+    // ce sont les seules pages du site à porter un récit. Aux paliers suivants,
+    // où les tranches comptent des millions de fiches, la reprise retrouve son
+    // rôle : mettre en avant ce qui a du contenu.
+    // Un critère, une requête. Réunis par `OR`, deux critères pourtant indexés
+    // chacun de leur côté redonnent un balayage complet : la tranche est
+    // repassée de six centièmes de seconde à onze en les rassemblant.
+    const contenu: Prisma.EntrepriseWhereInput[] = [
+      { ...OU_INDEXABLE, signalements: { some: {} } },
+      { ...OU_INDEXABLE, decisions: { some: {} } },
+    ];
+    const lots = await Promise.all([
+      ...contenu.map((where) =>
+        prisma.entreprise.findMany({
+          where,
+          select: { slug: true, majLe: true },
+          orderBy: { majLe: "desc" },
+          take: PAR_FICHIER,
+        }),
+      ),
+      PALIER_OUVERT === 1
+        ? Promise.resolve([] as { slug: string; majLe: Date }[])
+        : prisma.entreprise.findMany({
+            where: { ...OU_INDEXABLE, siteWeb: { not: null } },
+            select: { slug: true, majLe: true },
+            orderBy: { majLe: "desc" },
+            take: PAR_FICHIER,
+          }),
     ]);
-    const vus = new Set(avecSignalement.map((e) => e.slug));
-    const fiches = [...avecSignalement, ...avecSite.filter((e) => !vus.has(e.slug))].slice(
-      0,
-      PAR_FICHIER,
-    );
+    const parSlug = new Map<string, Date>();
+    for (const lot of lots) for (const e of lot) parSlug.set(e.slug, e.majLe);
+    const fiches = [...parSlug].slice(0, PAR_FICHIER).map(([slug, majLe]) => ({ slug, majLe }));
     return fiches.map((e) => ({
       url: `${b}/entreprises/${e.slug}`,
       lastModified: e.majLe,
@@ -196,33 +227,56 @@ export default async function sitemap({
   }
 
   /**
-   * Le regroupement porte sur `communeSlug`, non sur `commune`.
+   * Une tranche couvre dix départements, non un seul.
    *
-   * L'adresse produite est la même — `cheminCommune` réduit de toute façon la
-   * valeur en fragment d'URL — mais l'index qui existe déjà porte sur
+   * Cent un fichiers pour trois cent mille adresses de villes : un robot qui
+   * n'ouvre que quelques fichiers par jour n'en verrait jamais le bout. Les
+   * requêtes d'un même groupe partent ensemble — la plus lente décide du
+   * temps de réponse, pas leur somme.
+   *
+   * Le regroupement porte sur `communeSlug`, non sur `commune`. L'adresse
+   * produite est la même — `cheminCommune` réduit de toute façon la valeur en
+   * fragment d'URL — mais l'index qui existe déjà porte sur
    * `(secteur, departement, communeSlug, etatAdministratif)`. Grouper sur le
    * nom brut le rendait inutilisable : Postgres relisait la table par le seul
    * index de département, soit sept gigaoctets pour Paris et vingt secondes
-   * mesurées. Sur le slug, il balaie l'index seul — trois secondes et demie
-   * pour Paris, moins d'une pour tous les autres départements.
+   * mesurées. Sur le slug, il balaie l'index seul.
    *
    * Deux noms qui se réduisent au même fragment se trouvent fusionnés, ce qui
    * est exactement ce qu'il faut : ils désignaient déjà la même page.
+   *
+   * Le seuil écarte les villes qui ne comptent qu'une entreprise dans le
+   * secteur : cette page ne dit rien que la fiche ne dise déjà.
    */
   if (rangDemande < RANG_SIGNAL) {
-    const departement = DEPARTEMENTS[rangDemande - RANG_COMMUNES]?.code;
-    if (!departement) return [];
-    const communes = await prisma.entreprise.groupBy({
-      by: ["secteur", "communeSlug"],
-      where: { etatAdministratif: "ACTIVE", departement, communeSlug: { not: null } },
-      _count: { _all: true },
-    });
-    return communes.flatMap((c) => {
-      const href = c.secteur ? cheminCommune(c.secteur, departement, c.communeSlug!) : null;
-      return href
-        ? [{ url: `${b}${href}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 }]
-        : [];
-    });
+    const debut = (rangDemande - RANG_COMMUNES) * DEPARTEMENTS_PAR_TRANCHE;
+    const lot = DEPARTEMENTS.slice(debut, debut + DEPARTEMENTS_PAR_TRANCHE);
+    if (lot.length === 0) return [];
+
+    const groupes = await Promise.all(
+      lot.map(async (d) => ({
+        departement: d.code,
+        lignes: await prisma.entreprise.groupBy({
+          by: ["secteur", "communeSlug"],
+          where: {
+            etatAdministratif: "ACTIVE",
+            departement: d.code,
+            communeSlug: { not: null },
+          },
+          _count: { _all: true },
+        }),
+      })),
+    );
+
+    return groupes.flatMap(({ departement, lignes }) =>
+      lignes.flatMap((c) => {
+        if (c._count._all < SEUIL_COMMUNE) return [];
+        const href = c.secteur ? cheminCommune(c.secteur, departement, c.communeSlug!) : null;
+        return href
+          ? [{ url: `${b}${href}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 }]
+          : [];
+      }),
+    );
   }
 
   const liste = await prefixes();
@@ -230,17 +284,33 @@ export default async function sitemap({
 
   if (rang < liste.length) {
     const p = liste[rang];
-    // Encadrement textuel plutôt que `left(siren,4) = p` : seule cette forme
+    // Encadrement textuel plutôt que `left(siren,1) = p` : seule cette forme
     // se résout par l'index unique du SIREN.
-    const fiches = await prisma.entreprise.findMany({
-      // Le palier d'ouverture s'ajoute à l'encadrement par préfixe : le plan
-      // de site ne propose que ce qu'on veut faire explorer maintenant. Les
-      // fiches des paliers suivants restent indexables et atteignables par le
-      // maillage — elles attendent leur tour, elles ne sont pas exclues.
-      where: { siren: { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") }, ...ouPlanDeSite() },
-      select: { slug: true, majLe: true },
-      take: PAR_FICHIER,
-    });
+    //
+    // Le palier d'ouverture s'ajoute à l'encadrement : le plan de site ne
+    // propose que ce qu'on veut faire explorer maintenant. Les fiches des
+    // paliers suivants restent indexables et atteignables par le maillage —
+    // elles attendent leur tour, elles ne sont pas exclues.
+    //
+    // Ses critères sont interrogés un par un et réunis ici : réunis dans un
+    // `OR`, aucun index ne s'y appliquait et la tranche mettait quarante
+    // secondes.
+    const siren = { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") };
+    const lots = await Promise.all(
+      clausesPlanDeSite().map((clause) =>
+        prisma.entreprise.findMany({
+          where: { ...clause, siren },
+          select: { slug: true, majLe: true },
+          take: PAR_FICHIER,
+        }),
+      ),
+    );
+    const parSlug = new Map<string, Date>();
+    for (const lot of lots) for (const e of lot) parSlug.set(e.slug, e.majLe);
+    const fiches = [...parSlug]
+      .slice(0, PAR_FICHIER)
+      .map(([slug, majLe]) => ({ slug, majLe }));
+
     return fiches.map((e) => ({
       url: `${b}/entreprises/${e.slug}`,
       lastModified: e.majLe,
@@ -252,7 +322,7 @@ export default async function sitemap({
   // Seules les boutiques portant une déclaration : les autres sont en
   // noindex, les déclarer serait se contredire.
   const boutiques = await prisma.boutique.findMany({
-    where: OU_BOUTIQUE_INDEXABLE,
+    where: OU_BOUTIQUE_PLAN_DE_SITE,
     select: { slug: true, majLe: true },
     orderBy: { id: "asc" },
     skip: (rang - liste.length) * PAR_FICHIER,

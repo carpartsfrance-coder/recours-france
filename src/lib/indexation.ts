@@ -94,8 +94,8 @@ export const OU_INDEXABLE: Prisma.EntrepriseWhereInput = {
  * Le palier proposé au plan de site.
  *
  * 1 — la fiche porte un signal réel : un site déclaré, une boutique en ligne,
- *     ou un signalement. Ce sont les entreprises avec lesquelles un
- *     consommateur peut effectivement avoir eu affaire. ~86 000.
+ *     un signalement, ou une décision de justice. Ce sont les entreprises avec
+ *     lesquelles un consommateur peut effectivement avoir eu affaire. ~71 000.
  * 2 — active, dans un secteur grand public. ~3,26 millions.
  * 3 — le reste des actives : indexable et atteignable par le maillage, mais
  *     hors du plan de site tant que les paliers précédents ne sont pas
@@ -107,24 +107,58 @@ export const OU_INDEXABLE: Prisma.EntrepriseWhereInput = {
  */
 export const PALIER_OUVERT = Math.min(3, Math.max(1, Number(process.env.SEO_PALIER ?? 1) || 1));
 
-export function ouPlanDeSite(): Prisma.EntrepriseWhereInput {
-  if (PALIER_OUVERT >= 3) return OU_INDEXABLE;
-  if (PALIER_OUVERT === 2) {
-    return {
-      ...OU_INDEXABLE,
-      NOT: { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
-      secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS },
-    };
-  }
-  return {
-    ...OU_INDEXABLE,
-    NOT: { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
-    OR: [
-      { siteWeb: { not: null } },
-      { boutiques: { some: {} } },
-      { signalements: { some: {} } },
+/**
+ * Le palier, non comme une clause mais comme une liste de clauses à réunir.
+ *
+ * Le palier 1 tient en un `OR` de trois critères — un site, une boutique, un
+ * signalement. Écrit ainsi, aucun index ne s'applique : Postgres relit la
+ * plage entière et filtre. Sur une tranche d'un dixième du répertoire, un
+ * million trois cent mille lignes, quarante secondes mesurées.
+ *
+ * Interrogés séparément, chacun trouve son index — l'index partiel des
+ * sociétés ayant un site, la clé étrangère des boutiques, celle des
+ * signalements. Trois cent cinquante millisecondes à eux trois, en parallèle.
+ * L'appelant réunit les résultats et écarte les doublons ; c'est ce que la
+ * base aurait fait, en moins bien.
+ *
+ * Aux paliers 2 et 3 il n'y a pas de `OR` : la liste ne compte qu'une clause,
+ * et l'appelant n'a rien de particulier à faire.
+ */
+export function clausesPlanDeSite(): Prisma.EntrepriseWhereInput[] {
+  if (PALIER_OUVERT >= 3) return [OU_INDEXABLE];
+  /**
+   * Les deux exclusions tiennent dans un seul `NOT`, sous forme de liste.
+   *
+   * Écrites en deux clés `NOT` successives — l'une venant du socle par
+   * diffusion, l'autre ajoutée ici — la seconde écrasait la première : les
+   * sociétés civiles rentraient par la fenêtre. Cent neuf fiches y passaient
+   * au palier d'ouverture, où il faut un site déclaré pour entrer ; au palier
+   * suivant, c'étaient deux millions de sociétés civiles immobilières, soit
+   * exactement ce que l'exclusion existe pour empêcher.
+   */
+  const sansCategories: Prisma.EntrepriseWhereInput = {
+    etatAdministratif: "ACTIVE",
+    NOT: [
+      { categorieJuridique: { in: SOCIETES_CIVILES } },
+      { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
     ],
   };
+  if (PALIER_OUVERT === 2) {
+    return [{ ...sansCategories, secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS } }];
+  }
+  const socle = sansCategories;
+  return [
+    { ...socle, siteWeb: { not: null } },
+    { ...socle, boutiques: { some: {} } },
+    { ...socle, signalements: { some: {} } },
+    // Les décisions de justice sont arrivées après l'écriture de ce palier, et
+    // n'y figuraient donc pas. Ce sont pourtant le contenu le plus singulier du
+    // site : une fiche qui en porte onze n'a d'équivalent nulle part ailleurs.
+    // DISTRIMOTOR, la fiche la mieux fournie du répertoire, se trouvait exclue
+    // du plan de site faute de site déclaré — et dix-huit des vingt fiches
+    // portant une décision avec elle.
+    { ...socle, decisions: { some: {} } },
+  ];
 }
 
 /**
@@ -165,4 +199,31 @@ export function boutiqueIndexable(b: { derniereActivite?: Date | null }): boolea
 /** La même règle, côté base. */
 export const OU_BOUTIQUE_INDEXABLE: Prisma.BoutiqueWhereInput = {
   OR: [{ derniereActivite: null }, { derniereActivite: { gte: limiteActivite() } }],
+};
+
+/**
+ * Ce que le plan de site propose parmi les boutiques : celles rattachées à une
+ * société, et celles portant un signalement.
+ *
+ * Mesuré page à page en production : une boutique rattachée rend cent
+ * quatre-vingt-quinze lignes de texte — SIREN, adresse, forme juridique, date
+ * d'immatriculation, provenance du rattachement. Une boutique non rattachée en
+ * rend cent quatre-vingt-quatre, et ces cent quatre-vingt-quatre lignes sont
+ * les mêmes d'une boutique à l'autre : seul le nom de domaine change. Darty.com
+ * et Pepinet.fr rendaient le même document.
+ *
+ * Cent quinze mille neuf cents pages identiques proposées à un moteur sur un
+ * domaine d'un mois, c'est la définition de ce qu'il sanctionne. Elles restent
+ * indexables et atteignables — la règle de la maison est de hiérarchiser par le
+ * plan de site, pas d'exclure par `noindex` — mais elles ne sont plus
+ * proposées.
+ *
+ * Le jour où ces pages porteront quelque chose qui leur est propre, le filtre
+ * n'aura plus lieu d'être.
+ */
+export const OU_BOUTIQUE_PLAN_DE_SITE: Prisma.BoutiqueWhereInput = {
+  AND: [
+    OU_BOUTIQUE_INDEXABLE,
+    { OR: [{ entrepriseId: { not: null } }, { signalements: { some: {} } }] },
+  ],
 };

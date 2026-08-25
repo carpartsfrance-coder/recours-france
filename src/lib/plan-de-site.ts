@@ -10,27 +10,68 @@
 
 import { prisma } from "@/lib/db";
 import { DEPARTEMENTS } from "@/lib/referentiels/naf";
+import { OU_BOUTIQUE_PLAN_DE_SITE, PALIER_OUVERT } from "@/lib/indexation";
 import { ADRESSE } from "./adresse";
 
 export const PAR_FICHIER = 50_000;
+
 /**
- * Trois chiffres, non quatre.
+ * La longueur du préfixe suit le palier ouvert.
  *
- * Le préfixe borne chaque tranche par l'index unique du SIREN. Sa longueur
- * décide du nombre de tranches publiées : quatre chiffres en font dix mille,
- * dont la grande majorité seraient vides puisque les SIREN ne se répartissent
- * pas uniformément. Trois en font mille — quatre-vingt-six fiches chacune au
- * palier d'ouverture actuel, huit mille neuf cents si l'on ouvrait tout, ce
- * qui reste sous le plafond de cinquante mille URL par fichier.
+ * Le préfixe borne chaque tranche par l'index unique du SIREN, et sa longueur
+ * décide du nombre de fichiers publiés : un chiffre en fait dix, deux en font
+ * cent, trois en font mille.
+ *
+ * Elle était fixée à trois, dimensionnée pour le jour où les treize millions de
+ * fiches seraient ouvertes. Au palier d'ouverture, soixante et onze mille
+ * fiches se répartissaient donc sur mille fichiers — soixante-et-onze adresses
+ * par fichier, deux cent quatre-vingt-un fichiers vides, et mille requêtes
+ * demandées à un robot pour découvrir ce qui tient dans deux. Un domaine neuf
+ * n'obtient pas mille requêtes de plan de site ; il en obtient quelques-unes
+ * par jour.
+ *
+ * Le nombre de fichiers suit désormais le nombre de pages réellement
+ * proposées : dix au palier 1 (~7 100 adresses chacun), cent au palier 2
+ * (~33 000), mille au palier 3 (~13 000). Chacun reste sous le plafond de
+ * cinquante mille.
  */
-export const LONGUEUR_PREFIXE = 3;
+export function longueurPrefixe(): number {
+  return PALIER_OUVERT;
+}
+
+/**
+ * Les départements sont regroupés, non publiés un par un.
+ *
+ * Chaque département donnait un fichier — cent un fichiers pour trois cent mille
+ * adresses de villes. Regroupés par dix, ils en donnent onze, et les requêtes
+ * d'un même fichier partent ensemble : la plus lente décide, pas leur somme.
+ */
+export const DEPARTEMENTS_PAR_TRANCHE = 10;
+export const TRANCHES_COMMUNES = Math.ceil(DEPARTEMENTS.length / DEPARTEMENTS_PAR_TRANCHE);
+
+/**
+ * Nombre minimal d'entreprises pour qu'une page de ville entre au plan de site.
+ *
+ * Mesuré sur la base entière : sur trois cent trois mille pages de ville,
+ * quatre-vingt-six mille six cent soixante-dix-neuf n'en listent qu'une seule.
+ * Celle-là ne dit rien que la fiche de l'entreprise ne dise déjà, et elle le
+ * dit dans un gabarit partagé par les trois cent mille autres. La proposer,
+ * c'est dépenser du budget d'exploration contre soi.
+ *
+ * Le seuil ne rend rien inaccessible : ces pages restent indexables et
+ * atteignables par le maillage. Elles ne sont simplement plus proposées.
+ * Relever le seuil resserre davantage — mesuré : 2 → 216 909 pages,
+ * 3 → 176 030, 5 → 134 357, 10 → 88 848.
+ */
+export const SEUIL_COMMUNE = 2;
+
 export const DUREE_CACHE = 86_400;
 
 /** Tranches réservées avant les fiches : pages fixes, puis regroupements. */
 export const RANG_STATIQUES = 0;
 export const RANG_DEPARTEMENTS = 1;
-export const RANG_COMMUNES = 2; // une tranche par département
-export const RANG_SIGNAL = RANG_COMMUNES + DEPARTEMENTS.length;
+export const RANG_COMMUNES = 2; // une tranche par groupe de départements
+export const RANG_SIGNAL = RANG_COMMUNES + TRANCHES_COMMUNES;
 export const RANG_ENTREPRISES = RANG_SIGNAL + 1;
 
 export function base(): string {
@@ -46,33 +87,46 @@ export function base(): string {
  * dix : l'index du plan de site répondait 500, et Google, incapable de le
  * lire, n'a indexé que ce qui lui était soumis à la main.
  *
- * Un préfixe de trois chiffres ne prend que mille valeurs, et elles sont
- * connues d'avance. Les énumérer coûte zéro requête et ne peut pas échouer.
- *
- * Le prix est une poignée de tranches vides — sur huit millions neuf cent mille
- * sociétés actives, presque tous les préfixes sont peuplés. Un fichier vide
- * coûte une requête au robot ; un index en erreur lui coûte le site entier.
+ * Les valeurs d'un préfixe sont connues d'avance. Les énumérer coûte zéro
+ * requête et ne peut pas échouer. Le prix est une poignée de tranches vides ;
+ * un fichier vide coûte une requête au robot, un index en erreur lui coûte le
+ * site entier.
  */
 export async function prefixes(): Promise<string[]> {
-  const total = 10 ** LONGUEUR_PREFIXE;
-  return Array.from({ length: total }, (_, i) => String(i).padStart(LONGUEUR_PREFIXE, "0"));
+  const n = longueurPrefixe();
+  return Array.from({ length: 10 ** n }, (_, i) => String(i).padStart(n, "0"));
 }
 
 /**
- * Le nombre de boutiques est estimé, non compté.
+ * Les boutiques proposées sont comptées, non estimées.
  *
- * `count(*)` balaie la table. Un plan de site n'a pas besoin d'exactitude au
- * près : il lui faut le nombre de tranches, et `reltuples` — la statistique
- * que Postgres tient à jour — le donne instantanément. Une tranche de trop ou
- * de moins se corrige au prochain passage.
+ * `reltuples` donnait le nombre de lignes de la table — cent quatre-vingt-cinq
+ * mille — alors que le plan de site n'en propose plus que les rattachées à une
+ * société, soit soixante-neuf mille. L'index aurait annoncé quatre tranches
+ * pour deux réellement peuplées.
+ *
+ * Le compte exact coûte trente millisecondes, l'index `entrepriseId` suffisant
+ * à le faire sans toucher la table.
  */
+/**
+ * Le nombre de tranches, calculé sans la base.
+ *
+ * Sert de repli quand la base est indisponible : tout est connu d'avance sauf
+ * le nombre de tranches de boutiques, qu'on majore. Une tranche annoncée et
+ * vide coûte une requête au robot ; une tranche omise lui cache ce qu'elle
+ * contient.
+ */
+export function tranchesSansBase(): number {
+  return RANG_ENTREPRISES + 10 ** longueurPrefixe() + TRANCHES_BOUTIQUES_MAX;
+}
+
+/** Majorant : cent quatre-vingt-cinq mille boutiques, cinquante mille par fichier. */
+const TRANCHES_BOUTIQUES_MAX = 4;
+
 export async function nombreDeTranches(): Promise<number> {
-  const [p, estimation] = await Promise.all([
+  const [p, nbBoutiques] = await Promise.all([
     prefixes(),
-    prisma.$queryRaw<{ n: bigint }[]>`
-      SELECT GREATEST(reltuples, 0)::bigint AS n FROM pg_class WHERE relname = 'Boutique'
-    `,
+    prisma.boutique.count({ where: OU_BOUTIQUE_PLAN_DE_SITE }),
   ]);
-  const nbBoutiques = Number(estimation[0]?.n ?? 0);
   return RANG_ENTREPRISES + p.length + Math.max(1, Math.ceil(nbBoutiques / PAR_FICHIER));
 }
