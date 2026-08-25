@@ -147,9 +147,10 @@ export function clausesPlanDeSite(): Prisma.EntrepriseWhereInput[] {
     return [{ ...sansCategories, secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS } }];
   }
   const socle = sansCategories;
+  // L'ordre compte : la liste énumérée est découpée dans cet ordre, et le
+  // budget d'exploration est fini. Autant qu'il commence par ce qui porte un
+  // récit ou une décision plutôt que par ce qui porte une adresse de site.
   return [
-    { ...socle, siteWeb: { not: null } },
-    { ...socle, boutiques: { some: {} } },
     { ...socle, signalements: { some: {} } },
     // Les décisions de justice sont arrivées après l'écriture de ce palier, et
     // n'y figuraient donc pas. Ce sont pourtant le contenu le plus singulier du
@@ -158,6 +159,8 @@ export function clausesPlanDeSite(): Prisma.EntrepriseWhereInput[] {
     // du plan de site faute de site déclaré — et dix-huit des vingt fiches
     // portant une décision avec elle.
     { ...socle, decisions: { some: {} } },
+    { ...socle, siteWeb: { not: null } },
+    { ...socle, boutiques: { some: {} } },
   ];
 }
 

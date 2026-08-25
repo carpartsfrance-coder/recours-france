@@ -10,7 +10,7 @@
 
 import { prisma } from "@/lib/db";
 import { DEPARTEMENTS } from "@/lib/referentiels/naf";
-import { OU_BOUTIQUE_PLAN_DE_SITE, PALIER_OUVERT } from "@/lib/indexation";
+import { OU_BOUTIQUE_PLAN_DE_SITE, PALIER_OUVERT, clausesPlanDeSite } from "@/lib/indexation";
 import { ADRESSE } from "./adresse";
 
 export const PAR_FICHIER = 50_000;
@@ -72,10 +72,68 @@ export const RANG_STATIQUES = 0;
 export const RANG_DEPARTEMENTS = 1;
 export const RANG_COMMUNES = 2; // une tranche par groupe de départements
 export const RANG_SIGNAL = RANG_COMMUNES + TRANCHES_COMMUNES;
-export const RANG_ENTREPRISES = RANG_SIGNAL + 1;
+/**
+ * La tranche de mise en avant n'existe pas au palier d'ouverture.
+ *
+ * Elle sert à faire passer devant les fiches qui ont du contenu quand les
+ * tranches suivantes en comptent des millions. Au palier d'ouverture elles n'en
+ * comptent que soixante et onze mille, énumérées dans l'ordre voulu : reprendre
+ * les mêmes adresses en tête ne ferait qu'un fichier de plus et vingt-cinq
+ * doublons.
+ */
+export const RANG_ENTREPRISES = RANG_SIGNAL + (PALIER_OUVERT === 1 ? 0 : 1);
 
 export function base(): string {
   return ADRESSE;
+}
+
+/**
+ * Au palier d'ouverture, les fiches sont énumérées ; au-delà, encadrées.
+ *
+ * Le préfixe de SIREN existe pour découper ce qu'on ne peut pas tenir en
+ * mémoire. Au palier d'ouverture il n'y a que soixante et onze mille fiches :
+ * les énumérer coûte une seconde quatre, elles tiennent en deux fichiers, et le
+ * découpage par préfixe devient une complication pure. Il coûtait même cher —
+ * chaque tranche encadrait un dixième du répertoire, un million trois cent
+ * mille lignes, et les préfixes 5 à 9 dépassaient les dix secondes que la base
+ * s'accorde.
+ *
+ * Aux paliers suivants la liste ne tient plus en mémoire, et l'encadrement par
+ * préfixe reprend son rôle.
+ */
+export function enumerable(): boolean {
+  return PALIER_OUVERT === 1;
+}
+
+type Fiche = { slug: string; majLe: Date };
+let memoire: { liste: Fiche[]; le: number } | null = null;
+
+/**
+ * L'union des critères du palier, gardée en mémoire une journée.
+ *
+ * Un critère, une requête : réunis par `OR`, ils redonnent un balayage complet.
+ * L'union et le dédoublonnage se font ici, ce que la base aurait fait en moins
+ * bien.
+ *
+ * Le plan de site est demandé quelques fois par jour par des robots ; le tenir
+ * en mémoire évite de refaire quatre requêtes à chaque tranche, et une liste de
+ * soixante et onze mille chaînes pèse quelques mégaoctets.
+ */
+export async function fichesDuPalier(): Promise<Fiche[]> {
+  const maintenant = Date.now();
+  if (memoire && maintenant - memoire.le < DUREE_CACHE * 1000) return memoire.liste;
+
+  const lots = await Promise.all(
+    clausesPlanDeSite().map((where) =>
+      prisma.entreprise.findMany({ where, select: { slug: true, majLe: true } }),
+    ),
+  );
+  const parSlug = new Map<string, Date>();
+  for (const lot of lots) for (const e of lot) parSlug.set(e.slug, e.majLe);
+
+  const liste = [...parSlug].map(([slug, majLe]) => ({ slug, majLe }));
+  memoire = { liste, le: maintenant };
+  return liste;
 }
 
 /**
@@ -84,18 +142,39 @@ export function base(): string {
  * Cette fonction interrogeait la base : `SELECT DISTINCT left(siren, 3)`. Une
  * expression sur la colonne, donc aucun index utilisable, donc un balayage des
  * treize millions de lignes — huit secondes mesurées. La production coupe à
- * dix : l'index du plan de site répondait 500, et Google, incapable de le
- * lire, n'a indexé que ce qui lui était soumis à la main.
+ * dix : l'index du plan de site répondait 500.
  *
  * Les valeurs d'un préfixe sont connues d'avance. Les énumérer coûte zéro
- * requête et ne peut pas échouer. Le prix est une poignée de tranches vides ;
- * un fichier vide coûte une requête au robot, un index en erreur lui coûte le
- * site entier.
+ * requête et ne peut pas échouer.
  */
-export async function prefixes(): Promise<string[]> {
+export function prefixes(): string[] {
   const n = longueurPrefixe();
   return Array.from({ length: 10 ** n }, (_, i) => String(i).padStart(n, "0"));
 }
+
+/** Combien de fichiers les fiches d'entreprise occupent. */
+export async function tranchesFiches(): Promise<number> {
+  if (!enumerable()) return prefixes().length;
+  const fiches = await fichesDuPalier();
+  return Math.max(1, Math.ceil(fiches.length / PAR_FICHIER));
+}
+
+/**
+ * Le nombre de tranches, calculé sans la base.
+ *
+ * Sert de repli quand la base est indisponible : le repli ne renvoyait que la
+ * tranche 0, et une base absente le temps d'un appel faisait répondre 404 à
+ * tout le reste du plan de site. Les majorants valent mieux qu'un plan de site
+ * amputé — une tranche annoncée et vide coûte une requête au robot.
+ */
+export function tranchesSansBase(): number {
+  const fiches = enumerable() ? TRANCHES_FICHES_MAX : 10 ** longueurPrefixe();
+  return RANG_ENTREPRISES + fiches + TRANCHES_BOUTIQUES_MAX;
+}
+
+/** Majorants : soixante-quinze mille fiches et quatre-vingt-quinze mille boutiques. */
+const TRANCHES_FICHES_MAX = 2;
+const TRANCHES_BOUTIQUES_MAX = 2;
 
 /**
  * Les boutiques proposées sont comptées, non estimées.
@@ -104,29 +183,11 @@ export async function prefixes(): Promise<string[]> {
  * mille — alors que le plan de site n'en propose plus que les rattachées à une
  * société, soit soixante-neuf mille. L'index aurait annoncé quatre tranches
  * pour deux réellement peuplées.
- *
- * Le compte exact coûte trente millisecondes, l'index `entrepriseId` suffisant
- * à le faire sans toucher la table.
  */
-/**
- * Le nombre de tranches, calculé sans la base.
- *
- * Sert de repli quand la base est indisponible : tout est connu d'avance sauf
- * le nombre de tranches de boutiques, qu'on majore. Une tranche annoncée et
- * vide coûte une requête au robot ; une tranche omise lui cache ce qu'elle
- * contient.
- */
-export function tranchesSansBase(): number {
-  return RANG_ENTREPRISES + 10 ** longueurPrefixe() + TRANCHES_BOUTIQUES_MAX;
-}
-
-/** Majorant : cent quatre-vingt-cinq mille boutiques, cinquante mille par fichier. */
-const TRANCHES_BOUTIQUES_MAX = 4;
-
 export async function nombreDeTranches(): Promise<number> {
-  const [p, nbBoutiques] = await Promise.all([
-    prefixes(),
+  const [fiches, nbBoutiques] = await Promise.all([
+    tranchesFiches(),
     prisma.boutique.count({ where: OU_BOUTIQUE_PLAN_DE_SITE }),
   ]);
-  return RANG_ENTREPRISES + p.length + Math.max(1, Math.ceil(nbBoutiques / PAR_FICHIER));
+  return RANG_ENTREPRISES + fiches + Math.max(1, Math.ceil(nbBoutiques / PAR_FICHIER));
 }

@@ -18,8 +18,11 @@ import {
   RANG_STATIQUES,
   SEUIL_COMMUNE,
   base,
+  enumerable,
+  fichesDuPalier,
   nombreDeTranches,
   prefixes,
+  tranchesFiches,
   tranchesSansBase,
 } from "@/lib/plan-de-site";
 
@@ -182,7 +185,7 @@ export default async function sitemap({
    * tête et échappent au plafond de cinquante mille : elles sont une poignée,
    * et ce sont les seules pages du site à porter autre chose que du registre.
    */
-  if (rangDemande === RANG_SIGNAL) {
+  if (!enumerable() && rangDemande === RANG_SIGNAL) {
     // Au palier d'ouverture, les tranches par préfixe contiennent déjà
     // exactement ces fiches : reprendre les cinquante mille plus récentes en
     // doublerait huit pour cent du plan de site sans rien y ajouter. Seules les
@@ -279,37 +282,40 @@ export default async function sitemap({
     );
   }
 
-  const liste = await prefixes();
+  /**
+   * Les fiches d'entreprise, puis les boutiques.
+   *
+   * Au palier d'ouverture la liste est énumérée une fois par jour et découpée
+   * ici : soixante et onze mille fiches en deux fichiers. Aux paliers suivants
+   * elle ne tient plus en mémoire, et chaque tranche encadre le répertoire par
+   * un préfixe de SIREN — la seule forme qui se résolve par l'index unique.
+   */
+  const tranches = await tranchesFiches();
   const rang = rangDemande - RANG_ENTREPRISES;
 
-  if (rang < liste.length) {
-    const p = liste[rang];
-    // Encadrement textuel plutôt que `left(siren,1) = p` : seule cette forme
-    // se résout par l'index unique du SIREN.
-    //
-    // Le palier d'ouverture s'ajoute à l'encadrement : le plan de site ne
-    // propose que ce qu'on veut faire explorer maintenant. Les fiches des
-    // paliers suivants restent indexables et atteignables par le maillage —
-    // elles attendent leur tour, elles ne sont pas exclues.
-    //
-    // Ses critères sont interrogés un par un et réunis ici : réunis dans un
-    // `OR`, aucun index ne s'y appliquait et la tranche mettait quarante
-    // secondes.
-    const siren = { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") };
-    const lots = await Promise.all(
-      clausesPlanDeSite().map((clause) =>
-        prisma.entreprise.findMany({
-          where: { ...clause, siren },
-          select: { slug: true, majLe: true },
-          take: PAR_FICHIER,
-        }),
-      ),
-    );
-    const parSlug = new Map<string, Date>();
-    for (const lot of lots) for (const e of lot) parSlug.set(e.slug, e.majLe);
-    const fiches = [...parSlug]
-      .slice(0, PAR_FICHIER)
-      .map(([slug, majLe]) => ({ slug, majLe }));
+  if (rang < tranches) {
+    let fiches: { slug: string; majLe: Date }[];
+
+    if (enumerable()) {
+      fiches = (await fichesDuPalier()).slice(rang * PAR_FICHIER, (rang + 1) * PAR_FICHIER);
+    } else {
+      // Encadrement textuel plutôt que `left(siren, n) = p` : seule cette forme
+      // se résout par l'index unique du SIREN.
+      const p = prefixes()[rang];
+      const siren = { gte: p.padEnd(9, "0"), lte: p.padEnd(9, "9") };
+      const lots = await Promise.all(
+        clausesPlanDeSite().map((clause) =>
+          prisma.entreprise.findMany({
+            where: { ...clause, siren },
+            select: { slug: true, majLe: true },
+            take: PAR_FICHIER,
+          }),
+        ),
+      );
+      const parSlug = new Map<string, Date>();
+      for (const lot of lots) for (const e of lot) parSlug.set(e.slug, e.majLe);
+      fiches = [...parSlug].slice(0, PAR_FICHIER).map(([slug, majLe]) => ({ slug, majLe }));
+    }
 
     return fiches.map((e) => ({
       url: `${b}/entreprises/${e.slug}`,
@@ -319,13 +325,13 @@ export default async function sitemap({
     }));
   }
 
-  // Seules les boutiques portant une déclaration : les autres sont en
-  // noindex, les déclarer serait se contredire.
+  // Seules les boutiques rattachées à une société : les autres rendent toutes
+  // le même document, au nom de domaine près.
   const boutiques = await prisma.boutique.findMany({
     where: OU_BOUTIQUE_PLAN_DE_SITE,
     select: { slug: true, majLe: true },
     orderBy: { id: "asc" },
-    skip: (rang - liste.length) * PAR_FICHIER,
+    skip: (rang - tranches) * PAR_FICHIER,
     take: PAR_FICHIER,
   });
   return boutiques.map((x) => ({
