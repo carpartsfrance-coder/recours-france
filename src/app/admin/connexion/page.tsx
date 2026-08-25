@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { Logo } from "@/components/logo";
 import { redirect } from "next/navigation";
 import { adminCourant } from "@/lib/auth";
-import Image from "next/image";
 import { FormulaireConnexion } from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default async function Connexion() {
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div className="rf-ligne" style={{ marginBottom: 20, justifyContent: "center" }}>
-          <Image src="/recours-france.png" alt="Recours France" width={172} height={42} style={{ height: 42, width: "auto" }} />
+          <Logo taille={40} lien={null} />
         </div>
         <FormulaireConnexion />
       </div>

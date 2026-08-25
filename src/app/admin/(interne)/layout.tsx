@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 import { redirect } from "next/navigation";
 import { adminCourant } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -36,15 +36,7 @@ export default async function LayoutInterne({ children }: { children: React.Reac
     <div className="rf-admin">
       <nav className="rf-admin__nav" aria-label="Navigation de l’administration">
         <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-          <Image
-            src="/pictogramme-rf-blanc.png"
-            alt=""
-            aria-hidden="true"
-            width={36}
-            height={32}
-            style={{ height: 32, width: "auto" }}
-          />
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>Recours France</span>
+          <Logo taille={30} fonce lien={null} />
           <span style={{ color: "var(--rf-sur-nuit)", fontWeight: 600, fontSize: 12.5 }}>Administration</span>
         </div>
         <ul>

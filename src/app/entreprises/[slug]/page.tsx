@@ -13,7 +13,7 @@ import {
 import { mediateurPublie } from "@/lib/mediation";
 import { ficheIndexable } from "@/lib/indexation";
 import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
-import { Logo } from "@/components/fiche-entreprise/logo";
+import { Logo } from "@/components/logo";
 import { Sommaire } from "@/components/fiche-entreprise/sommaire";
 import { EnteteSite } from "@/components/entete-site";
 import { Question } from "@/components/fiche-entreprise/question";

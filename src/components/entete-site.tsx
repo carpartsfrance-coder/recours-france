@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/fiche-entreprise/logo";
+import { Logo } from "@/components/logo";
 import { MenuSite } from "@/components/menu-site";
 import { Loupe } from "@/components/refonte/icones";
 import { typo } from "@/lib/typographie";

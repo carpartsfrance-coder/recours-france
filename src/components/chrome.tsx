@@ -1,20 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { nomEditeur } from "@/lib/editeur";
 import { Info } from "@/components/refonte/icones";
 import { GUIDES } from "@/lib/observatoire";
 import { EnteteSite } from "@/components/entete-site";
-
-/**
- * Le verrou complet, réservé au pied de page : c'est le seul endroit qui lui
- * laisse assez de place pour que sa signature reste lisible. L'en-tête, lui,
- * porte le logotype de la couche institutionnelle.
- */
-const LOGO = {
-  verrouBlanc: "/recours-france-blanc.png",
-  ratioVerrou: 1205 / 325,
-};
+import { Logo } from "@/components/logo";
 
 // Comparaison insensible a la casse et aux espaces. Le reglage se saisit a la
 // main dans le tableau de bord de l'hebergeur, ou « False » se tape aussi
@@ -144,13 +134,9 @@ export function PiedDePage({
             style={institutionnel ? { paddingTop: 34, paddingBottom: 22 } : undefined}
           >
             <div>
-              <Image
-                src={LOGO.verrouBlanc}
-                alt="Recours France — vos droits, notre engagement"
-                width={Math.round(52 * LOGO.ratioVerrou)}
-                height={52}
-                className="rf-pied__logo"
-              />
+              {/* Le même logo qu'en tête, en version claire : le pied de page
+                  portait encore l'ancien verrou en image. */}
+              <Logo taille={34} fonce lien={null} />
               <p className="rf-pied__texte">
                 Plateforme privée indépendante de signalement des litiges de consommation, éditée par {nomEditeur()}. Sans lien avec l’État, une administration ou une autorité publique.
               </p>
