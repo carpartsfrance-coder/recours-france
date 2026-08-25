@@ -35,7 +35,7 @@ export function EnteteSite({
   return (
     <header className="rfh">
       <div className="rfh__piste">
-        <Logo taille={38} />
+        <Logo taille={40} priorite />
 
         <form action="/entreprises" className="rfh-recherche" role="search">
           <Loupe taille={17} />

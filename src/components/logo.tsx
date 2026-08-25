@@ -1,96 +1,59 @@
 import Link from "next/link";
+import Image from "next/image";
 
 /**
  * Le logo de Recours France.
  *
- * Deux bulles de dialogue imbriquées. De l'avant, tracée en plein, il ne
- * manque rien ; de l'arrière, décalée vers la droite et le bas, seules deux
- * arêtes dépassent — la droite en bleu, la basse en rouge. C'est de ces trois
- * couleurs que toute la charte du site est tirée : navy #0B2C6B, bleu #1152C4,
- * rouge #E1000F.
+ * Le fichier fourni, pas une reconstitution : « Recours France » sur deux
+ * lignes en bleu marine, suivi des deux barres inclinées bleue et rouge. Le
+ * logotype fait partie du dessin — ce composant n'écrit aucun texte à côté.
  *
- * Un dessin, pas une image : le logo apparaît de dix-huit à quarante pixels
- * selon les emplacements, il doit rester net à toutes ces tailles et suivre le
- * fond sur lequel il est posé. Un PNG demanderait un fichier par taille et par
- * fond.
+ * Deux versions, une par fond : la sombre passe le texte en blanc et laisse
+ * les barres telles quelles, elles tiennent sur les deux fonds.
  *
- * `fonce` bascule sur fond navy : le tracé de l'avant passe au blanc et
- * l'arête bleue s'éclaircit pour rester lisible. Le rouge ne bouge pas — il
- * tient sur les deux fonds.
+ * `public/` porte les deux formats. Le PNG est servi ici, en trois fois la
+ * taille d'affichage, ce qui laisse `next/image` produire les densités et les
+ * formats modernes ; le SVG l'accompagne comme source vectorielle pour tout ce
+ * qui sort du site — courriels, réseaux, impression.
  */
 
-/** Les trois tracés, séparés du composant pour que la favicone les reprenne. */
-export function LogoTraces({ avant, bleu }: { avant: string; bleu: string }) {
-  return (
-    <>
-      <path
-        d="M8 4h16a5 5 0 0 1 5 5v11a5 5 0 0 1-5 5h-7l-5 6-.6-6H8a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5Z"
-        stroke={avant}
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-      />
-      <path d="M29 13h2a5 5 0 0 1 5 5v6" stroke={bleu} strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M36 24v3a5 5 0 0 1-5 5H15.5" stroke="#E1000F" strokeWidth="2.6" strokeLinecap="round" />
-    </>
-  );
-}
+/** 356 × 130 dans le fichier d'origine. */
+const RATIO = 356 / 130;
 
 export function Logo({
-  taille = 38,
+  taille = 40,
   fonce = false,
   lien = "/",
+  priorite = false,
 }: {
+  /** Hauteur en pixels. La largeur suit. */
   taille?: number;
   fonce?: boolean;
-  /** `null` rend le logo sans lien — pour la page d'accueil, où il pointerait sur elle-même. */
+  /** `null` rend le logo sans lien — pour les pages où il pointerait sur elle-même. */
   lien?: string | null;
+  priorite?: boolean;
 }) {
-  const avant = fonce ? "#fff" : "#0B2C6B";
-  const bleu = fonce ? "#7FA6E0" : "#1152C4";
+  const largeur = Math.round(taille * RATIO);
 
-  const dessin = (
-    <>
-      <svg width={taille} height={taille} viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false">
-        <LogoTraces avant={avant} bleu={bleu} />
-      </svg>
-      <span
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          // Le logotype se règle sur la hauteur du dessin plutôt que sur une
-          // valeur fixe : le logo sert de dix-huit à quarante pixels.
-          fontSize: Math.round(taille * 0.45),
-          fontWeight: 800,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.06,
-          color: fonce ? "#fff" : "#0B2C6B",
-        }}
-      >
-        <span>Recours</span>
-        <span>France</span>
-      </span>
-    </>
+  const image = (
+    <Image
+      src={fonce ? "/logo-recours-france-blanc.png" : "/logo-recours-france.png"}
+      alt="Recours France"
+      width={largeur}
+      height={taille}
+      priority={priorite}
+      // La source fait trois fois la hauteur demandée : à densité double ou
+      // triple, l'image reste nette sans qu'on serve trois fichiers.
+      quality={90}
+      style={{ height: taille, width: "auto", display: "block" }}
+    />
   );
 
-  const style = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: Math.round(taille * 0.29),
-    textDecoration: "none",
-    flex: "none",
-  } as const;
-
-  if (lien === null) {
-    return (
-      <span style={style} aria-label="Recours France">
-        {dessin}
-      </span>
-    );
-  }
+  if (lien === null) return image;
 
   return (
-    <Link href={lien} aria-label="Recours France — accueil" style={style}>
-      {dessin}
+    <Link href={lien} aria-label="Recours France — accueil" style={{ display: "inline-flex", flex: "none" }}>
+      {image}
     </Link>
   );
 }

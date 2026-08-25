@@ -4,6 +4,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   serverExternalPackages: ["@prisma/client", "nodemailer"],
+
+  /**
+   * Le logo est demandé en qualité 90, non 75.
+   *
+   * Next refuse toute qualité absente de cette liste et retombe sur la valeur
+   * par défaut sans rien signaler. Sur une photographie, 75 ne se voit pas ;
+   * sur un logotype, dont les bords sont nets et les aplats uniformes, la
+   * compression laisse un halo autour des lettres.
+   */
+  images: { qualities: [75, 90] },
   experimental: {
     serverActions: {
       // Les justificatifs sont limités à 10 Mo par pièce, 5 pièces par signalement.
