@@ -3988,7 +3988,10 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   display: flex;
   flex-wrap: wrap;
   gap: clamp(24px, 3cqw, 52px);
-  padding: clamp(28px, 3cqw, 46px) 0 clamp(24px, 2.6cqw, 38px);
+  /* `padding-block` et non `padding` : la propriété raccourcie remettait à zéro
+     les gouttières horizontales déclarées par `.rfb-conteneur`, et le titre de
+     la boutique se retrouvait collé au bord de l'écran. */
+  padding-block: clamp(28px, 3cqw, 46px) clamp(24px, 2.6cqw, 38px);
 }
 /* La colonne droite ne grandit pas : sinon le H1 casse sur trois lignes
    déséquilibrées autour de 1300 px, là où deux lignes tiennent. */
@@ -5091,6 +5094,13 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe :where(a) { color: var(--e-bleu); }
 .rfe :focus-visible { outline: 2px solid var(--e-bleu); outline-offset: 2px; }
 
+/* Les gouttières du conteneur.
+   Les classes qui l'accompagnent — le fil d'Ariane, le hero — réglaient leur
+   rythme vertical avec la propriété raccourcie `padding`, qui remettait à zéro
+   les gouttières horizontales déclarées ici. Le titre de l'entreprise, le fil
+   d'Ariane et le chapô se retrouvaient collés au bord de l'écran ; sur mobile,
+   où la gouttière ne fait que seize pixels, il n'en restait rien. D'où
+   `padding-block` partout où seul le rythme vertical est visé. */
 .rfe-conteneur { max-width: 1220px; margin: 0 auto; padding-inline: clamp(16px, 2.2cqw, 30px); }
 
 /* Le filet tricolore : trois segments égaux de 4 px, en tête de page et en
@@ -5142,7 +5152,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 /* ── Bandeau, en-tête, fil d'Ariane ─────────────────────────────────────── */
 .rfe-fil { background: var(--e-gris); border-bottom: 1px solid var(--e-filet); }
-.rfe-fil__piste { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding: 10px 0; font-size: 13px; }
+.rfe-fil__piste { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding-block: 10px; font-size: 13px; }
 .rfe-fil a { color: var(--e-tertiaire); text-decoration: none; }
 .rfe-fil a:hover { color: var(--e-bleu); }
 .rfe-fil span[aria-hidden] { color: var(--e-numero); }
@@ -5200,10 +5210,15 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 .rfe-action:hover { text-decoration: underline; }
 
 /* ── Hero ───────────────────────────────────────────────────────────────── */
-.rfe-hero { display: flex; flex-wrap: wrap; gap: clamp(24px, 3cqw, 52px); padding: clamp(26px, 3cqw, 44px) 0; }
-.rfe-hero__g { flex: 1 1 560px; min-width: min(100%, 300px); }
-/* Le panneau ne grandit pas : sinon le H1 casse sur trois lignes déséquilibrées. */
-.rfe-hero__d { flex: 0 1 330px; min-width: min(100%, 300px); }
+.rfe-hero { display: flex; flex-wrap: wrap; gap: clamp(24px, 3cqw, 52px); padding-block: clamp(26px, 3cqw, 44px); }
+.rfe-hero__g { flex: 1 1 560px; min-width: 0; }
+/* Le panneau ne grandit pas : sinon le H1 casse sur trois lignes déséquilibrées.
+   `min-width: 0` plutôt que `min(100%, 300px)` : par défaut un élément de boîte
+   souple refuse de descendre sous la taille minimale de son contenu, et c'est
+   ce refus qui pousse une page à déborder horizontalement. Le plancher de
+   trois cents pixels ne servait qu'à éviter un panneau ridicule sur grand
+   écran, ce dont `flex-basis` se charge déjà. */
+.rfe-hero__d { flex: 0 1 330px; min-width: 0; }
 
 .rfe-statut { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .rfe-badge {
@@ -5229,7 +5244,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 .rfe-meta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(max(140px, 9cqw), 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1px;
   border: 1px solid var(--e-bord);
   border-radius: 3px;
@@ -5279,11 +5294,11 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
   border-bottom: 1px solid var(--e-filet);
   scroll-margin-top: clamp(112px, 8.5cqw, 122px);
 }
-.rfe-section__t { flex: 0 1 228px; min-width: min(100%, 200px); }
+.rfe-section__t { flex: 0 1 228px; min-width: 0; }
 .rfe-section__n { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; color: var(--e-numero); }
 .rfe-section__t h2 { margin-top: 6px; }
 .rfe-section__t p { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--e-tertiaire); }
-.rfe-section__c { flex: 1 1 560px; min-width: min(100%, 280px); }
+.rfe-section__c { flex: 1 1 560px; min-width: 0; }
 
 /* ── Le quadrillage : un filet obtenu par le gap ─────────────────────────
    `gap:1px` sur un fond gris avec des cellules blanches donne un trait d'un
@@ -5310,7 +5325,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    filet bas. Six cellules dans une grille encadrée laissaient deux cases vides
    grises en fin de rangée — ici il n'y a rien à laisser vide. */
 .rfe-grille--synthese {
-  grid-template-columns: repeat(auto-fit, minmax(max(150px, 17cqw), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
   background: transparent;
   border: 0;
@@ -5323,13 +5338,13 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
    posés côte à côte, pas enfermés dans une grille réglée. */
 .rfe-grille--panneaux { border: 0; border-radius: 0; overflow: visible; gap: 14px; }
 .rfe-grille--panneaux > * { box-shadow: none; }
-.rfe-grille--problemes { grid-template-columns: repeat(auto-fit, minmax(max(150px, 17cqw), 1fr)); }
+.rfe-grille--problemes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 /* Quatre postes, quatre colonnes tant que la place le permet : à 240 px de
    colonne minimale, la grille n'en tenait que trois et la quatrième cellule
    laissait deux cases vides grises derrière elle. */
-.rfe-grille--finances { grid-template-columns: repeat(auto-fit, minmax(max(160px, 24cqw), 1fr)); }
-.rfe-grille--panneaux { grid-template-columns: repeat(auto-fit, minmax(max(280px, 24cqw), 1fr)); }
-.rfe-grille--voisines { grid-template-columns: repeat(auto-fit, minmax(max(150px, 14cqw), 1fr)); }
+.rfe-grille--finances { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rfe-grille--panneaux { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rfe-grille--voisines { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .rfe-cellule { padding: 16px 18px; }
 .rfe-cellule__k { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--e-mention); }
@@ -5520,7 +5535,7 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 .rfe-pied { background: var(--e-navy-pied); color: var(--e-sur-navy-2); font-size: 14px; }
 .rfe-pied__cols { display: flex; flex-wrap: wrap; gap: 28px clamp(24px, 3cqw, 56px); padding: clamp(28px, 3cqw, 44px) 0; }
-.rfe-pied__ident { flex: 1 1 320px; min-width: min(100%, 260px); }
+.rfe-pied__ident { flex: 1 1 320px; min-width: 0; }
 .rfe-pied__col { flex: 0 1 190px; }
 .rfe-pied__t { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #fff; }
 .rfe-pied__liens { margin-top: 12px; display: grid; gap: 9px; }
@@ -5590,6 +5605,46 @@ details.rfn-accordeon[open] .rfn-accordeon__chevron { transform: rotate(180deg);
 
 /* ── Barre d'action permanente ──────────────────────────────────────────── */
 .rfe-barre { display: none; position: sticky; bottom: 0; z-index: 45; background: #fff; border-top: 1px solid var(--e-bord); padding: 10px clamp(16px, 2.2cqw, 30px) calc(10px + env(safe-area-inset-bottom)); }
+
+/* ── Nombre de colonnes par palier ────────────────────────────────────────
+   Le handoff exprimait ces paliers par `repeat(auto-fit, minmax(max(px, cqw),
+   1fr))` : une seule déclaration produisant les deux mises en page. La forme
+   est élégante et elle a cassé sur Safari mobile, qui y tenait trois colonnes
+   de cent quarante pixels dans un écran de trois cent quatre-vingt-dix — soit
+   quatre cent vingt-deux pixels de grille, un débordement horizontal, et la
+   page entière décalée.
+
+   La cause exacte du désaccord entre moteurs n'a pas pu être établie faute
+   d'un WebKit sous la main. Le mécanisme, lui, est certain : `minmax(140px,
+   1fr)` interdit à une colonne de descendre sous cent quarante pixels, donc
+   une grille trop serrée déborde au lieu de se réduire.
+
+   D'où la forme retenue, que le handoff prévoit lui-même en repli : le nombre
+   de colonnes est déclaré par palier, et les pistes sont en `minmax(0, 1fr)` —
+   elles peuvent toujours rétrécir. Un débordement horizontal devient
+   impossible, quel que soit le moteur. */
+@container (max-width: 1100px) {
+  .rfe-meta { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container (max-width: 860px) {
+  /* Les colonnes du hero et des sections ne grandissent pas : leur base fait
+     330 ou 228 pixels et elles s'y tiennent. Passées à la ligne, elles
+     laissaient donc une bande vide à leur droite. */
+  .rfe-hero__g,
+  .rfe-hero__d,
+  .rfe-section__t,
+  .rfe-section__c,
+  .rfe-pied__ident { flex-basis: 100%; flex-grow: 1; }
+
+  .rfe-meta,
+  .rfe-grille--synthese,
+  .rfe-grille--problemes,
+  .rfe-grille--voisines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rfe-grille--panneaux { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 460px) {
+  .rfe-grille--voisines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 @container (max-width: 900px) {
   .rfe-sommaire__piste { display: none; }
