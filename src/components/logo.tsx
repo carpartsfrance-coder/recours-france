@@ -4,21 +4,26 @@ import Image from "next/image";
 /**
  * Le logo de Recours France.
  *
- * Le fichier fourni, pas une reconstitution : « Recours France » sur deux
- * lignes en bleu marine, suivi des deux barres inclinées bleue et rouge. Le
- * logotype fait partie du dessin — ce composant n'écrit aucun texte à côté.
+ * Le fichier fourni : deux bulles de dialogue imbriquées, puis « Recours
+ * France » sur deux lignes. Le logotype fait partie du dessin — ce composant
+ * n'écrit aucun texte à côté.
  *
- * Deux versions, une par fond : la sombre passe le texte en blanc et laisse
- * les barres telles quelles, elles tiennent sur les deux fonds.
+ * Le fichier d'origine (`design/logo-source-recours-france.png`) est un export
+ * sur fond blanc, damier compris. Le fond en a été retiré par un masque
+ * progressif tiré de la luminance, et non par un seuil : un seuil hache les
+ * bords adoucis, très visibles à quarante pixels de haut.
  *
- * `public/` porte les deux formats. Le PNG est servi ici, en trois fois la
- * taille d'affichage, ce qui laisse `next/image` produire les densités et les
- * formats modernes ; le SVG l'accompagne comme source vectorielle pour tout ce
- * qui sort du site — courriels, réseaux, impression.
+ * La version claire garde les couleurs d'origine. La version sombre est le
+ * même dessin en blanc plein — sa silhouette, tirée du canal alpha. Elle n'est
+ * pas une recolorisation : dans ce fichier, le bleu marine et le bleu vif ont
+ * la même teinte et ne diffèrent que par la clarté, si bien qu'aucun
+ * remplacement de couleur ne sait les distinguer une fois les bords adoucis.
+ * Un logotype d'une seule couleur sur fond sombre est de toute façon l'usage.
+ * Une version couleur sur fond sombre demanderait un export dédié.
  */
 
-/** 356 × 130 dans le fichier d'origine. */
-const RATIO = 356 / 130;
+/** 1200 × 359 après détourage et rognage. */
+const RATIO = 1200 / 359;
 
 export function Logo({
   taille = 40,
