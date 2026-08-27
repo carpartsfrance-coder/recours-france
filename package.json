@@ -20,6 +20,7 @@
     "purge": "tsx scripts/purge.ts",
     "relances": "tsx scripts/relances.ts",
     "indexnow": "tsx scripts/indexnow.ts",
+    "admin": "tsx scripts/admin.ts",
     "contestations": "tsx scripts/contestations.ts",
     "import:sites": "tsx scripts/import-sites.ts",
     "import:entreprises": "tsx scripts/import-entreprises.ts",

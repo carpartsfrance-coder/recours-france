@@ -3,36 +3,21 @@
  *  — le consommateur n'a AUCUN compte : il reçoit un lien signé par email ;
  *  — l'administration Recours France utilise un identifiant et un mot de passe.
  */
-import { randomBytes, scrypt as scryptCb, timingSafeEqual, createHash } from "node:crypto";
-import { promisify } from "node:util";
+import { randomBytes, createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
-
-const scrypt = promisify(scryptCb) as (
-  motDePasse: string,
-  sel: Buffer,
-  longueur: number,
-) => Promise<Buffer>;
 
 const COOKIE_ADMIN = "rf_admin";
 const DUREE_SESSION_ADMIN = 8 * 3_600_000; // 8 heures
 const DUREE_JETON_SUIVI = 90 * 86_400_000; // 90 jours
 
 // ── Mots de passe ────────────────────────────────────────────────────────────
+//
+// Le hachage vit dans `mot-de-passe.ts`, sans dépendance à Next : le script de
+// création de compte en a besoin, et il ne peut pas importer ce fichier-ci.
+// Réexporté ici pour que les appelants existants n'aient pas à changer.
 
-export async function hacherMotDePasse(motDePasse: string): Promise<string> {
-  const sel = randomBytes(16);
-  const cle = await scrypt(motDePasse, sel, 64);
-  return `scrypt:${sel.toString("hex")}:${cle.toString("hex")}`;
-}
-
-export async function verifierMotDePasse(motDePasse: string, hachage: string): Promise<boolean> {
-  const [algo, selHex, cleHex] = hachage.split(":");
-  if (algo !== "scrypt" || !selHex || !cleHex) return false;
-  const cle = await scrypt(motDePasse, Buffer.from(selHex, "hex"), 64);
-  const attendu = Buffer.from(cleHex, "hex");
-  return cle.length === attendu.length && timingSafeEqual(cle, attendu);
-}
+export { hacherMotDePasse, verifierMotDePasse } from "./mot-de-passe";
 
 // ── Session administrateur ───────────────────────────────────────────────────
 
