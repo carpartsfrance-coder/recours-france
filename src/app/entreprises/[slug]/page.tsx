@@ -77,6 +77,55 @@ const ICONES_PROBLEME = {
   carte: Carte, bulle: Bulle,
 };
 
+/**
+ * Soixante caractères : au-delà, Google coupe le titre.
+ *
+ * Le gabarit précédent écrivait « {nom} ({commune}) : avis, litiges et
+ * signalements publics » — soixante-deux caractères pour MRM AUTO, quatre-vingt-
+ * cinq pour CARAVANING DU MARAIS. La fin, c'est-à-dire ce que la page contient,
+ * n'était jamais affichée : le visiteur lisait « avis, litiges et signaleme… ».
+ */
+const LIMITE_TITRE = 60;
+
+/**
+ * Le titre reprend la formulation de la requête.
+ *
+ * Mesuré sur trois jours de Search Console : trois cent dix requêtes sur sept
+ * cent six contiennent « avis », et cinquante-quatre pour cent d'entre elles
+ * s'écrivent « avis sur {entreprise} » plutôt que « {entreprise} avis ».
+ * Google met en gras les mots de la requête dans le titre ; commencer par
+ * « Avis sur {nom} » fait correspondre la phrase entière, pas seulement un mot.
+ *
+ * La commune n'est ajoutée que si elle tient dans le budget. Elle désambiguïse
+ * les homonymes — il y en a beaucoup sur treize millions de sociétés — mais
+ * elle ne vaut pas de faire tomber la fin du titre.
+ */
+function titreFiche(nom: string, commune: string | null): string {
+  const sans = `Avis sur ${nom} : litiges et signalements`;
+  if (!commune) return sans;
+  const avec = `Avis sur ${nom} (${communeEnTitre(commune)}) : litiges et signalements`;
+  return avec.length <= LIMITE_TITRE ? avec : sans;
+}
+
+/**
+ * Cent cinquante-cinq caractères : au-delà, Google coupe la description.
+ *
+ * La description dit ce que la page contient vraiment.
+ *
+ * L'ancienne promettait des signalements à toutes les fiches ; six sur treize
+ * millions en portent. Elle est donc conditionnelle, et met en avant ce que
+ * nous avons et que les annuaires concurrents n'affichent pas : la date à
+ * laquelle la fiche a été vérifiée.
+ */
+function descriptionFiche(nom: string, total: number, verifieeLe: Date): string {
+  const verifiee = `Fiche vérifiée le ${formatDateLongue(verifieeLe)}`;
+  if (total === 0) {
+    return `${verifiee} : identité au registre, comptes déposés et publications officielles. Aucun signalement de consommateur à ce jour.`;
+  }
+  const pluriel = total > 1 ? "s" : "";
+  return `${total} signalement${pluriel} publié${pluriel} sur ${nom}, avec leur statut. ${verifiee} : identité au registre et publications officielles.`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -86,20 +135,14 @@ export async function generateMetadata({
   const base = await chargerEntreprise(slug);
   if (!base) return { title: "Entreprise" };
 
-  const nom = base.denomination;
-  const lieu = base.commune ? ` (${communeEnTitre(base.commune)})` : "";
+  const total = await prisma.signalement.count({
+    where: { entrepriseId: base.id, moderation: "PUBLIE" },
+  });
 
   return {
     ...(ficheIndexable(base) ? {} : { robots: { index: false, follow: true } }),
-    // Le handoff écrit « {nom} : litiges et signalements publics ». « avis » y
-    // est ajouté, et seulement là : c'est le mot que la personne tape, le
-    // title est l'élément le plus décisif pour une requête de marque, et le
-    // handoff se donne lui-même « {nom} avis » comme première cible. Le H1
-    // reste celui du handoff, au mot près.
-    title: typo(`${nom}${lieu} : avis, litiges et signalements publics`),
-    description: typo(
-      `Vous recherchez des avis sur ${nom} ? Consultez les signalements publiés, leur statut et les démarches disponibles.`,
-    ),
+    title: typo(titreFiche(base.denomination, base.commune)),
+    description: typo(descriptionFiche(base.denomination, total, base.majLe)),
     alternates: { canonical: `/entreprises/${base.slug}` },
   };
 }
