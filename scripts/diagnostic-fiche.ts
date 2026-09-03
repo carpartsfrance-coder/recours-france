@@ -113,57 +113,47 @@ async function main() {
     const hors = { siren: { not: e.siren } };
     const actives = { etatAdministratif: "ACTIVE" as const };
 
-    // Chaque entrée reproduit une requête réellement exécutée au rendu de la
-    // fiche. Elles sont lancées une par une, jamais en parallèle : le but est
-    // de savoir laquelle coûte, pas de reproduire le temps total.
+    // On appelle le vrai code, pas une reconstitution.
+    //
+    // La première version de ce diagnostic réécrivait à la main les requêtes
+    // du rendu. Elles répondaient toutes en quelques millisecondes pendant que
+    // la page tombait à douze secondes : la reconstitution était fausse
+    // quelque part, et c'est précisément ce qu'on cherchait. En important les
+    // fonctions du site après avoir posé `DATABASE_URL`, on mesure ce que la
+    // page exécute, aux colonnes et aux jointures près.
+    process.env.DATABASE_URL = url;
+    const { chargerEntreprise, detailEntreprise } = await import("../src/lib/fiche");
+    const { voisines } = await import("../src/lib/maillage");
+    const { prisma: prismaSite } = await import("../src/lib/db");
+
     const mesures: { nom: string; ms: number; lignes: number }[] = [];
     const chrono = async (nom: string, fn: () => Promise<unknown>) => {
       process.stdout.write(`  ${nom.padEnd(38)}`);
       const t = Date.now();
-      let lignes = 0;
       try {
         const r = await fn();
-        lignes = Array.isArray(r) ? r.length : typeof r === "number" ? r : r ? 1 : 0;
+        const lignes = Array.isArray(r) ? r.length : typeof r === "number" ? r : r ? 1 : 0;
+        const ms = Date.now() - t;
+        mesures.push({ nom, ms, lignes });
+        console.log(`${String(ms).padStart(7)} ms   ${lignes} ligne(s)`);
       } catch (err) {
-        console.log(`  ÉCHEC — ${err instanceof Error ? err.message.split("\n")[0] : err}`);
-        mesures.push({ nom, ms: Date.now() - t, lignes: -1 });
-        return;
+        const ms = Date.now() - t;
+        mesures.push({ nom, ms, lignes: -1 });
+        console.log(`${String(ms).padStart(7)} ms   ÉCHEC — ${err instanceof Error ? err.message.split("\n").filter((x) => x.includes("message:") || x.includes("Timed out")).join(" ").slice(0, 80) || "voir ci-dessous" : err}`);
       }
-      const ms = Date.now() - t;
-      mesures.push({ nom, ms, lignes });
-      console.log(`${String(ms).padStart(7)} ms   ${lignes} ligne(s)`);
     };
 
-    await chrono("fiche par slug", () => prisma.entreprise.findUnique({ where: { slug } }));
-    await chrono("compte des signalements", () => prisma.signalement.count({ where: { entrepriseId: e.id, moderation: "PUBLIE" } }));
-    await chrono("établissements", () => prisma.etablissement.findMany({ where: { entrepriseId: e.id }, orderBy: [{ estSiege: "desc" }, { commune: "asc" }] }));
-    await chrono("évènements BODACC", () => prisma.evenement.findMany({ where: { entrepriseId: e.id }, orderBy: { date: "desc" }, take: 40 }));
-    await chrono("comptes annuels", () => prisma.compteAnnuel.findMany({ where: { entrepriseId: e.id }, orderBy: { exercice: "desc" } }));
-    await chrono("sources de données", () => prisma.donneeSource.findMany({ where: { entrepriseId: e.id } }));
-    await chrono("décisions de justice", () => prisma.decisionJustice.findMany({ where: { entrepriseId: e.id }, orderBy: { date: "desc" }, take: 25 }));
-    await chrono("signalements publiés", () => prisma.signalement.findMany({ where: { entrepriseId: e.id, moderation: "PUBLIE" }, orderBy: { creeLe: "desc" }, take: 10 }));
-    await chrono("boutique rattachée", () => prisma.boutique.findFirst({ where: { entrepriseId: e.id }, select: { slug: true, domaine: true } }));
-
-    await chrono("voisines — même ville", () =>
-      prisma.entreprise.findMany({
-        where: { ...hors, ...actives, secteur: e.secteur, departement: e.departement, communeSlug: e.communeSlug },
-        select: CHAMPS, orderBy: { denomination: "asc" }, take: 8,
-      }));
-    await chrono("voisines — même département", () =>
-      prisma.entreprise.findMany({
-        where: { ...hors, ...actives, departement: e.departement, secteur: e.secteur },
-        select: CHAMPS, orderBy: { denomination: "asc" }, take: 8,
-      }));
-    await chrono("voisines — secteur, signalées", () =>
-      prisma.entreprise.findMany({
-        where: { ...hors, ...actives, secteur: e.secteur, signalements: { some: { moderation: "PUBLIE" } } },
-        select: CHAMPS, take: 8,
-      }));
-    await chrono("voisines — secteur, avec site", () =>
-      prisma.entreprise.findMany({
-        where: { ...hors, ...actives, secteur: e.secteur, siteWeb: { not: null } },
-        select: CHAMPS, take: 8,
-      }));
+    await chrono("chargerEntreprise (métadonnées)", () => chargerEntreprise(slug));
+    await chrono("compte des signalements", () => prismaSite.signalement.count({ where: { entrepriseId: e.id, moderation: "PUBLIE" } }));
+    await chrono("chargerEntreprise (page)", () => chargerEntreprise(slug));
+    await chrono("detailEntreprise", () => detailEntreprise(e.id));
+    await chrono("signalements publiés", () => prismaSite.signalement.findMany({ where: { entrepriseId: e.id, moderation: "PUBLIE" }, orderBy: { creeLe: "desc" }, take: 10 }));
+    await chrono("signalements résolus", () => prismaSite.signalement.count({ where: { entrepriseId: e.id, moderation: "PUBLIE", resolutionConfirmee: true } }));
+    await chrono("boutique rattachée", () => prismaSite.boutique.findFirst({ where: { entrepriseId: e.id }, select: { slug: true, domaine: true } }));
+    await chrono("voisines (fonction complète)", async () => {
+      const v = await voisines({ siren: e.siren, secteur: e.secteur, departement: e.departement, commune: null, communeSlug: e.communeSlug });
+      return [...v.memeVille, ...v.memeDepartement, ...v.memeSecteur];
+    });
 
     const classees = [...mesures].sort((a, b) => b.ms - a.ms);
     const total = mesures.reduce((s, m) => s + m.ms, 0);
