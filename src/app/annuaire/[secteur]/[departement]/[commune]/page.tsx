@@ -17,6 +17,17 @@ import {
 
 export const revalidate = 86400;
 
+/**
+ * Sans cette fonction, le `revalidate` ci-dessus est ignoré : un segment
+ * dynamique dépourvu de `generateStaticParams` est rendu à chaque requête. La
+ * liste est vide à dessein — la page est générée à la première demande, puis
+ * servie du cache.
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
+
 type Params = Promise<{ secteur: string; departement: string; commune: string }>;
 
 async function resoudre(params: Params) {

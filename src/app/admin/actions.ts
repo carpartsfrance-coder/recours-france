@@ -128,6 +128,7 @@ export async function controlerJustificatif(_precedent: EtatAdmin, donnees: Form
   );
   revalidatePath("/admin/justificatifs");
   revalidatePath("/admin/signalements");
+  await viderLaFichePublique(id);
   return { succes: true, message: accepte ? "Pièce retenue après examen." : "Pièce écartée." };
 }
 
@@ -161,6 +162,7 @@ export async function modererSignalement(_precedent: EtatAdmin, donnees: FormDat
   if (signalement.entrepriseId) await recalculerIndices(signalement.entrepriseId).catch(() => undefined);
   await journaliser(admin.id, `signalement.${decision}`, "signalement", id, signalement.reference);
   revalidatePath("/admin/signalements");
+  await viderLaFichePublique(id);
   return { succes: true, message: "Décision enregistrée." };
 }
 
@@ -424,4 +426,25 @@ export async function trancherContestation(_precedent: EtatAdmin, donnees: FormD
   await journaliser(admin.id, retenue ? "contestation.retenue" : "contestation.ecartee", "contestation", id, motif || undefined);
   revalidatePath("/admin/contestations");
   return { succes: true, message: retenue ? "Contestation retenue, signalement retiré." : "Contestation écartée, signalement maintenu." };
+}
+
+/**
+ * Une décision de modération change la fiche publique, qui est en cache.
+ *
+ * Publier ou déclasser un signalement sans vider ce cache laisse la fiche
+ * mentir pendant vingt-quatre heures — dans un sens comme dans l'autre, et le
+ * second est le plus gênant : un signalement retiré resterait affiché.
+ */
+async function viderLaFichePublique(signalementId: string) {
+  try {
+    const s = await prisma.signalement.findUnique({
+      where: { id: signalementId },
+      select: { entreprise: { select: { slug: true } }, boutique: { select: { slug: true } } },
+    });
+    if (s?.entreprise) revalidatePath(`/entreprises/${s.entreprise.slug}`);
+    if (s?.boutique) revalidatePath(`/boutiques/${s.boutique.slug}`);
+  } catch {
+    // Le cache expire de toute façon ; l'échec ne doit pas faire échouer la
+    // décision de modération, qui est déjà écrite.
+  }
 }

@@ -71,6 +71,30 @@ import {
  */
 export const revalidate = 86400;
 
+/**
+ * Sans cette fonction, `revalidate` ne sert à rien.
+ *
+ * Un segment dynamique dépourvu de `generateStaticParams` est rendu à chaque
+ * requête, et la durée de cache déclarée au-dessus est ignorée. La compilation
+ * le disait — « ƒ /entreprises/[slug] », rendu à la demande, quand une page en
+ * cache s'affiche « ○ » — et la production le confirmait : `cache-control:
+ * no-store` sur les fiches, `s-maxage=31536000` et `x-nextjs-cache: HIT` sur
+ * les guides.
+ *
+ * Chaque visite refaisait donc les huit requêtes du rendu. Un robot qui
+ * explore cinquante mille fiches les payait cinquante mille fois, et sous
+ * cette charge les fiches des zones denses dépassaient les douze secondes que
+ * la base s'accorde : elles répondaient 500.
+ *
+ * La liste est vide à dessein. Treize millions de fiches ne se pré-rendent pas
+ * à la compilation ; avec `dynamicParams` — vrai par défaut — Next les génère
+ * à la première demande puis les sert du cache pendant une journée. Le coût
+ * d'une fiche est payé une fois par jour au lieu d'une fois par visite.
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
 const ICONES_PROBLEME = {
   alerte: Alerte, colis: Colis, remboursement: Remboursement,
   bouclier: Bouclier, document: Document, question: IconeQuestion,

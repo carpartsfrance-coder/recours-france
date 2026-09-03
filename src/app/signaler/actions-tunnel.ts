@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { genererReference } from "@/lib/refs";
 import { creerJetonSuivi, empreinteIp } from "@/lib/auth";
@@ -78,6 +79,7 @@ export async function deposerDepuisBrouillon(
 
     await creerJetonSuivi(signalement.id, email);
     if (cible.entrepriseId) await recalculerIndices(cible.entrepriseId).catch(() => undefined);
+    await viderLeCacheDeLaFiche(cible.entrepriseId, boutique?.slug ?? null);
 
     return reference;
   } catch (e) {
@@ -194,6 +196,7 @@ export async function publierSignalement(entree: {
 
     await creerJetonSuivi(signalement.id, entree.email);
     if (cible.entrepriseId) await recalculerIndices(cible.entrepriseId).catch(() => undefined);
+    await viderLeCacheDeLaFiche(cible.entrepriseId, boutique?.slug ?? null);
 
     // Où le signalement vient de paraître : la fiche de la société quand elle
     // est établie, celle de la boutique sinon. Le tunnel proposait jusqu'ici
@@ -209,5 +212,26 @@ export async function publierSignalement(entree: {
   } catch (e) {
     console.error("[tunnel] dépôt impossible", e);
     return { erreur: "La publication a échoué. Réessayez dans un instant." };
+  }
+}
+
+/**
+ * Vide le cache de la page où le signalement vient de paraître.
+ *
+ * Les fiches sont désormais servies d'un cache d'une journée. Sans cette
+ * invalidation, quelqu'un qui vient de publier son litige ne le verrait pas
+ * sur la fiche avant vingt-quatre heures — et conclurait, à raison, que le
+ * dépôt n'a pas fonctionné.
+ */
+async function viderLeCacheDeLaFiche(entrepriseId: string | null, boutiqueSlug: string | null) {
+  try {
+    if (entrepriseId) {
+      const e = await prisma.entreprise.findUnique({ where: { id: entrepriseId }, select: { slug: true } });
+      if (e) revalidatePath(`/entreprises/${e.slug}`);
+    }
+    if (boutiqueSlug) revalidatePath(`/boutiques/${boutiqueSlug}`);
+  } catch {
+    // Un cache non vidé se rattrape en vingt-quatre heures ; un dépôt perdu,
+    // jamais. L'échec ne doit pas remonter.
   }
 }
