@@ -64,11 +64,26 @@ async function main() {
 
   const prisma = new PrismaClient({ datasourceUrl: url });
   try {
-    const [entreprises, signalements] = await Promise.all([
-      prisma.entreprise.count(), prisma.signalement.count(),
-    ]);
+    // `count(*)` balaie la table. Sur treize millions de lignes il dépasse le
+    // délai que la production s'accorde — le diagnostic mourait sur sa
+    // première ligne. `reltuples` est la statistique que PostgreSQL tient à
+    // jour ; elle est approximative et instantanée, ce qui suffit ici.
     console.log(`\nBase : ${sansSecret(url)}`);
-    console.log(`  ${entreprises.toLocaleString("fr-FR")} entreprises, ${signalements} signalement(s)`);
+    const tailles = await prisma.$queryRawUnsafe<{ table: string; lignes: bigint; taille: string }[]>(`
+      SELECT relname AS "table", GREATEST(reltuples,0)::bigint AS lignes,
+             pg_size_pretty(pg_total_relation_size(oid)) AS taille
+      FROM pg_class WHERE relname IN ('Entreprise','Signalement','Boutique','Evenement','CompteAnnuel')
+        AND relkind='r' ORDER BY pg_total_relation_size(oid) DESC`);
+    for (const t of tailles) {
+      console.log(`  ${t.table.padEnd(14)} ~${Number(t.lignes).toLocaleString("fr-FR").padStart(12)} lignes   ${t.taille}`);
+    }
+
+    const reglages = await prisma.$queryRawUnsafe<{ name: string; setting: string; unit: string | null }[]>(`
+      SELECT name, setting, unit FROM pg_settings
+      WHERE name IN ('statement_timeout','shared_buffers','work_mem','effective_cache_size','max_connections','random_page_cost')
+      ORDER BY name`);
+    console.log("\n  Réglages du serveur :");
+    for (const r of reglages) console.log(`    ${r.name.padEnd(22)} ${r.setting}${r.unit ? " " + r.unit : ""}`);
 
     const slug = slugDemande || (await demander("\nSlug de la fiche [danone-552032534] : ")) || "danone-552032534";
     const e = await prisma.entreprise.findUnique({
