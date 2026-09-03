@@ -78,6 +78,23 @@ async function main() {
       console.log(`  ${t.table.padEnd(14)} ~${Number(t.lignes).toLocaleString("fr-FR").padStart(12)} lignes   ${t.taille}`);
     }
 
+    // Les statistiques du planificateur.
+    //
+    // Sans elles, PostgreSQL ne sait pas combien de lignes une valeur va
+    // ramener : il choisit alors un plan au jugé, excellent pour certaines
+    // valeurs et catastrophique pour d'autres. C'est le seul mécanisme connu
+    // qui produise « rapide dans la Creuse, coupé à Paris » avec les mêmes
+    // index et les mêmes données.
+    const stats = await prisma.$queryRawUnsafe<{ relname: string; last_analyze: Date | null; last_autoanalyze: Date | null; n_live_tup: bigint; n_dead_tup: bigint }[]>(`
+      SELECT relname, last_analyze, last_autoanalyze, n_live_tup, n_dead_tup
+      FROM pg_stat_user_tables WHERE relname IN ('Entreprise','Signalement') ORDER BY relname`);
+    console.log("\n  Statistiques du planificateur :");
+    for (const t of stats) {
+      const d = (x: Date | null) => (x ? new Date(x).toISOString().slice(0, 16).replace("T", " ") : "JAMAIS");
+      console.log(`    ${t.relname.padEnd(13)} analyse ${d(t.last_analyze)}   auto-analyse ${d(t.last_autoanalyze)}`);
+      console.log(`    ${"".padEnd(13)} ${Number(t.n_live_tup).toLocaleString("fr-FR")} lignes vivantes, ${Number(t.n_dead_tup).toLocaleString("fr-FR")} mortes`);
+    }
+
     const reglages = await prisma.$queryRawUnsafe<{ name: string; setting: string; unit: string | null }[]>(`
       SELECT name, setting, unit FROM pg_settings
       WHERE name IN ('statement_timeout','shared_buffers','work_mem','effective_cache_size','max_connections','random_page_cost')
@@ -150,27 +167,46 @@ async function main() {
 
     const classees = [...mesures].sort((a, b) => b.ms - a.ms);
     const total = mesures.reduce((s, m) => s + m.ms, 0);
-    console.log(`\n  Total : ${total} ms`);
-    console.log(`  La plus lente : « ${classees[0].nom} » à ${classees[0].ms} ms — ${Math.round((100 * classees[0].ms) / Math.max(1, total))} % du total\n`);
+    const distante = !/localhost|127\.0\.0\.1/.test(url);
+    console.log(
+      `\n  Total : ${total} ms` +
+        (distante ? ` — chaque ligne inclut l'aller-retour réseau depuis ce poste, d'où un plancher.` : ""),
+    );
+    console.log(`  La plus lente : « ${classees[0].nom} » à ${classees[0].ms} ms\n`);
 
-    // Le chronomètre dit « c'est lent » ; le plan dit pourquoi. On ne le
-    // demande que pour les requêtes de voisinage : les autres portent sur une
-    // clé étrangère indexée et ne peuvent pas déraper.
-    if (classees[0].ms > 500 && classees[0].nom.startsWith("voisines")) {
-      console.log("  Plan d'exécution de la requête la plus lente :\n");
-      const plans: Record<string, string> = {
-        "voisines — même ville": `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND departement=$2 AND "communeSlug"=$3 AND siren<>$4 ORDER BY denomination ASC LIMIT 8`,
-        "voisines — même département": `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND departement=$2 AND siren<>$3 ORDER BY denomination ASC LIMIT 8`,
-        "voisines — secteur, signalées": `SELECT e.id FROM "Entreprise" e WHERE e."etatAdministratif"='ACTIVE' AND e.secteur=$1 AND e.siren<>$2 AND EXISTS (SELECT 1 FROM "Signalement" s WHERE s."entrepriseId"=e.id AND s.moderation='PUBLIE') LIMIT 8`,
-        "voisines — secteur, avec site": `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND "siteWeb" IS NOT NULL AND siren<>$2 LIMIT 8`,
-      };
-      const sql = plans[classees[0].nom];
-      const params: unknown[] =
-        classees[0].nom === "voisines — même ville" ? [e.secteur, e.departement, e.communeSlug, e.siren]
-        : classees[0].nom === "voisines — même département" ? [e.secteur, e.departement, e.siren]
-        : [e.secteur, e.siren];
-      const plan = await prisma.$queryRawUnsafe<{ "QUERY PLAN": string }[]>(`EXPLAIN (ANALYZE, BUFFERS) ${sql}`, ...params);
-      for (const l of plan.slice(0, 12)) console.log("    " + l["QUERY PLAN"]);
+    // Le chronomètre mesure l'aller-retour ; `EXPLAIN ANALYZE` mesure le
+    // serveur seul. Depuis un poste distant, cinquante millisecondes de réseau
+    // par requête suffisent à noyer la différence entre une requête à un
+    // milliseconde et une à quarante — d'où le plan, demandé pour chacune des
+    // quatre requêtes de voisinage, qui sont les seules à pouvoir déraper.
+    console.log("  Temps d'exécution côté serveur, et plan retenu :\n");
+    const aExpliquer: [string, string, unknown[]][] = [
+      ["voisines — même ville",
+       `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND departement=$2 AND "communeSlug"=$3 AND siren<>$4 ORDER BY denomination ASC LIMIT 8`,
+       [e.secteur, e.departement, e.communeSlug, e.siren]],
+      ["voisines — même département",
+       `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND departement=$2 AND siren<>$3 ORDER BY denomination ASC LIMIT 8`,
+       [e.secteur, e.departement, e.siren]],
+      ["voisines — secteur, signalées",
+       `SELECT e.id FROM "Entreprise" e WHERE e."etatAdministratif"='ACTIVE' AND e.secteur=$1 AND e.siren<>$2 AND EXISTS (SELECT 1 FROM "Signalement" s WHERE s."entrepriseId"=e.id AND s.moderation='PUBLIE') LIMIT 8`,
+       [e.secteur, e.siren]],
+      ["voisines — secteur, avec site",
+       `SELECT id FROM "Entreprise" WHERE "etatAdministratif"='ACTIVE' AND secteur=$1 AND "siteWeb" IS NOT NULL AND siren<>$2 LIMIT 8`,
+       [e.secteur, e.siren]],
+    ];
+    for (const [nom, sql, params] of aExpliquer) {
+      try {
+        const plan = await prisma.$queryRawUnsafe<{ "QUERY PLAN": string }[]>(`EXPLAIN (ANALYZE, BUFFERS) ${sql}`, ...params);
+        const lignes = plan.map((x) => x["QUERY PLAN"]);
+        const duree = lignes.find((l) => l.startsWith("Execution Time"))?.replace("Execution Time: ", "") ?? "?";
+        console.log(`    ${nom.padEnd(32)} ${duree}`);
+        for (const l of lignes.filter((l) => /Scan|Sort|Heap|Filter|rows removed/i.test(l)).slice(0, 4)) {
+          console.log(`        ${l.trim().slice(0, 130)}`);
+        }
+      } catch (err) {
+        console.log(`    ${nom.padEnd(32)} ÉCHEC — ${err instanceof Error ? err.message.split("\n")[0].slice(0, 90) : err}`);
+      }
+      console.log("");
     }
 
     console.log("\n  Index présents sur « Entreprise » :");

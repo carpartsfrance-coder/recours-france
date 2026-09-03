@@ -241,6 +241,23 @@ export async function voisines(entreprise: {
     // combinaison que couvre l'index composite. Filtrer sur le libellé de
     // commune, un texte sans index, coûtait 1 327 ms — l'essentiel du temps
     // d'affichage de la fiche.
+    // Sans tri par dénomination, et c'est délibéré.
+    //
+    // Avec `ORDER BY denomination LIMIT 8`, PostgreSQL préfère l'index
+    // alphabétique du secteur — il le parcourt dans l'ordre en écartant ce qui
+    // n'est pas de la commune, et s'arrête aux huit premières trouvées. Le plan
+    // paraît bon parce que la limite est petite ; il est en réalité non borné.
+    // Quand les correspondances sont rares dans l'ordre alphabétique du
+    // secteur, le parcours ne s'arrête jamais : coût estimé six millions et
+    // demi, et en production des fiches coupées à douze secondes par
+    // `statement_timeout`.
+    //
+    // Sans le tri, il utilise l'index composite exact — secteur, département,
+    // commune, état — lit au plus huit entrées et s'arrête. Le plan devient
+    // borné par construction, quelle que soit la valeur cherchée.
+    //
+    // Le prix est que la liste des voisines n'est plus alphabétique. Elle sert
+    // le maillage interne, où l'ordre n'a aucune importance.
     entreprise.communeSlug && entreprise.departement && entreprise.secteur
       ? prisma.entreprise.findMany({
           where: {
@@ -251,7 +268,6 @@ export async function voisines(entreprise: {
             communeSlug: entreprise.communeSlug,
           },
           select: CHAMPS,
-          orderBy: { denomination: "asc" },
           take: 8,
         })
       : [],
@@ -259,7 +275,6 @@ export async function voisines(entreprise: {
       ? prisma.entreprise.findMany({
           where: { ...hors, ...actives, departement: entreprise.departement, secteur: entreprise.secteur },
           select: CHAMPS,
-          orderBy: { denomination: "asc" },
           take: 8,
         })
       : [],
