@@ -59,24 +59,52 @@ const INACTIVITE_MAX_ANNEES = 3;
 const NON_CONFIRME = "Non confirmé";
 const NON_COMMUNIQUE = "Non communiqué";
 
+/**
+ * Le titre ne promet des avis que là où il y en a.
+ *
+ * Il portait « avis » sur les 185 058 boutiques, parce que « avis
+ * maboutique.fr » est la requête visée. Elle l'est toujours — mais 115 909 de
+ * ces pages ne savent rien de la boutique qu'elles décrivent : ni société
+ * exploitante, ni signalement, et 184 de leurs 195 lignes sont identiques
+ * d'une page à l'autre. Elles passent en `noindex` (voir `lib/indexation.ts`),
+ * et leur titre cesse d'annoncer ce qu'elles n'ont pas.
+ *
+ * Restent proposées à la recherche les boutiques rattachées à une société —
+ * elles répondent vraiment à « qui est derrière ce site ? » — et celles qui
+ * portent un signalement.
+ */
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const boutique = await prisma.boutique.findUnique({
-    where: { slug },
-    include: { entreprise: { select: { denomination: true } } },
-  });
+  // Le décompte part du slug plutôt que de l'identifiant : il n'a pas à
+  // attendre la première requête, et l'unicité du slug le résout aussi vite.
+  const [boutique, signalements] = await Promise.all([
+    prisma.boutique.findUnique({
+      where: { slug },
+      include: { entreprise: { select: { denomination: true } } },
+    }),
+    prisma.signalement.count({ where: { boutique: { slug }, moderation: "PUBLIE" } }),
+  ]);
   if (!boutique) return { title: "Boutique en ligne" };
 
   const nom = nomAffiche(boutique.domaine);
+  const exploitante = boutique.entreprise?.denomination;
+  const titre = signalements > 0
+    ? `${nom} : avis, litiges et signalements`
+    : exploitante
+      ? `${nom} : société exploitante et démarches`
+      : `${nom} : boutique en ligne et démarches`;
+
   return {
-    ...(boutiqueIndexable(boutique) ? {} : { robots: { index: false, follow: true } }),
-    // Le titre porte « avis » et le domaine : c'est la requête visée, et elle
-    // s'écrit telle que la personne la tape.
-    title: typo(`${nom} : avis, litiges et signalements`),
+    ...(boutiqueIndexable({ ...boutique, signalements })
+      ? {}
+      : { robots: { index: false, follow: true } }),
+    title: typo(titre),
     description: typo(
-      boutique.entreprise
-        ? `Vous recherchez des avis sur ${nom} ? Consultez les litiges publiés, l’identité de la société exploitante (${boutique.entreprise.denomination}) et les démarches disponibles.`
-        : `Vous recherchez des avis sur ${nom} ? Consultez les litiges publiés, les informations sur la boutique et les démarches disponibles.`,
+      signalements > 0
+        ? `${signalements} litige${signalements > 1 ? "s" : ""} publié${signalements > 1 ? "s" : ""} sur ${nom}, avec leur statut, et les démarches disponibles.`
+        : exploitante
+          ? `Qui exploite ${nom} ? Identité de la société (${exploitante}), dernière activité constatée du domaine et démarches en cas de litige.`
+          : `Informations connues sur ${nom}, dernière activité constatée du domaine et démarches à suivre en cas de litige.`,
     ),
     alternates: { canonical: `/boutiques/${slug}` },
   };

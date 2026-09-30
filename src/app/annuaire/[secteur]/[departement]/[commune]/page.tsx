@@ -54,10 +54,28 @@ async function resoudre(params: Params) {
   };
 }
 
+/**
+ * Ces pages ne paraissent plus dans les résultats de recherche.
+ *
+ * Il y en a 216 910, une par couple secteur × commune. Chacune recopie le
+ * répertoire Sirene dans un gabarit que les 216 909 autres partagent : le nom
+ * des entreprises change, le reste est identique. Mesuré en Search Console sur
+ * la vie du site, aucune n'apparaît parmi les pages les plus cliquées — tout
+ * le trafic venait des fiches d'entreprise, sur des requêtes « avis X ».
+ *
+ * Elles pesaient 59 % des adresses proposées à Google, et c'est cette masse
+ * qui a fait déclasser le domaine entier en septembre 2026 (voir
+ * `lib/indexation.ts`). Elles sortent de l'index et du plan de site.
+ *
+ * `follow` est conservé à dessein : ces pages restent le chemin par lequel le
+ * robot atteint les fiches d'entreprise depuis l'annuaire. On retire la page
+ * de l'index, pas le maillage qui mène au contenu.
+ */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const r = await resoudre(params);
   if (!r) return {};
   return {
+    robots: { index: false, follow: true },
     title: `${r.libelle} à ${r.nomCommune} : entreprises et litiges`,
     description: `Entreprises du secteur « ${r.libelle} » à ${r.nomCommune} (${r.code}). Consultez les litiges déclarés par des consommateurs et signalez le vôtre gratuitement.`,
     alternates: { canonical: `/annuaire/${r.secteur}/${r.fragmentDept}/${r.slugCommune}` },

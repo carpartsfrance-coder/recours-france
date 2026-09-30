@@ -11,7 +11,7 @@ import {
   organisationJsonLd,
 } from "@/components/donnees-structurees";
 import { mediateurPublie } from "@/lib/mediation";
-import { ficheIndexable } from "@/lib/indexation";
+import { ficheIndexable, type ContenuFiche } from "@/lib/indexation";
 import { FAMILLES_PUBLICATION, etapesPlan, faqRefonte, problemesFiche } from "@/lib/refonte";
 import { Logo } from "@/components/logo";
 import { Sommaire } from "@/components/fiche-entreprise/sommaire";
@@ -124,10 +124,38 @@ const LIMITE_TITRE = 60;
  * les homonymes — il y en a beaucoup sur treize millions de sociétés — mais
  * elle ne vaut pas de faire tomber la fin du titre.
  */
-function titreFiche(nom: string, commune: string | null): string {
-  const sans = `Avis sur ${nom} : litiges et signalements`;
+/**
+ * « Avis sur X » n'est promis que si la page a des avis à montrer.
+ *
+ * Le gabarit titrait ainsi les 12 997 993 fiches, dont 6 portent un
+ * signalement. Le visiteur cliquait sur une promesse que la page ne tenait
+ * pas, et repartait aussitôt — c'est le signal que les systèmes de qualité
+ * lisent le plus durement, et le domaine a été déclassé en septembre 2026.
+ *
+ * Les fiches sans contenu propre sont désormais en `noindex` : leur titre ne
+ * décide plus de rien en recherche, mais il reste lu dans l'onglet et dans les
+ * partages, et il n'a aucune raison de mentir là non plus.
+ *
+ * La commune n'est ajoutée que si elle tient dans le budget. Elle désambiguïse
+ * les homonymes — il y en a beaucoup sur treize millions de sociétés — mais
+ * elle ne vaut pas de faire tomber la fin du titre.
+ */
+function titreFiche(nom: string, commune: string | null, contenu: ContenuFiche): string {
+  const avecAvis = contenu.signalements > 0;
+  const debut = avecAvis ? `Avis sur ${nom}` : nom;
+  // Chaque cas nomme ce que la fiche porte réellement. Annoncer « comptes et
+  // publications » à une fiche qui n'a qu'une décision de justice serait la
+  // même promesse creuse que celle qu'on retire — 19 fiches sont dans ce cas.
+  const fin = avecAvis
+    ? " : litiges et signalements"
+    : contenu.comptes > 0 || contenu.evenements > 0
+      ? " : comptes, publications et démarches"
+      : contenu.decisions > 0
+        ? " : décisions de justice citées"
+        : " : fiche entreprise et démarches";
+  const sans = `${debut}${fin}`;
   if (!commune) return sans;
-  const avec = `Avis sur ${nom} (${communeEnTitre(commune)}) : litiges et signalements`;
+  const avec = `${debut} (${communeEnTitre(commune)})${fin}`;
   return avec.length <= LIMITE_TITRE ? avec : sans;
 }
 
@@ -141,13 +169,26 @@ function titreFiche(nom: string, commune: string | null): string {
  * nous avons et que les annuaires concurrents n'affichent pas : la date à
  * laquelle la fiche a été vérifiée.
  */
-function descriptionFiche(nom: string, total: number, verifieeLe: Date): string {
+function descriptionFiche(nom: string, contenu: ContenuFiche, verifieeLe: Date): string {
   const verifiee = `Fiche vérifiée le ${formatDateLongue(verifieeLe)}`;
-  if (total === 0) {
-    return `${verifiee} : identité au registre, comptes déposés et publications officielles. Aucun signalement de consommateur à ce jour.`;
+  const total = contenu.signalements;
+  if (total > 0) {
+    const pluriel = total > 1 ? "s" : "";
+    return `${total} signalement${pluriel} publié${pluriel} sur ${nom}, avec leur statut. ${verifiee} : identité au registre et publications officielles.`;
   }
-  const pluriel = total > 1 ? "s" : "";
-  return `${total} signalement${pluriel} publié${pluriel} sur ${nom}, avec leur statut. ${verifiee} : identité au registre et publications officielles.`;
+  // L'ancienne description annonçait « comptes déposés et publications
+  // officielles » à toutes les fiches ; 191 portent un compte et 260 une
+  // publication. Elle ne les annonce plus que là où il y en a.
+  if (contenu.comptes > 0 || contenu.evenements > 0) {
+    return `${verifiee} : identité au registre, comptes déposés et publications officielles sur ${nom}. Aucun signalement de consommateur à ce jour.`;
+  }
+  if (contenu.decisions > 0) {
+    const pluriel = contenu.decisions > 1 ? "s" : "";
+    // « citée », jamais « condamnation » : la page elle-même précise qu'une
+    // décision citée ne préjuge de rien.
+    return `${contenu.decisions} décision${pluriel} de justice citant ${nom}, et les démarches à suivre en cas de litige. ${verifiee}.`;
+  }
+  return `${verifiee} : identité de ${nom} au registre, et les démarches à suivre en cas de litige. Aucun signalement de consommateur à ce jour.`;
 }
 
 export async function generateMetadata({
@@ -159,14 +200,31 @@ export async function generateMetadata({
   const base = await chargerEntreprise(slug);
   if (!base) return { title: "Entreprise" };
 
-  const total = await prisma.signalement.count({
-    where: { entrepriseId: base.id, moderation: "PUBLIE" },
-  });
+  /**
+   * Deux requêtes, toutes deux servies par une clé étrangère indexée.
+   *
+   * Les signalements sont comptés à part parce qu'eux seuls sont filtrés sur
+   * la modération : une fiche ne doit pas devenir indexable sur la foi d'un
+   * signalement encore en attente de relecture.
+   */
+  const [signalements, autres] = await Promise.all([
+    prisma.signalement.count({ where: { entrepriseId: base.id, moderation: "PUBLIE" } }),
+    prisma.entreprise.findUnique({
+      where: { id: base.id },
+      select: { _count: { select: { decisions: true, comptes: true, evenements: true } } },
+    }),
+  ]);
+  const contenu: ContenuFiche = {
+    signalements,
+    decisions: autres?._count.decisions ?? 0,
+    comptes: autres?._count.comptes ?? 0,
+    evenements: autres?._count.evenements ?? 0,
+  };
 
   return {
-    ...(ficheIndexable(base) ? {} : { robots: { index: false, follow: true } }),
-    title: typo(titreFiche(base.denomination, base.commune)),
-    description: typo(descriptionFiche(base.denomination, total, base.majLe)),
+    ...(ficheIndexable(base, contenu) ? {} : { robots: { index: false, follow: true } }),
+    title: typo(titreFiche(base.denomination, base.commune, contenu)),
+    description: typo(descriptionFiche(base.denomination, contenu, base.majLe)),
     alternates: { canonical: `/entreprises/${base.slug}` },
   };
 }

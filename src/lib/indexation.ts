@@ -1,32 +1,61 @@
 import type { Prisma } from "@prisma/client";
 
 /**
- * Ce qui est proposé aux moteurs, et dans quel ordre.
+ * Ce qui est proposé aux moteurs.
  *
- * Deux mécanismes distincts, qu'il ne faut pas confondre.
+ * ── La règle précédente, et ce qui l'a démentie ────────────────────────────
+ * Ce fichier posait qu'on n'excluait jamais par `noindex`, et qu'on se
+ * contentait de hiérarchiser par le plan de site : une fiche hors du plan
+ * restait indexable et atteignable, elle attendait son tour. Le raisonnement
+ * était juste sur un point — une page laissée longtemps en `noindex` cesse
+ * d'être réexplorée — et faux sur l'essentiel : il supposait que le plan de
+ * site décide de ce qui entre dans l'index. Il n'en décide pas.
  *
- *  — `noindex` exclut définitivement. Réservé à ce qui n'a aucun sens à
- *    paraître, jamais à ce qui est simplement moins prioritaire : une page
- *    laissée longtemps en `noindex` cesse d'être réexplorée, et la rouvrir
- *    ensuite coûte des mois.
+ * Relevé en Search Console le 30 septembre 2026, sur un domaine de deux mois :
  *
- *  — Le plan de site hiérarchise. C'est lui qui exprime la priorité, avec le
- *    maillage interne. Une fiche hors du plan de site reste indexable et reste
- *    atteignable par les liens ; elle attend simplement son tour.
+ *   — 339 000 pages dans l'index, pour 369 476 adresses au plan de site ;
+ *   — aucune action manuelle, donc aucune pénalité : le domaine a été
+ *     déclassé par les systèmes de qualité, pas sanctionné ;
+ *   — le trafic est tombé de ~300 clics par jour à zéro entre le 12 et le
+ *     15 septembre, et n'est jamais remonté ;
+ *   — 22 650 erreurs 5xx relevées, Googlebot saturant l'instance sur des
+ *     centaines de milliers d'adresses.
  *
- * Un domaine neuf qui soumet sept millions de pages quasi jumelles est jugé sur
- * la moyenne. Pappers et societe.com en ont autant d'indexées, mais après vingt
- * ans d'ancienneté. D'où l'étagement : on présente d'abord ce qu'on a de mieux,
- * on ouvre quand le premier palier est effectivement indexé.
+ * Le maillage interne avait suffi à tout faire indexer. Le plan de site
+ * étageait 71 000 fiches ; Google en a indexé 339 000, parce que les pages de
+ * ville s'enchaînent les unes aux autres et mènent à toutes les fiches. On
+ * avait donc la surface d'un annuaire de treize millions de lignes, et le
+ * contenu d'une trentaine de pages rédigées.
+ *
+ * ── La règle qui la remplace ───────────────────────────────────────────────
+ * Une page n'est indexable que si elle porte quelque chose qui lui est propre.
+ * Pas « quelque chose de plus que les autres pages du site » : quelque chose
+ * qu'on ne trouve pas ailleurs. Recopier le répertoire Sirene n'y suffit pas —
+ * il est public, et d'autres le recopient depuis vingt ans.
+ *
+ * Mesuré sur la base complète, 12 997 993 fiches :
+ *
+ *   — 6 portent un signalement de consommateur ;
+ *   — 20 portent une décision de justice ;
+ *   — 191 portent un compte annuel déposé ;
+ *   — 260 portent une publication BODACC ;
+ *   — 280 en portent au moins un des quatre.
+ *
+ * Deux cent quatre-vingts. C'est la taille réelle de ce site aujourd'hui, et
+ * c'est ce qu'il faut présenter tant qu'il n'a rien de plus. Le jour où les
+ * signalements arrivent, les fiches correspondantes deviennent indexables
+ * d'elles-mêmes : la règle est une mesure du contenu, pas une liste figée.
+ *
+ * ── Le prix, assumé ────────────────────────────────────────────────────────
+ * Rouvrir une page laissée en `noindex` coûte des mois. C'est moins cher que
+ * de laisser 339 000 pages creuses décider de la moyenne du domaine.
  */
 
 /**
  * Sociétés civiles — code 6540 de la nomenclature Insee, plus le 6588 résiduel.
  *
  * Une SCI n'a pas de consommateurs : aucun litige de consommation n'est
- * possible avec elle, par construction. Deux millions de fiches demandant
- * « un problème avec cette société ? » à des sociétés civiles immobilières
- * abîmeraient la moyenne du domaine sans jamais servir personne.
+ * possible avec elle, par construction.
  *
  * Les codes voisins ne sont pas visés : 6521 et 6532 sont des coopératives, qui
  * vendent bel et bien à des particuliers. D'où l'énumération exacte plutôt
@@ -35,34 +64,17 @@ import type { Prisma } from "@prisma/client";
 const SOCIETES_CIVILES = ["6540", "6588"];
 
 /**
- * Secteurs où un litige de consommation existe réellement.
- *
- * « autre » et « immobilier » en sont exclus : le premier rassemble surtout des
- * associations, du conseil aux entreprises et des clubs sportifs, le second est
- * aux quatre cinquièmes des sociétés civiles.
- */
-const SECTEURS_GRAND_PUBLIC_EXCLUS = ["autre", "immobilier"];
-
-/**
- * Les personnes morales de droit public administratif, hors du plan de site.
+ * Les personnes morales de droit public administratif.
  *
  * La catégorie juridique 7 rassemble l'État, les collectivités territoriales
  * et les établissements publics administratifs : préfectures, mairies, lycées,
- * collèges. Elles figuraient au plan de site pour la seule raison qu'elles ont
- * un site internet — quatorze mille huit cent quatre-vingt-quatre fiches, soit
- * un sixième de ce qui est proposé à l'exploration.
- *
- * Personne ne cherche « avis collège Robert Schuman », et un différend avec un
- * établissement scolaire ne relève pas du droit de la consommation mais du
- * recours administratif. Les proposer dilue le budget d'exploration sur des
- * pages qui ne répondront jamais à une requête.
+ * collèges. Personne ne cherche « avis collège Robert Schuman », et un
+ * différend avec un établissement scolaire ne relève pas du droit de la
+ * consommation mais du recours administratif.
  *
  * Les établissements publics à caractère industriel et commercial ne sont pas
  * concernés : ils relèvent de la catégorie 4, et un litige avec eux est bien
  * un litige de consommation.
- *
- * Ces fiches restent indexables et atteignables par le maillage : c'est leur
- * proposition au robot qui cesse, pas leur existence.
  */
 const DROIT_PUBLIC_ADMINISTRATIF = "7";
 
@@ -72,117 +84,96 @@ export type PourIndexation = {
 };
 
 /**
+ * Ce qu'une fiche porte en propre.
+ *
+ * Les quatre seuls contenus du site qu'un autre annuaire n'affiche pas déjà.
+ * L'identité au registre n'en fait pas partie : elle est la même partout, et
+ * c'est elle qui compose les 99,99 % de pages qui se ressemblent.
+ */
+export type ContenuFiche = {
+  signalements: number;
+  decisions: number;
+  comptes: number;
+  evenements: number;
+};
+
+export function ficheAvecContenu(c: ContenuFiche): boolean {
+  return c.signalements > 0 || c.decisions > 0 || c.comptes > 0 || c.evenements > 0;
+}
+
+/**
  * Une fiche mérite-t-elle de paraître dans les résultats de recherche ?
  *
  * Non pour une société radiée : la page lui demande de réagir à un litige, ce
- * qui n'a pas de sens et ne rend service à personne. Non pour une société
- * civile, qui n'a pas de clients.
+ * qui n'a pas de sens. Non pour une société civile, qui n'a pas de clients.
+ * Non, désormais, pour une fiche qui ne porte que son identité au registre :
+ * elle est titrée « Avis sur X » et n'a aucun avis à montrer.
  */
-export function ficheIndexable(e: PourIndexation): boolean {
+export function ficheIndexable(e: PourIndexation, contenu: ContenuFiche): boolean {
   if (e.etatAdministratif !== "ACTIVE") return false;
   if (e.categorieJuridique && SOCIETES_CIVILES.includes(e.categorieJuridique)) return false;
-  return true;
+  if (e.categorieJuridique?.startsWith(DROIT_PUBLIC_ADMINISTRATIF)) return false;
+  return ficheAvecContenu(contenu);
 }
 
-/** La même règle, côté base. */
-export const OU_INDEXABLE: Prisma.EntrepriseWhereInput = {
-  etatAdministratif: "ACTIVE",
-  NOT: { categorieJuridique: { in: SOCIETES_CIVILES } },
-};
-
 /**
- * Le palier proposé au plan de site.
+ * La même règle, côté base — et la seule liste que le plan de site propose.
  *
- * 1 — la fiche porte un signal réel : un site déclaré, une boutique en ligne,
- *     un signalement, ou une décision de justice. Ce sont les entreprises avec
- *     lesquelles un consommateur peut effectivement avoir eu affaire. ~71 000.
- * 2 — active, dans un secteur grand public. ~3,26 millions.
- * 3 — le reste des actives : indexable et atteignable par le maillage, mais
- *     hors du plan de site tant que les paliers précédents ne sont pas
- *     effectivement indexés.
+ * Plan de site et `noindex` disent désormais la même chose. Ils divergeaient :
+ * le plan proposait 81 763 fiches à l'exploration quand aucune règle ne les
+ * empêchait d'entrer dans l'index. Proposer à un robot ce qu'on lui interdit
+ * ensuite d'indexer est le pire des deux mondes — on dépense son budget
+ * d'exploration pour rien.
  *
- * Le palier ouvert se règle par variable d'environnement, sans redéploiement de
- * code : la décision d'élargir se prend au vu de la Search Console, pas au
- * calendrier.
- */
-export const PALIER_OUVERT = Math.min(3, Math.max(1, Number(process.env.SEO_PALIER ?? 1) || 1));
-
-/**
- * Le palier, non comme une clause mais comme une liste de clauses à réunir.
- *
- * Le palier 1 tient en un `OR` de trois critères — un site, une boutique, un
- * signalement. Écrit ainsi, aucun index ne s'applique : Postgres relit la
- * plage entière et filtre. Sur une tranche d'un dixième du répertoire, un
- * million trois cent mille lignes, quarante secondes mesurées.
- *
- * Interrogés séparément, chacun trouve son index — l'index partiel des
- * sociétés ayant un site, la clé étrangère des boutiques, celle des
- * signalements. Trois cent cinquante millisecondes à eux trois, en parallèle.
- * L'appelant réunit les résultats et écarte les doublons ; c'est ce que la
- * base aurait fait, en moins bien.
- *
- * Aux paliers 2 et 3 il n'y a pas de `OR` : la liste ne compte qu'une clause,
- * et l'appelant n'a rien de particulier à faire.
+ * Quatre clauses plutôt qu'un `OR` : réunis dans une même clause, aucun index
+ * ne s'applique et Postgres relit les treize millions de lignes. Séparés,
+ * chacun se résout par la clé étrangère de sa table. L'appelant réunit les
+ * résultats et écarte les doublons.
  */
 export function clausesPlanDeSite(): Prisma.EntrepriseWhereInput[] {
-  if (PALIER_OUVERT >= 3) return [OU_INDEXABLE];
   /**
-   * Les deux exclusions tiennent dans un seul `NOT`, sous forme de liste.
+   * Les exclusions tiennent dans un seul `NOT`, sous forme de liste.
    *
-   * Écrites en deux clés `NOT` successives — l'une venant du socle par
-   * diffusion, l'autre ajoutée ici — la seconde écrasait la première : les
-   * sociétés civiles rentraient par la fenêtre. Cent neuf fiches y passaient
-   * au palier d'ouverture, où il faut un site déclaré pour entrer ; au palier
-   * suivant, c'étaient deux millions de sociétés civiles immobilières, soit
-   * exactement ce que l'exclusion existe pour empêcher.
+   * Écrites en deux clés `NOT` successives, la seconde écrasait la première et
+   * les sociétés civiles rentraient par la fenêtre.
    */
-  const sansCategories: Prisma.EntrepriseWhereInput = {
+  const socle: Prisma.EntrepriseWhereInput = {
     etatAdministratif: "ACTIVE",
     NOT: [
       { categorieJuridique: { in: SOCIETES_CIVILES } },
       { categorieJuridique: { startsWith: DROIT_PUBLIC_ADMINISTRATIF } },
     ],
   };
-  if (PALIER_OUVERT === 2) {
-    return [{ ...sansCategories, secteur: { notIn: SECTEURS_GRAND_PUBLIC_EXCLUS } }];
-  }
-  const socle = sansCategories;
-  // L'ordre compte : la liste énumérée est découpée dans cet ordre, et le
-  // budget d'exploration est fini. Autant qu'il commence par ce qui porte un
-  // récit ou une décision plutôt que par ce qui porte une adresse de site.
+  // L'ordre compte : le budget d'exploration est fini, autant qu'il commence
+  // par ce qui porte un récit ou une décision plutôt que par un compte annuel.
   return [
     { ...socle, signalements: { some: {} } },
-    // Les décisions de justice sont arrivées après l'écriture de ce palier, et
-    // n'y figuraient donc pas. Ce sont pourtant le contenu le plus singulier du
-    // site : une fiche qui en porte onze n'a d'équivalent nulle part ailleurs.
-    // DISTRIMOTOR, la fiche la mieux fournie du répertoire, se trouvait exclue
-    // du plan de site faute de site déclaré — et dix-huit des vingt fiches
-    // portant une décision avec elle.
     { ...socle, decisions: { some: {} } },
-    { ...socle, siteWeb: { not: null } },
-    { ...socle, boutiques: { some: {} } },
+    { ...socle, comptes: { some: {} } },
+    { ...socle, evenements: { some: {} } },
   ];
 }
 
 /**
- * Les boutiques sont indexables — décision de l'éditeur, prise en connaissance
- * de cause.
+ * Les boutiques : rattachées à une société, ou porteuses d'un signalement.
  *
- * La mesure qui l'a précédée : une page boutique comptait six cent
- * soixante-dix-sept mots, dont DIX lui appartenaient. J'ai recommandé de ne
- * publier que celles portant une déclaration ; l'éditeur a tranché autrement,
- * et il a une raison que la mesure ne dit pas — « avis maboutique.fr » est
- * exactement la requête d'un consommateur qui hésite avant de commander, et
- * cette page est la seule au monde qui puisse lui répondre.
+ * L'éditeur avait tranché pour l'indexation de toutes les boutiques, contre la
+ * recommandation, et il avait une raison qui tient toujours : « avis
+ * maboutique.fr » est exactement la requête d'un consommateur qui hésite avant
+ * de commander, et cette page est la seule au monde qui puisse lui répondre.
  *
- * Le compromis n'est donc pas d'indexer moins, mais de publier davantage : la
- * page porte désormais l'identité de la société quand elle est connue, la
- * dernière activité constatée du domaine, et les démarches propres à un litige
- * en ligne. Un index qui ne coûte rien à qui le lit.
+ * Elle ne le peut que si elle sait quelque chose. Mesuré page à page : une
+ * boutique rattachée rend 195 lignes de texte — SIREN, adresse, forme
+ * juridique, date d'immatriculation, provenance du rattachement. Une boutique
+ * non rattachée en rend 184, et ces 184 lignes sont les mêmes d'une boutique à
+ * l'autre : seul le nom de domaine change. Darty.com et Pepinet.fr rendaient
+ * le même document.
  *
- * Restent exclues les boutiques éteintes : un domaine sans activité depuis
- * plus de trois ans n'a plus de client à renseigner, et sa page dirait
- * seulement qu'elle ne sait rien.
+ * 115 909 boutiques sur 185 058 sont dans ce cas. Elles sortent de l'index.
+ * Les 69 149 restantes répondent vraiment à la question posée.
+ *
+ * Restent exclues les boutiques éteintes : un domaine sans signe de vie depuis
+ * plus de trois ans n'a plus de client à renseigner.
  */
 const INACTIVITE_MAX_ANNEES = 3;
 
@@ -192,41 +183,23 @@ function limiteActivite(): Date {
   return d;
 }
 
-export function boutiqueIndexable(b: { derniereActivite?: Date | null }): boolean {
-  // Une date inconnue ne condamne pas : elle signifie seulement que la source
-  // ne l'a pas fournie, pas que le site est mort.
-  if (!b.derniereActivite) return true;
-  return b.derniereActivite >= limiteActivite();
-}
-
-/** La même règle, côté base. */
-export const OU_BOUTIQUE_INDEXABLE: Prisma.BoutiqueWhereInput = {
-  OR: [{ derniereActivite: null }, { derniereActivite: { gte: limiteActivite() } }],
+export type PourIndexationBoutique = {
+  derniereActivite?: Date | null;
+  entrepriseId: string | null;
+  signalements: number;
 };
 
-/**
- * Ce que le plan de site propose parmi les boutiques : celles rattachées à une
- * société, et celles portant un signalement.
- *
- * Mesuré page à page en production : une boutique rattachée rend cent
- * quatre-vingt-quinze lignes de texte — SIREN, adresse, forme juridique, date
- * d'immatriculation, provenance du rattachement. Une boutique non rattachée en
- * rend cent quatre-vingt-quatre, et ces cent quatre-vingt-quatre lignes sont
- * les mêmes d'une boutique à l'autre : seul le nom de domaine change. Darty.com
- * et Pepinet.fr rendaient le même document.
- *
- * Cent quinze mille neuf cents pages identiques proposées à un moteur sur un
- * domaine d'un mois, c'est la définition de ce qu'il sanctionne. Elles restent
- * indexables et atteignables — la règle de la maison est de hiérarchiser par le
- * plan de site, pas d'exclure par `noindex` — mais elles ne sont plus
- * proposées.
- *
- * Le jour où ces pages porteront quelque chose qui leur est propre, le filtre
- * n'aura plus lieu d'être.
- */
+export function boutiqueIndexable(b: PourIndexationBoutique): boolean {
+  // Une date inconnue ne condamne pas : elle signifie seulement que la source
+  // ne l'a pas fournie, pas que le site est mort.
+  if (b.derniereActivite && b.derniereActivite < limiteActivite()) return false;
+  return b.entrepriseId !== null || b.signalements > 0;
+}
+
+/** La même règle, côté base. Plan de site et `noindex` ne peuvent plus diverger. */
 export const OU_BOUTIQUE_PLAN_DE_SITE: Prisma.BoutiqueWhereInput = {
   AND: [
-    OU_BOUTIQUE_INDEXABLE,
-    { OR: [{ entrepriseId: { not: null } }, { signalements: { some: {} } }] },
+    { OR: [{ derniereActivite: null }, { derniereActivite: { gte: limiteActivite() } }] },
+    { OR: [{ entrepriseId: { not: null } }, { signalements: { some: { moderation: "PUBLIE" } } }] },
   ],
 };
